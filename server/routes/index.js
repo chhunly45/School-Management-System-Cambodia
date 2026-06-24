@@ -24,6 +24,7 @@ const certificateRoutes = require('./certificate.routes');
 const transportRoutes = require('./transport.routes');
 const teacherRoutes = require('./teacher.routes');
 const schoolDashboardRoutes = require('./schoolDashboard.routes');
+const financeRoutes = require('./finance.routes');
 
 const router = express.Router();
 
@@ -54,5 +55,6 @@ router.use('/certificates', certificateRoutes);
 router.use('/transport', transportRoutes);
 router.use('/teachers', teacherRoutes);
 router.use('/school-dashboard', schoolDashboardRoutes);
+router.use('/finance', financeRoutes);
 
 module.exports = router;

@@ -1,135 +1,178 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, ArrowUpRight, ArrowDownLeft, DollarSign } from 'lucide-react';
+import { DollarSign, Clock3, AlertTriangle, TrendingUp } from 'lucide-react';
+import { getFinanceSummary, getFinancePaymentsReport } from '../services/finance.api';
 
-interface FinanceMetrics {
+interface PendingOverdue {
+  count: number;
+  total: number;
+}
+
+interface IncomeByMonthItem {
+  month: string;
+  total: number;
+}
+
+interface IncomeByClassItem {
+  className: string;
+  total: number;
+  count: number;
+}
+
+interface FinanceSummary {
   totalIncome: number;
-  totalExpense: number;
-  netBalance: number;
   monthlyIncome: number;
+  pendingPayments: PendingOverdue;
+  overduePayments: PendingOverdue;
+  incomeByMonth: IncomeByMonthItem[];
+  incomeByClass: IncomeByClassItem[];
 }
 
-interface Transaction {
+interface PaymentRecord {
   _id: string;
-  date: Date;
-  type: 'income' | 'expense';
-  category: string;
+  receiptNumber: string;
+  studentId: string;
+  studentName: string;
+  className: string;
   amount: number;
-  description: string;
-  reference?: string;
+  paymentDate: string;
+  paymentMethod: 'cash' | 'bank_transfer' | 'check' | 'mobile_money';
+  academicYear?: string;
+  semester?: number;
+  status: 'paid' | 'pending' | 'overdue';
+  remarks?: string;
 }
+
+interface PaymentsMeta {
+  page: number;
+  limit: number;
+  total: number;
+}
+
+const defaultSummary: FinanceSummary = {
+  totalIncome: 0,
+  monthlyIncome: 0,
+  pendingPayments: { count: 0, total: 0 },
+  overduePayments: { count: 0, total: 0 },
+  incomeByMonth: [],
+  incomeByClass: []
+};
+
+const currency = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
 
 const FinancePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [metrics, setMetrics] = useState<FinanceMetrics>({
-    totalIncome: 0,
-    totalExpense: 0,
-    netBalance: 0,
-    monthlyIncome: 0
-  });
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  const [summary, setSummary] = useState<FinanceSummary>(defaultSummary);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [meta, setMeta] = useState<PaymentsMeta>({ page: 1, limit: 20, total: 0 });
   const [loading, setLoading] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [activeChart, setActiveChart] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [filters, setFilters] = useState({
+    academicYear: '',
+    semester: '',
+    className: '',
+    status: '',
+    page: 1,
+    perPage: 20
+  });
 
   useEffect(() => {
     if (!user) return navigate('/login');
     if (user.role !== 'admin') return;
-    loadData();
+
+    loadSummary();
+    loadPaymentsReport(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const loadData = async () => {
+  const loadSummary = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API calls
-      // const metricsData = await getFinanceMetrics();
-      // const transactionsData = await getTransactions();
-
-      setMetrics({
-        totalIncome: 650000,
-        totalExpense: 150000,
-        netBalance: 500000,
-        monthlyIncome: 150000
-      });
-
-      setTransactions([
-        {
-          _id: '1',
-          date: new Date('2024-06-20'),
-          type: 'income',
-          category: 'Student Fees',
-          amount: 50000,
-          description: 'June tuition fees - Class 10A',
-          reference: 'INV2024061'
-        },
-        {
-          _id: '2',
-          date: new Date('2024-06-19'),
-          type: 'expense',
-          category: 'Salaries',
-          amount: 100000,
-          description: 'Staff salaries - June',
-          reference: 'PAY2024061'
-        },
-        {
-          _id: '3',
-          date: new Date('2024-06-18'),
-          type: 'income',
-          category: 'Donations',
-          amount: 25000,
-          description: 'Corporate donation',
-          reference: 'DON2024062'
-        },
-        {
-          _id: '4',
-          date: new Date('2024-06-17'),
-          type: 'expense',
-          category: 'Utilities',
-          amount: 15000,
-          description: 'Electricity and water',
-          reference: 'UTL2024063'
-        }
-      ]);
+      const response = await getFinanceSummary();
+      setSummary(response.data || defaultSummary);
+      setMessage('');
     } catch (err) {
-      setMessage('Unable to load financial data.');
+      setMessage('Unable to load finance summary.');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredTransactions = transactions.filter(t =>
-    (!startDate || new Date(t.date) >= new Date(startDate)) &&
-    (!endDate || new Date(t.date) <= new Date(endDate))
-  );
+  const loadPaymentsReport = async (page = filters.page) => {
+    setReportLoading(true);
+    try {
+      const response = await getFinancePaymentsReport({
+        academicYear: filters.academicYear || undefined,
+        semester: filters.semester ? Number(filters.semester) : undefined,
+        className: filters.className || undefined,
+        status: (filters.status || undefined) as 'paid' | 'pending' | 'overdue' | undefined,
+        page,
+        perPage: filters.perPage
+      });
 
-  const chartData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-    income: [35000, 40000, 38000, 42000],
-    expense: [30000, 32000, 28000, 35000]
+      const data = response.data || { items: [], meta: { page: 1, limit: 20, total: 0 } };
+      setPayments(data.items || []);
+      setMeta(data.meta || { page: 1, limit: 20, total: 0 });
+      setFilters((prev) => ({ ...prev, page }));
+      setMessage('');
+    } catch (err) {
+      setMessage('Unable to load payments report.');
+      console.error(err);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const totalPages = Math.max(1, Math.ceil((meta.total || 0) / (meta.limit || 20)));
+
+  const handleFilterChange = (name: string, value: string) => {
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyFilters = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadPaymentsReport(1);
+  };
+
+  const handleResetFilters = () => {
+    const reset = {
+      academicYear: '',
+      semester: '',
+      className: '',
+      status: '',
+      page: 1,
+      perPage: 20
+    };
+    setFilters(reset);
+
+    setTimeout(() => {
+      loadPaymentsReport(1);
+    }, 0);
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-text-primary">Finance</h1>
-        <p className="text-text-secondary">School financial management and analytics</p>
+        <p className="text-text-secondary">School finance reports and payment analytics</p>
       </div>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-text-secondary">Total Balance</p>
-              <p className="text-2xl font-bold text-text-primary">
-                {(metrics.netBalance / 1000).toFixed(0)}K
-              </p>
+              <p className="text-sm text-text-secondary">Total Income</p>
+              <p className="text-2xl font-bold text-text-primary">{currency.format(summary.totalIncome)}</p>
             </div>
             <DollarSign className="h-8 w-8 text-primary opacity-20" />
           </div>
@@ -138,192 +181,263 @@ const FinancePage = () => {
         <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-text-secondary">Total Income</p>
-              <p className="text-2xl font-bold text-green-600">
-                {(metrics.totalIncome / 1000).toFixed(0)}K
-              </p>
+              <p className="text-sm text-text-secondary">Monthly Income</p>
+              <p className="text-2xl font-bold text-green-600">{currency.format(summary.monthlyIncome)}</p>
             </div>
-            <ArrowUpRight className="h-8 w-8 text-green-600 opacity-20" />
+            <TrendingUp className="h-8 w-8 text-green-600 opacity-20" />
           </div>
         </div>
 
         <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-text-secondary">Total Expense</p>
-              <p className="text-2xl font-bold text-red-600">
-                {(metrics.totalExpense / 1000).toFixed(0)}K
+              <p className="text-sm text-text-secondary">Pending Payments</p>
+              <p className="text-lg font-bold text-amber-600">
+                {summary.pendingPayments.count} / {currency.format(summary.pendingPayments.total)}
               </p>
             </div>
-            <ArrowDownLeft className="h-8 w-8 text-red-600 opacity-20" />
+            <Clock3 className="h-8 w-8 text-amber-600 opacity-20" />
           </div>
         </div>
 
         <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-text-secondary">This Month</p>
-              <p className="text-2xl font-bold text-primary">
-                {(metrics.monthlyIncome / 1000).toFixed(0)}K
+              <p className="text-sm text-text-secondary">Overdue Payments</p>
+              <p className="text-lg font-bold text-red-600">
+                {summary.overduePayments.count} / {currency.format(summary.overduePayments.total)}
               </p>
             </div>
-            <TrendingUp className="h-8 w-8 text-primary opacity-20" />
+            <AlertTriangle className="h-8 w-8 text-red-600 opacity-20" />
           </div>
         </div>
       </div>
 
       {message && (
-        <div
-          className={`rounded-lg p-4 ${
-            message.includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}
-        >
+        <div className={`rounded-lg p-4 ${message.includes('Unable') ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-800'}`}>
           {message}
         </div>
       )}
 
-      {/* Chart Section */}
-      <div className="rounded-lg border border-muted bg-white p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Financial Trends</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveChart('daily')}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                activeChart === 'daily'
-                  ? 'bg-primary text-white'
-                  : 'bg-background text-text-secondary hover:bg-muted'
-              }`}
-            >
-              Daily
-            </button>
-            <button
-              onClick={() => setActiveChart('weekly')}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                activeChart === 'weekly'
-                  ? 'bg-primary text-white'
-                  : 'bg-background text-text-secondary hover:bg-muted'
-              }`}
-            >
-              Weekly
-            </button>
-            <button
-              onClick={() => setActiveChart('monthly')}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                activeChart === 'monthly'
-                  ? 'bg-primary text-white'
-                  : 'bg-background text-text-secondary hover:bg-muted'
-              }`}
-            >
-              Monthly
-            </button>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-lg border border-muted bg-white p-6">
+          <h3 className="mb-4 text-lg font-semibold text-text-primary">Monthly Income (Last 12 Months)</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-background">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Month</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Income</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-8 text-center text-text-secondary">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : summary.incomeByMonth.length === 0 ? (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-8 text-center text-text-secondary">
+                      No monthly income data.
+                    </td>
+                  </tr>
+                ) : (
+                  summary.incomeByMonth.map((item) => (
+                    <tr key={item.month} className="border-t border-muted hover:bg-background transition">
+                      <td className="px-4 py-3 text-sm">{item.month}</td>
+                      <td className="px-4 py-3 text-sm font-semibold">{currency.format(item.total)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Simple Chart Visualization */}
-        <div className="h-64 flex items-end justify-around gap-4 p-4 bg-background rounded-lg">
-          {chartData.income.map((income, idx) => (
-            <div key={idx} className="flex-1 flex flex-col items-center justify-end gap-2">
-              <div className="relative w-full">
-                <div
-                  className="bg-green-500 rounded-t-lg mx-auto"
-                  style={{ height: `${(income / 50000) * 200}px`, width: '60%' }}
-                  title={`Income: ${income}`}
-                />
-              </div>
-              <div className="text-xs text-text-secondary">{chartData.labels[idx]}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 bg-green-500 rounded-full" />
-            <span>Income</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 bg-red-500 rounded-full" />
-            <span>Expense</span>
+        <div className="rounded-lg border border-muted bg-white p-6">
+          <h3 className="mb-4 text-lg font-semibold text-text-primary">Income By Class</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-background">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Class</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Payments</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold">Income</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-8 text-center text-text-secondary">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : summary.incomeByClass.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-4 py-8 text-center text-text-secondary">
+                      No class income data.
+                    </td>
+                  </tr>
+                ) : (
+                  summary.incomeByClass.map((item) => (
+                    <tr key={item.className} className="border-t border-muted hover:bg-background transition">
+                      <td className="px-4 py-3 text-sm">{item.className}</td>
+                      <td className="px-4 py-3 text-sm">{item.count}</td>
+                      <td className="px-4 py-3 text-sm font-semibold">{currency.format(item.total)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      {/* Transactions */}
       <div>
-        <div className="flex gap-4 mb-4 flex-wrap items-end">
+        <h3 className="mb-4 text-lg font-semibold text-text-primary">Payments Report</h3>
+
+        <form onSubmit={handleApplyFilters} className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-muted bg-white p-4 md:grid-cols-2 xl:grid-cols-6">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Start Date</label>
+            <label className="mb-1 block text-sm font-medium text-text-secondary">Academic Year</label>
             <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              type="text"
+              value={filters.academicYear}
+              onChange={(e) => handleFilterChange('academicYear', e.target.value)}
+              placeholder="e.g. 2025-2026"
+              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">End Date</label>
+            <label className="mb-1 block text-sm font-medium text-text-secondary">Semester</label>
+            <select
+              value={filters.semester}
+              onChange={(e) => handleFilterChange('semester', e.target.value)}
+              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            >
+              <option value="">All</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-text-secondary">Class</label>
             <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              type="text"
+              value={filters.className}
+              onChange={(e) => handleFilterChange('className', e.target.value)}
+              placeholder="e.g. Grade 10-A"
+              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
             />
           </div>
-        </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-text-secondary">Status</label>
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            >
+              <option value="">All</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+
+          <div className="flex items-end">
+            <button type="submit" className="w-full rounded-lg bg-primary px-4 py-2 text-white hover:opacity-90">
+              Apply
+            </button>
+          </div>
+
+          <div className="flex items-end">
+            <button type="button" onClick={handleResetFilters} className="w-full rounded-lg border border-muted px-4 py-2 text-text-primary hover:bg-background">
+              Reset
+            </button>
+          </div>
+        </form>
 
         <div className="overflow-x-auto rounded-lg border border-muted">
           <table className="w-full">
             <thead className="bg-background">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Type</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Category</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Description</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Receipt</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Student</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Class</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Amount</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Reference</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Year/Sem</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {reportLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
+                  <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
                     Loading...
                   </td>
                 </tr>
-              ) : filteredTransactions.length === 0 ? (
+              ) : payments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
-                    No transactions found
+                  <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                    No payment records found
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map(transaction => (
-                  <tr key={transaction._id} className="border-t border-muted hover:bg-background transition">
-                    <td className="px-4 py-3 text-sm">{new Date(transaction.date).toLocaleDateString()}</td>
+                payments.map((payment) => (
+                  <tr key={payment._id} className="border-t border-muted hover:bg-background transition">
+                    <td className="px-4 py-3 text-sm">{payment.receiptNumber}</td>
+                    <td className="px-4 py-3 text-sm">{payment.studentName}</td>
+                    <td className="px-4 py-3 text-sm">{payment.className}</td>
+                    <td className="px-4 py-3 text-sm font-semibold">{currency.format(payment.amount)}</td>
+                    <td className="px-4 py-3 text-sm">{payment.academicYear || '-'} / {payment.semester || '-'}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          transaction.type === 'income'
+                          payment.status === 'paid'
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            : payment.status === 'pending'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {transaction.type}
+                        {payment.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium">{transaction.category}</td>
-                    <td className="px-4 py-3 text-sm">{transaction.description}</td>
-                    <td className="px-4 py-3 font-semibold">
-                      <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                        {transaction.type === 'income' ? '+' : '-'} {transaction.amount.toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-text-secondary">{transaction.reference}</td>
+                    <td className="px-4 py-3 text-sm">{new Date(payment.paymentDate).toLocaleDateString()}</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-text-secondary">
+            Page {meta.page} of {totalPages} • Total records: {meta.total}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => loadPaymentsReport(Math.max(1, meta.page - 1))}
+              disabled={meta.page <= 1 || reportLoading}
+              className="rounded-lg border border-muted px-4 py-2 text-sm disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => loadPaymentsReport(Math.min(totalPages, meta.page + 1))}
+              disabled={meta.page >= totalPages || reportLoading}
+              className="rounded-lg border border-muted px-4 py-2 text-sm disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>
