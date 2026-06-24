@@ -20,6 +20,7 @@ const studentRoutes = require('./student.routes');
 const paymentRoutes = require('./payment.routes');
 const attendanceRoutes = require('./attendance.routes');
 const academicRecordRoutes = require('./academicRecord.routes');
+const certificateRoutes = require('./certificate.routes');
 
 const router = express.Router();
 
@@ -46,5 +47,6 @@ router.use('/students', studentRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/attendances', attendanceRoutes);
 router.use('/academic-records', academicRecordRoutes);
+router.use('/certificates', certificateRoutes);
 
 module.exports = router;

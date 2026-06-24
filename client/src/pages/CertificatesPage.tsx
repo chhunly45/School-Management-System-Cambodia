@@ -1,66 +1,98 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Award, Download, Trash2 } from 'lucide-react';
+import {
+  listCertificates,
+  createCertificate,
+  updateCertificate,
+  deleteCertificate
+} from '../services/certificate.api';
+import { listStudents } from '../services/student.api';
 
 interface Certificate {
   _id: string;
-  studentName: string;
+  certificateNumber: string;
   studentId: string;
-  certificateType: 'completion' | 'achievement' | 'merit' | 'participation';
-  dateIssued: Date;
-  issuedBy: string;
-  status: 'draft' | 'issued' | 'printed';
-  fileUrl?: string;
+  studentName: string;
+  className: string;
+  certificateType: 'graduation' | 'achievement' | 'attendance' | 'honor';
+  issueDate: string;
+  academicYear: string;
+  issuedBy?: string;
+  remarks?: string;
+  status: 'draft' | 'issued' | 'revoked';
 }
+
+interface StudentOption {
+  _id: string;
+  studentId: string;
+  fullName: string;
+  className: string;
+}
+
+const emptyCertificate: Certificate = {
+  _id: '',
+  certificateNumber: '',
+  studentId: '',
+  studentName: '',
+  className: '',
+  certificateType: 'graduation',
+  issueDate: new Date().toISOString().slice(0, 10),
+  academicYear: '',
+  issuedBy: '',
+  remarks: '',
+  status: 'draft'
+};
 
 const CertificatesPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [formValues, setFormValues] = useState<Certificate>(emptyCertificate);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [generatingFor, setGeneratingFor] = useState<string>('');
-  const [certificateType, setCertificateType] = useState<'completion' | 'achievement' | 'merit' | 'participation'>(
-    'completion'
-  );
-  const [studentSearch, setStudentSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [students, setStudents] = useState<StudentOption[]>([]);
 
   useEffect(() => {
     if (!user) return navigate('/login');
     if (user.role !== 'admin') return;
     loadCertificates();
+    loadStudents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const loadStudents = async () => {
+    try {
+      const response = await listStudents({ perPage: 500 });
+      const items = response.data?.items || [];
+      setStudents(
+        items.map((item: any) => ({
+          _id: item._id,
+          studentId: item.studentId,
+          fullName: item.fullName,
+          className: item.className
+        }))
+      );
+    } catch (err) {
+      console.error(err);
+      setMessage('Unable to load students.');
+    }
+  };
 
   const loadCertificates = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // const res = await getCertificates();
-
-      setCertificates([
-        {
-          _id: '1',
-          studentName: 'Sokha Minh',
-          studentId: 'S001',
-          certificateType: 'completion',
-          dateIssued: new Date('2024-06-15'),
-          issuedBy: 'Principal',
-          status: 'issued',
-          fileUrl: '/certificates/S001_completion.pdf'
-        },
-        {
-          _id: '2',
-          studentName: 'Srey Nit',
-          studentId: 'S002',
-          certificateType: 'achievement',
-          dateIssued: new Date('2024-06-18'),
-          issuedBy: 'Dean',
-          status: 'issued',
-          fileUrl: '/certificates/S002_achievement.pdf'
-        }
-      ]);
+      const response = await listCertificates({ search: searchTerm, perPage: 200 });
+      const items = response.data?.items || [];
+      setCertificates(
+        items.map((item: any) => ({
+          ...item,
+          studentId: typeof item.studentId === 'string' ? item.studentId : item.studentId?._id,
+          issueDate: item.issueDate ? new Date(item.issueDate).toISOString().slice(0, 10) : ''
+        }))
+      );
     } catch (err) {
       setMessage('Unable to load certificates.');
       console.error(err);
@@ -69,214 +101,329 @@ const CertificatesPage = () => {
     }
   };
 
-  const handleGenerateCertificate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!generatingFor) {
-      setMessage('Please select a student.');
+  const handleInputChange = (key: keyof Certificate, value: string) => {
+    setFormValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleStudentSelect = (selectedStudentId: string) => {
+    const selectedStudent = students.find((student) => student._id === selectedStudentId);
+    if (!selectedStudent) {
+      setFormValues((prev) => ({ ...prev, studentId: '', studentName: '', className: '' }));
       return;
     }
 
-    setLoading(true);
-    try {
-      // TODO: Add API call to generate certificate
-      const newCertificate: Certificate = {
-        _id: Date.now().toString(),
-        studentName: 'Selected Student',
-        studentId: generatingFor,
-        certificateType,
-        dateIssued: new Date(),
-        issuedBy: user?.email || 'Admin',
-        status: 'draft',
-        fileUrl: `/certificates/${generatingFor}_${certificateType}.pdf`
-      };
+    setFormValues((prev) => ({
+      ...prev,
+      studentId: selectedStudent._id,
+      studentName: selectedStudent.fullName,
+      className: selectedStudent.className
+    }));
+  };
 
-      setCertificates([...certificates, newCertificate]);
-      setGeneratingFor('');
-      setCertificateType('completion');
-      setMessage('Certificate generated successfully.');
-    } catch (err) {
-      setMessage('Failed to generate certificate.');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    const payload = {
+      certificateNumber: formValues.certificateNumber,
+      studentId: formValues.studentId,
+      studentName: formValues.studentName,
+      className: formValues.className,
+      certificateType: formValues.certificateType,
+      issueDate: formValues.issueDate,
+      academicYear: formValues.academicYear,
+      issuedBy: formValues.issuedBy,
+      remarks: formValues.remarks,
+      status: formValues.status
+    };
+
+    try {
+      if (editingId) {
+        await updateCertificate(editingId, payload);
+        setMessage('Certificate updated successfully.');
+      } else {
+        await createCertificate(payload);
+        setMessage('Certificate created successfully.');
+      }
+      setEditingId(null);
+      setFormValues(emptyCertificate);
+      await loadCertificates();
+    } catch (err: any) {
+      setMessage(err?.response?.data?.message || 'Failed to save certificate.');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownload = async (certificateId: string) => {
-    try {
-      // TODO: Add API call to download certificate
-      const cert = certificates.find(c => c._id === certificateId);
-      if (cert?.fileUrl) {
-        window.open(cert.fileUrl, '_blank');
-      }
-    } catch (err) {
-      setMessage('Failed to download certificate.');
-    }
+  const handleEdit = (certificate: Certificate) => {
+    setEditingId(certificate._id);
+    setFormValues(certificate);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (certificateId: string) => {
-    if (!confirm('Delete this certificate?')) return;
-
+    if (!window.confirm('Delete this certificate?')) return;
     setLoading(true);
+    setMessage('');
     try {
-      // TODO: Add API call to delete certificate
-      setCertificates(certificates.filter(c => c._id !== certificateId));
+      await deleteCertificate(certificateId);
       setMessage('Certificate deleted successfully.');
-    } catch (err) {
-      setMessage('Failed to delete certificate.');
+      await loadCertificates();
+    } catch (err: any) {
+      setMessage(err?.response?.data?.message || 'Failed to delete certificate.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getCertificateTypeLabel = (type: string) => {
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await loadCertificates();
+  };
+
+  const getCertificateTypeLabel = (type: Certificate['certificateType']) => {
     const labels: Record<string, string> = {
-      completion: 'Completion Certificate',
-      achievement: 'Achievement Certificate',
-      merit: 'Merit Certificate',
-      participation: 'Participation Certificate'
+      graduation: 'Graduation',
+      achievement: 'Achievement',
+      attendance: 'Attendance',
+      honor: 'Honor'
     };
     return labels[type] || type;
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: Certificate['status']) => {
     switch (status) {
       case 'issued':
         return 'bg-green-100 text-green-800';
       case 'draft':
         return 'bg-yellow-100 text-yellow-800';
-      case 'printed':
-        return 'bg-blue-100 text-blue-800';
+      case 'revoked':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  if (!user || user.role !== 'admin') {
+    return <div className="p-8 text-center text-red-600">Access denied. Admin only.</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-text-primary">Certificates</h1>
-        <p className="text-text-secondary">Generate and manage student certificates</p>
+        <p className="text-text-secondary">Manage student certificates by academic year and status.</p>
       </div>
 
       {message && (
         <div
           className={`rounded-lg p-4 ${
-            message.includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+            message.toLowerCase().includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
           }`}
         >
           {message}
         </div>
       )}
 
-      {/* Certificate Generation Form */}
-      <form onSubmit={handleGenerateCertificate} className="rounded-lg border border-muted bg-white p-6">
-        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Award className="h-5 w-5" />
-          Generate New Certificate
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Student ID</label>
-            <input
-              type="text"
-              placeholder="e.g., S001"
-              value={generatingFor}
-              onChange={(e) => setGeneratingFor(e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-              disabled={loading}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Certificate Type</label>
-            <select
-              value={certificateType}
-              onChange={(e) => setCertificateType(e.target.value as any)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-              disabled={loading}
-            >
-              <option value="completion">Completion</option>
-              <option value="achievement">Achievement</option>
-              <option value="merit">Merit</option>
-              <option value="participation">Participation</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={loading || !generatingFor}
-              className="w-full rounded-lg bg-primary px-4 py-2 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
-            >
-              {loading ? 'Generating...' : 'Generate'}
-            </button>
-          </div>
+      <form onSubmit={handleSubmit} className="rounded-lg border border-muted bg-white p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <input
+            value={formValues.certificateNumber}
+            onChange={(e) => handleInputChange('certificateNumber', e.target.value)}
+            placeholder="Certificate Number"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          />
+          <select
+            value={formValues.studentId}
+            onChange={(e) => handleStudentSelect(e.target.value)}
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          >
+            <option value="">Select Student</option>
+            {students.map((student) => (
+              <option key={student._id} value={student._id}>
+                {`${student.fullName} (${student.studentId})`}
+              </option>
+            ))}
+          </select>
+          <input
+            value={formValues.studentName}
+            placeholder="Student Name"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled
+          />
         </div>
-        <p className="text-sm text-text-secondary">
-          Search for student by ID or name to select. Leave blank to generate for all.
-        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <input
+            value={formValues.className}
+            placeholder="Class Name"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled
+          />
+          <select
+            value={formValues.certificateType}
+            onChange={(e) => handleInputChange('certificateType', e.target.value)}
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          >
+            <option value="graduation">Graduation</option>
+            <option value="achievement">Achievement</option>
+            <option value="attendance">Attendance</option>
+            <option value="honor">Honor</option>
+          </select>
+          <input
+            type="date"
+            value={formValues.issueDate}
+            onChange={(e) => handleInputChange('issueDate', e.target.value)}
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <input
+            value={formValues.academicYear}
+            onChange={(e) => handleInputChange('academicYear', e.target.value)}
+            placeholder="Academic Year"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          />
+          <input
+            value={formValues.issuedBy}
+            onChange={(e) => handleInputChange('issuedBy', e.target.value)}
+            placeholder="Issued By"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+          <select
+            value={formValues.status}
+            onChange={(e) => handleInputChange('status', e.target.value)}
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          >
+            <option value="draft">Draft</option>
+            <option value="issued">Issued</option>
+            <option value="revoked">Revoked</option>
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <input
+            value={formValues.remarks}
+            onChange={(e) => handleInputChange('remarks', e.target.value)}
+            placeholder="Remarks"
+            className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-primary px-6 py-2 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
+          >
+            {editingId ? 'Update Certificate' : 'Create Certificate'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingId(null);
+              setFormValues(emptyCertificate);
+            }}
+            className="rounded-lg border border-muted px-6 py-2 hover:bg-background transition"
+            disabled={loading}
+          >
+            Reset
+          </button>
+        </div>
       </form>
 
-      {/* Issued Certificates */}
-      <div className="rounded-lg border border-muted">
-        <div className="border-b border-muted bg-background px-6 py-4">
-          <h3 className="font-semibold text-lg">Issued Certificates</h3>
-        </div>
+      <form onSubmit={handleSearch} className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search by number, student, class, or year..."
+          className="flex-1 rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          className="rounded-lg bg-secondary px-6 py-2 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
+          disabled={loading}
+        >
+          Search
+        </button>
+      </form>
+
+      <div className="overflow-x-auto rounded-lg border border-muted bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-background border-b border-muted">
+          <table className="w-full min-w-[1200px]">
+            <thead className="bg-background">
               <tr>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Number</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Student</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Certificate Type</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Date Issued</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Class</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Type</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Issue Date</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Academic Year</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Issued By</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Remarks</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {certificates.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
-                    Loading...
-                  </td>
-                </tr>
-              ) : certificates.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
+                  <td colSpan={10} className="px-4 py-8 text-center text-text-secondary">
                     No certificates issued yet
                   </td>
                 </tr>
               ) : (
-                certificates.map(cert => (
+                certificates.map((cert) => (
                   <tr key={cert._id} className="border-t border-muted hover:bg-background transition">
+                    <td className="px-4 py-3 font-medium">{cert.certificateNumber}</td>
                     <td className="px-4 py-3 font-medium">{cert.studentName}</td>
+                    <td className="px-4 py-3">{cert.className}</td>
                     <td className="px-4 py-3 text-sm">{getCertificateTypeLabel(cert.certificateType)}</td>
-                    <td className="px-4 py-3 text-sm">{new Date(cert.dateIssued).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 text-sm">{cert.issuedBy}</td>
+                    <td className="px-4 py-3 text-sm">{new Date(cert.issueDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm">{cert.academicYear}</td>
+                    <td className="px-4 py-3 text-sm">{cert.issuedBy || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-text-secondary">{cert.remarks || '-'}</td>
                     <td className="px-4 py-3">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(cert.status)}`}>
                         {cert.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                    <td className="px-4 py-3 space-x-2">
                         <button
-                          onClick={() => handleDownload(cert._id)}
-                          className="text-primary hover:underline text-sm font-medium flex items-center gap-1"
+                          onClick={() => handleEdit(cert)}
+                          className="text-primary hover:underline text-sm font-medium"
                           disabled={loading}
                         >
-                          <Download className="h-4 w-4" />
-                          Download
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDelete(cert._id)}
-                          className="text-red-600 hover:underline text-sm font-medium flex items-center gap-1"
+                          className="text-red-600 hover:underline text-sm font-medium"
                           disabled={loading}
                         >
-                          <Trash2 className="h-4 w-4" />
                           Delete
                         </button>
-                      </div>
                     </td>
                   </tr>
                 ))

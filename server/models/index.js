@@ -20,6 +20,7 @@ const Student = require('./Student');
 const Payment = require('./Payment');
 const Attendance = require('./Attendance');
 const AcademicRecord = require('./AcademicRecord');
+const Certificate = require('./Certificate');
 
 module.exports = {
   User,
@@ -43,5 +44,6 @@ module.exports = {
   Student,
   Payment,
   Attendance,
-  AcademicRecord
+  AcademicRecord,
+  Certificate
 };
