@@ -1,9 +1,10 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus } from 'lucide-react';
+import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus, GraduationCap } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: Home },
   { label: 'Students', to: '/admin/students', icon: Users },
+  { label: 'Teachers', to: '/admin/teachers', icon: GraduationCap },
   { label: 'Payments', to: '/admin/payments', icon: ShoppingBag },
   { label: 'Attendance', to: '/admin/attendance', icon: CheckCircle },
   { label: 'Academic', to: '/admin/academic', icon: BookOpen },

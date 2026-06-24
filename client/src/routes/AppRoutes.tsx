@@ -35,6 +35,7 @@ import AcademicPage from '../pages/AcademicPage';
 import CertificatesPage from '../pages/CertificatesPage';
 import FinancePage from '../pages/FinancePage';
 import TransportPage from '../pages/TransportPage';
+import TeachersPage from '../pages/TeachersPage';
 
 const AppRoutes = () => (
   <Routes>
@@ -83,6 +84,7 @@ const AppRoutes = () => (
         <Route path="certificates" element={<CertificatesPage />} />
         <Route path="finance" element={<FinancePage />} />
         <Route path="transport" element={<TransportPage />} />
+        <Route path="teachers" element={<TeachersPage />} />
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />
