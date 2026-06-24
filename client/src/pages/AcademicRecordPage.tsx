@@ -36,7 +36,7 @@ const emptyRecord: AcademicRecord = {
   remarks: ''
 };
 
-const AcademicPage = () => {
+const AcademicRecordPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [records, setRecords] = useState<AcademicRecord[]>([]);
@@ -58,13 +58,11 @@ const AcademicPage = () => {
     try {
       const response = await listAcademicRecords({ search: searchTerm, perPage: 200 });
       const items = response.data?.items || [];
-      setRecords(
-        items.map((item: any) => ({
-          ...item,
-          score: Number(item.score),
-          semester: Number(item.semester) as 1 | 2
-        }))
-      );
+      setRecords(items.map((item: any) => ({
+        ...item,
+        score: Number(item.score),
+        semester: Number(item.semester) as 1 | 2
+      })));
     } catch (err) {
       setMessage('Unable to load academic records.');
       console.error(err);
@@ -148,7 +146,7 @@ const AcademicPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-text-primary">Academic Records</h1>
-        <p className="text-text-secondary">Manage student exam results across subjects and semesters.</p>
+        <p className="text-text-secondary">Manage student exam results across semesters and subjects.</p>
       </div>
 
       {message && (
@@ -268,22 +266,24 @@ const AcademicPage = () => {
         </div>
       </form>
 
-      <form onSubmit={handleSearch} className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by student, class, or subject..."
-          className="flex-1 rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-          disabled={loading}
-        />
-        <button
-          type="submit"
-          className="rounded-lg bg-secondary px-6 py-2 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
-          disabled={loading}
-        >
-          Search
-        </button>
-      </form>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <form onSubmit={handleSearch} className="flex flex-1 gap-2">
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by student, class, or subject..."
+            className="flex-1 rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            className="rounded-lg bg-secondary px-6 py-2 text-white font-medium hover:opacity-90 transition"
+            disabled={loading}
+          >
+            Search
+          </button>
+        </form>
+      </div>
 
       <div className="overflow-x-auto rounded-lg border border-muted bg-white">
         <table className="w-full min-w-[900px]">
@@ -345,4 +345,4 @@ const AcademicPage = () => {
   );
 };
 
-export default AcademicPage;
+export default AcademicRecordPage;

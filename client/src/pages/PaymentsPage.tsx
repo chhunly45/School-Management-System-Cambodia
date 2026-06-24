@@ -1,264 +1,392 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Check, Clock, X } from 'lucide-react';
-
-interface PaymentMetrics {
-  totalAmount: number;
-  receivedAmount: number;
-  pendingAmount: number;
-  failedAmount: number;
-}
+import { listPayments, createPayment, updatePayment, deletePayment } from '../services/payment.api';
 
 interface Payment {
   _id: string;
-  studentName: string;
+  receiptNumber: string;
   studentId: string;
+  studentName: string;
+  className: string;
   amount: number;
-  paymentDate: Date;
-  status: 'pending' | 'received' | 'failed' | 'cancelled';
-  paymentMethod: 'cash' | 'bank' | 'online';
-  reference: string;
+  paymentDate: string;
+  paymentMethod: 'cash' | 'bank_transfer' | 'check' | 'mobile_money';
+  academicYear: string;
+  semester: 1 | 2;
+  status: 'paid' | 'pending' | 'overdue';
+  remarks: string;
 }
+
+const emptyPaymentForm: Payment = {
+  _id: '',
+  receiptNumber: '',
+  studentId: '',
+  studentName: '',
+  className: '',
+  amount: 0,
+  paymentDate: '',
+  paymentMethod: 'cash',
+  academicYear: '',
+  semester: 1,
+  status: 'pending',
+  remarks: ''
+};
 
 const PaymentsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [metrics, setMetrics] = useState<PaymentMetrics>({
-    totalAmount: 0,
-    receivedAmount: 0,
-    pendingAmount: 0,
-    failedAmount: 0
-  });
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [formValues, setFormValues] = useState<Payment>(emptyPaymentForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'received' | 'failed'>('all');
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     if (!user) return navigate('/login');
-    if (user.role !== 'admin') return;
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    if (user.role !== 'admin') {
+      setAccessDenied(true);
+      return;
+    }
+    loadPayments();
+  }, [user, navigate]);
 
-  const loadData = async () => {
+  const loadPayments = async (search = '', status = '') => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API calls
-      // const metricsData = await getPaymentMetrics();
-      // const paymentsData = await getPayments();
-
-      setMetrics({
-        totalAmount: 500000,
-        receivedAmount: 450000,
-        pendingAmount: 40000,
-        failedAmount: 10000
-      });
-
-      setPayments([
-        {
-          _id: '1',
-          studentName: 'Sokha Minh',
-          studentId: 'S001',
-          amount: 50000,
-          paymentDate: new Date('2024-06-20'),
-          status: 'received',
-          paymentMethod: 'online',
-          reference: 'TXN20240620001'
-        },
-        {
-          _id: '2',
-          studentName: 'Srey Nit',
-          studentId: 'S002',
-          amount: 50000,
-          paymentDate: new Date('2024-06-21'),
-          status: 'pending',
-          paymentMethod: 'bank',
-          reference: 'TXN20240621001'
-        },
-        {
-          _id: '3',
-          studentName: 'Pheap Dev',
-          studentId: 'S003',
-          amount: 50000,
-          paymentDate: new Date('2024-06-19'),
-          status: 'received',
-          paymentMethod: 'cash',
-          reference: 'TXN20240619001'
-        }
-      ]);
+      const response = await listPayments({ search, status: status || undefined, perPage: 200 });
+      const items = response.data?.items || [];
+      setPayments(
+        items.map((item: any) => ({
+          ...item,
+          paymentDate: item.paymentDate ? new Date(item.paymentDate).toISOString().slice(0, 10) : ''
+        }))
+      );
     } catch (err) {
-      setMessage('Unable to load payment data.');
+      setMessage('Unable to load payments.');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredPayments = payments.filter(p =>
-    (statusFilter === 'all' || p.status === statusFilter) &&
-    (!startDate || new Date(p.paymentDate) >= new Date(startDate)) &&
-    (!endDate || new Date(p.paymentDate) <= new Date(endDate))
-  );
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await loadPayments(searchTerm, statusFilter);
+  };
+
+  const handleChange = (key: keyof Payment, value: string | number) => {
+    setFormValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleAdd = () => {
+    setEditingId(null);
+    setFormValues(emptyPaymentForm);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleEdit = (payment: Payment) => {
+    setEditingId(payment._id);
+    setFormValues(payment);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    const payload = {
+      receiptNumber: formValues.receiptNumber,
+      studentId: formValues.studentId,
+      studentName: formValues.studentName,
+      className: formValues.className,
+      amount: parseFloat(formValues.amount.toString()),
+      paymentDate: formValues.paymentDate,
+      paymentMethod: formValues.paymentMethod,
+      academicYear: formValues.academicYear,
+      semester: parseInt(formValues.semester.toString()),
+      status: formValues.status,
+      remarks: formValues.remarks
+    };
+
+    try {
+      if (editingId) {
+        await updatePayment(editingId, payload);
+        setMessage('Payment updated successfully.');
+      } else {
+        await createPayment(payload);
+        setMessage('Payment created successfully.');
+      }
+      setFormValues(emptyPaymentForm);
+      setEditingId(null);
+      await loadPayments(searchTerm, statusFilter);
+    } catch (err) {
+      setMessage('Error saving payment. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this payment?')) return;
+
+    setLoading(true);
+    try {
+      await deletePayment(id);
+      setMessage('Payment deleted successfully.');
+      await loadPayments(searchTerm, statusFilter);
+    } catch (err) {
+      setMessage('Error deleting payment. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (accessDenied) {
+    return <div className="p-8 text-center text-red-500">Access Denied. Admin only.</div>;
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-text-primary">Payments</h1>
-        <p className="text-text-secondary">Track and manage student fee payments</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-gray-900 mb-8">Payment Management</h1>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-text-secondary">Total Amount</p>
-              <p className="text-2xl font-bold text-text-primary">
-                {(metrics.totalAmount / 1000).toFixed(0)}K
-              </p>
-            </div>
-            <DollarSign className="h-8 w-8 text-primary opacity-20" />
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+            {message}
           </div>
-        </div>
+        )}
 
-        <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-text-secondary">Received</p>
-              <p className="text-2xl font-bold text-green-600">
-                {(metrics.receivedAmount / 1000).toFixed(0)}K
-              </p>
+        {/* Form Section */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <h2 className="text-2xl font-semibold mb-6">{editingId ? 'Edit Payment' : 'Add New Payment'}</h2>
+          <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <input
+              type="text"
+              placeholder="Receipt Number *"
+              value={formValues.receiptNumber}
+              onChange={(e) => handleChange('receiptNumber', e.target.value)}
+              className="border border-gray-300 rounded px-4 py-2"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Student ID *"
+              value={formValues.studentId}
+              onChange={(e) => handleChange('studentId', e.target.value)}
+              className="border border-gray-300 rounded px-4 py-2"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Student Name *"
+              value={formValues.studentName}
+              onChange={(e) => handleChange('studentName', e.target.value)}
+              className="border border-gray-300 rounded px-4 py-2"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Class Name *"
+              value={formValues.className}
+              onChange={(e) => handleChange('className', e.target.value)}
+              className="border border-gray-300 rounded px-4 py-2"
+              required
+            />
+            <input
+              type="number"
+              placeholder="Amount *"
+              step="0.01"
+              min="0"
+              value={formValues.amount}
+              onChange={(e) => handleChange('amount', parseFloat(e.target.value))}
+              className="border border-gray-300 rounded px-4 py-2"
+              required
+            />
+            <input
+              type="date"
+              value={formValues.paymentDate}
+              onChange={(e) => handleChange('paymentDate', e.target.value)}
+              className="border border-gray-300 rounded px-4 py-2"
+              required
+            />
+            <select
+              value={formValues.paymentMethod}
+              onChange={(e) => handleChange('paymentMethod', e.target.value as any)}
+              className="border border-gray-300 rounded px-4 py-2"
+            >
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="check">Check</option>
+              <option value="mobile_money">Mobile Money</option>
+            </select>
+            <input
+              type="text"
+              placeholder="Academic Year"
+              value={formValues.academicYear}
+              onChange={(e) => handleChange('academicYear', e.target.value)}
+              className="border border-gray-300 rounded px-4 py-2"
+            />
+            <select
+              value={formValues.semester}
+              onChange={(e) => handleChange('semester', parseInt(e.target.value))}
+              className="border border-gray-300 rounded px-4 py-2"
+            >
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+            </select>
+            <select
+              value={formValues.status}
+              onChange={(e) => handleChange('status', e.target.value as any)}
+              className="border border-gray-300 rounded px-4 py-2"
+            >
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+            </select>
+            <textarea
+              placeholder="Remarks"
+              value={formValues.remarks}
+              onChange={(e) => handleChange('remarks', e.target.value)}
+              className="border border-gray-300 rounded px-4 py-2 md:col-span-2 lg:col-span-2"
+            />
+            <div className="md:col-span-2 lg:col-span-1 flex gap-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                {loading ? 'Saving...' : editingId ? 'Update' : 'Create'}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  className="flex-1 bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+                >
+                  Clear
+                </button>
+              )}
             </div>
-            <Check className="h-8 w-8 text-green-600 opacity-20" />
-          </div>
+          </form>
         </div>
 
-        <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-text-secondary">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {(metrics.pendingAmount / 1000).toFixed(0)}K
-              </p>
-            </div>
-            <Clock className="h-8 w-8 text-yellow-600 opacity-20" />
-          </div>
+        {/* Search Section */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <form onSubmit={handleSearch} className="flex gap-4 mb-4">
+            <input
+              type="text"
+              placeholder="Search by receipt, student ID, or name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 border border-gray-300 rounded px-4 py-2"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border border-gray-300 rounded px-4 py-2"
+            >
+              <option value="">All Status</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+            </select>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
+            >
+              Search
+            </button>
+          </form>
         </div>
 
-        <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-text-secondary">Failed</p>
-              <p className="text-2xl font-bold text-red-600">
-                {(metrics.failedAmount / 1000).toFixed(0)}K
-              </p>
-            </div>
-            <X className="h-8 w-8 text-red-600 opacity-20" />
-          </div>
-        </div>
-      </div>
-
-      {message && (
-        <div
-          className={`rounded-lg p-4 ${
-            message.includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}
-        >
-          {message}
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="flex gap-4 flex-wrap items-end">
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">Start Date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">End Date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">Status</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+        {/* Table Section */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <button
+            onClick={handleAdd}
+            className="m-6 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
           >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="received">Received</option>
-            <option value="failed">Failed</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Payments Table */}
-      <div className="overflow-x-auto rounded-lg border border-muted">
-        <table className="w-full">
-          <thead className="bg-background">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Student</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Amount</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Method</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Reference</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
-                  Loading...
-                </td>
-              </tr>
-            ) : filteredPayments.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text-secondary">
-                  No payments found
-                </td>
-              </tr>
-            ) : (
-              filteredPayments.map(payment => (
-                <tr key={payment._id} className="border-t border-muted hover:bg-background transition">
-                  <td className="px-4 py-3 font-medium">{payment.studentName}</td>
-                  <td className="px-4 py-3 font-semibold">{payment.amount.toLocaleString()}</td>
-                  <td className="px-4 py-3">{new Date(payment.paymentDate).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 capitalize">{payment.paymentMethod}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        payment.status === 'received'
-                          ? 'bg-green-100 text-green-800'
-                          : payment.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {payment.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm">{payment.reference}</td>
+            + Add Payment
+          </button>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100 border-b">
+                <tr>
+                  <th className="text-left px-6 py-3 font-semibold">Receipt #</th>
+                  <th className="text-left px-6 py-3 font-semibold">Student</th>
+                  <th className="text-left px-6 py-3 font-semibold">Class</th>
+                  <th className="text-right px-6 py-3 font-semibold">Amount</th>
+                  <th className="text-left px-6 py-3 font-semibold">Date</th>
+                  <th className="text-left px-6 py-3 font-semibold">Method</th>
+                  <th className="text-left px-6 py-3 font-semibold">Year</th>
+                  <th className="text-left px-6 py-3 font-semibold">Status</th>
+                  <th className="text-center px-6 py-3 font-semibold">Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="text-center px-6 py-8 text-gray-500">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : payments.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center px-6 py-8 text-gray-500">
+                      No payments found
+                    </td>
+                  </tr>
+                ) : (
+                  payments.map((payment) => (
+                    <tr key={payment._id} className="border-b hover:bg-gray-50">
+                      <td className="px-6 py-3 font-mono">{payment.receiptNumber}</td>
+                      <td className="px-6 py-3">{payment.studentName}</td>
+                      <td className="px-6 py-3">{payment.className}</td>
+                      <td className="px-6 py-3 text-right font-semibold">${payment.amount.toFixed(2)}</td>
+                      <td className="px-6 py-3 text-sm">{payment.paymentDate}</td>
+                      <td className="px-6 py-3 text-sm capitalize">{payment.paymentMethod.replace('_', ' ')}</td>
+                      <td className="px-6 py-3 text-sm">{payment.academicYear}</td>
+                      <td className="px-6 py-3">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            payment.status === 'paid'
+                              ? 'bg-green-100 text-green-800'
+                              : payment.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <button
+                          onClick={() => handleEdit(payment)}
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(payment._id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

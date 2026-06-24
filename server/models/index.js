@@ -17,6 +17,9 @@ const Search = require('./Search');
 const Visitor = require('./Visitor');
 const SellerVerification = require('./SellerVerification');
 const Student = require('./Student');
+const Payment = require('./Payment');
+const Attendance = require('./Attendance');
+const AcademicRecord = require('./AcademicRecord');
 
 module.exports = {
   User,
@@ -37,5 +40,8 @@ module.exports = {
   Search,
   Visitor,
   SellerVerification,
-  Student
+  Student,
+  Payment,
+  Attendance,
+  AcademicRecord
 };

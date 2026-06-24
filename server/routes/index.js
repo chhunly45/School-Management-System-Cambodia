@@ -17,6 +17,9 @@ const trafficAnalyticsRoutes = require('./traffic-analytics.routes');
 const promotionRoutes = require('./promotions.routes');
 const verificationRoutes = require('./verification.routes');
 const studentRoutes = require('./student.routes');
+const paymentRoutes = require('./payment.routes');
+const attendanceRoutes = require('./attendance.routes');
+const academicRecordRoutes = require('./academicRecord.routes');
 
 const router = express.Router();
 
@@ -40,5 +43,8 @@ router.use('/verification', verificationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/users', userRoutes);
 router.use('/students', studentRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/attendances', attendanceRoutes);
+router.use('/academic-records', academicRecordRoutes);
 
 module.exports = router;

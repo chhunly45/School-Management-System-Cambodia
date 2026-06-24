@@ -10,6 +10,7 @@ module.exports = {
   allowedOrigins: (() => {
     const defaultOrigins = [
       'http://localhost:5173',
+      'http://localhost:5174',
       'https://kh-product.vercel.app',
       'https://konpuk.com',
       'https://www.konpuk.com'
