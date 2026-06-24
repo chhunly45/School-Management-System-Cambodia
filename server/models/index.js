@@ -21,6 +21,7 @@ const Payment = require('./Payment');
 const Attendance = require('./Attendance');
 const AcademicRecord = require('./AcademicRecord');
 const Certificate = require('./Certificate');
+const Transport = require('./Transport');
 
 module.exports = {
   User,
@@ -45,5 +46,6 @@ module.exports = {
   Payment,
   Attendance,
   AcademicRecord,
-  Certificate
+  Certificate,
+  Transport
 };

@@ -1,463 +1,434 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Bus, MapPin, Users } from 'lucide-react';
+import {
+  listTransport,
+  createTransport,
+  updateTransport,
+  deleteTransport
+} from '../services/transport.api';
+import { listStudents } from '../services/student.api';
 
-interface TransportRoute {
+interface TransportRecord {
   _id: string;
-  routeName: string;
-  startPoint: string;
-  endPoint: string;
-  stops: number;
-  vehicleId?: string;
-  driverId?: string;
-  departureTime: string;
-  arrivalTime: string;
-  studentsCount: number;
-}
-
-interface Vehicle {
-  _id: string;
-  registrationNumber: string;
-  type: string;
-  capacity: number;
-  condition: 'good' | 'fair' | 'needs_repair';
-  lastMaintenance: Date;
-  driverName?: string;
-}
-
-interface StudentAssignment {
-  _id: string;
-  studentName: string;
   studentId: string;
-  routeId: string;
+  studentName: string;
+  className: string;
   routeName: string;
-  pickupLocation: string;
-  dropoffLocation: string;
-  status: 'active' | 'inactive' | 'transferred';
+  pickupPoint: string;
+  dropoffPoint?: string;
+  driverName?: string;
+  vehicleNumber?: string;
+  monthlyFee: number;
+  status: 'active' | 'inactive';
+  academicYear?: string;
+  remarks?: string;
 }
+
+interface StudentOption {
+  _id: string;
+  studentId: string;
+  fullName: string;
+  className: string;
+}
+
+const emptyRecord: TransportRecord = {
+  _id: '',
+  studentId: '',
+  studentName: '',
+  className: '',
+  routeName: '',
+  pickupPoint: '',
+  dropoffPoint: '',
+  driverName: '',
+  vehicleNumber: '',
+  monthlyFee: 0,
+  status: 'active',
+  academicYear: '',
+  remarks: ''
+};
 
 const TransportPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'routes' | 'vehicles' | 'assignments'>('routes');
-  const [routes, setRoutes] = useState<TransportRoute[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
+  const [records, setRecords] = useState<TransportRecord[]>([]);
+  const [formValues, setFormValues] = useState<TransportRecord>(emptyRecord);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [editingRoute, setEditingRoute] = useState<TransportRoute | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [students, setStudents] = useState<StudentOption[]>([]);
 
   useEffect(() => {
     if (!user) return navigate('/login');
     if (user.role !== 'admin') return;
-    loadData();
+    loadRecords();
+    loadStudents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const loadData = async () => {
+  const loadStudents = async () => {
+    try {
+      const response = await listStudents({ perPage: 500 });
+      const items = response.data?.items || [];
+      setStudents(
+        items.map((item: any) => ({
+          _id: item._id,
+          studentId: item.studentId,
+          fullName: item.fullName,
+          className: item.className
+        }))
+      );
+    } catch (err) {
+      console.error(err);
+      setMessage('Unable to load students.');
+    }
+  };
+
+  const loadRecords = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API calls
-      // const routesData = await getTransportRoutes();
-      // const vehiclesData = await getVehicles();
-      // const assignmentsData = await getStudentAssignments();
-
-      setRoutes([
-        {
-          _id: '1',
-          routeName: 'Route A - North Zone',
-          startPoint: 'Central Station',
-          endPoint: 'North Market',
-          stops: 5,
-          vehicleId: 'V001',
-          driverId: 'D001',
-          departureTime: '07:00',
-          arrivalTime: '08:00',
-          studentsCount: 25
-        },
-        {
-          _id: '2',
-          routeName: 'Route B - South Zone',
-          startPoint: 'Central Station',
-          endPoint: 'South Park',
-          stops: 4,
-          vehicleId: 'V002',
-          driverId: 'D002',
-          departureTime: '07:15',
-          arrivalTime: '08:15',
-          studentsCount: 22
-        },
-        {
-          _id: '3',
-          routeName: 'Route C - East Zone',
-          startPoint: 'Central Station',
-          endPoint: 'East Mall',
-          stops: 6,
-          vehicleId: 'V003',
-          driverId: 'D003',
-          departureTime: '07:30',
-          arrivalTime: '08:30',
-          studentsCount: 28
-        }
-      ]);
-
-      setVehicles([
-        {
-          _id: '1',
-          registrationNumber: 'V001',
-          type: 'Bus',
-          capacity: 50,
-          condition: 'good',
-          lastMaintenance: new Date('2024-05-15'),
-          driverName: 'Mr. Sokha'
-        },
-        {
-          _id: '2',
-          registrationNumber: 'V002',
-          type: 'Mini Bus',
-          capacity: 35,
-          condition: 'good',
-          lastMaintenance: new Date('2024-05-20'),
-          driverName: 'Mr. Chea'
-        },
-        {
-          _id: '3',
-          registrationNumber: 'V003',
-          type: 'Bus',
-          capacity: 50,
-          condition: 'fair',
-          lastMaintenance: new Date('2024-04-10'),
-          driverName: 'Mr. Pheap'
-        }
-      ]);
-
-      setAssignments([
-        {
-          _id: '1',
-          studentName: 'Sokha Minh',
-          studentId: 'S001',
-          routeId: '1',
-          routeName: 'Route A - North Zone',
-          pickupLocation: 'Central Station',
-          dropoffLocation: 'North Market',
-          status: 'active'
-        },
-        {
-          _id: '2',
-          studentName: 'Srey Nit',
-          studentId: 'S002',
-          routeId: '2',
-          routeName: 'Route B - South Zone',
-          pickupLocation: 'Central Station',
-          dropoffLocation: 'South Park',
-          status: 'active'
-        },
-        {
-          _id: '3',
-          studentName: 'Pheap Dev',
-          studentId: 'S003',
-          routeId: '1',
-          routeName: 'Route A - North Zone',
-          pickupLocation: 'Central Station',
-          dropoffLocation: 'North Market',
-          status: 'active'
-        }
-      ]);
+      const response = await listTransport({ search: searchTerm, perPage: 200 });
+      const items = response.data?.items || [];
+      setRecords(
+        items.map((item: any) => ({
+          ...item,
+          studentId: typeof item.studentId === 'string' ? item.studentId : item.studentId?._id,
+          monthlyFee: Number(item.monthlyFee || 0)
+        }))
+      );
     } catch (err) {
-      setMessage('Unable to load transportation data.');
+      setMessage('Unable to load transport records.');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveRoute = async (e: React.FormEvent) => {
+  const handleInputChange = (key: keyof TransportRecord, value: string | number) => {
+    setFormValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleStudentSelect = (selectedStudentId: string) => {
+    const selectedStudent = students.find((student) => student._id === selectedStudentId);
+
+    if (!selectedStudent) {
+      setFormValues((prev) => ({ ...prev, studentId: '', studentName: '', className: '' }));
+      return;
+    }
+
+    setFormValues((prev) => ({
+      ...prev,
+      studentId: selectedStudent._id,
+      studentName: selectedStudent.fullName,
+      className: selectedStudent.className
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setMessage('');
+
+    const payload = {
+      studentId: formValues.studentId,
+      studentName: formValues.studentName,
+      className: formValues.className,
+      routeName: formValues.routeName,
+      pickupPoint: formValues.pickupPoint,
+      dropoffPoint: formValues.dropoffPoint,
+      driverName: formValues.driverName,
+      vehicleNumber: formValues.vehicleNumber,
+      monthlyFee: Number(formValues.monthlyFee || 0),
+      status: formValues.status,
+      academicYear: formValues.academicYear,
+      remarks: formValues.remarks
+    };
+
     try {
-      // TODO: Add API call to save route
-      setEditingRoute(null);
-      await loadData();
-      setMessage('Route saved successfully.');
-    } catch (err) {
-      setMessage('Failed to save route.');
+      if (editingId) {
+        await updateTransport(editingId, payload);
+        setMessage('Transport record updated successfully.');
+      } else {
+        await createTransport(payload);
+        setMessage('Transport record created successfully.');
+      }
+      setEditingId(null);
+      setFormValues(emptyRecord);
+      await loadRecords();
+    } catch (err: any) {
+      setMessage(err?.response?.data?.message || 'Failed to save transport record.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteRoute = async (id: string) => {
-    if (!confirm('Delete this route?')) return;
+  const handleEdit = (record: TransportRecord) => {
+    setEditingId(record._id);
+    setFormValues(record);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this transport record?')) return;
     setLoading(true);
+    setMessage('');
     try {
-      // TODO: Add API call to delete route
-      await loadData();
-      setMessage('Route deleted successfully.');
-    } catch (err) {
-      setMessage('Failed to delete route.');
+      await deleteTransport(id);
+      setMessage('Transport record deleted successfully.');
+      await loadRecords();
+    } catch (err: any) {
+      setMessage(err?.response?.data?.message || 'Failed to delete transport record.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getConditionColor = (condition: string) => {
-    switch (condition) {
-      case 'good':
-        return 'bg-green-100 text-green-800';
-      case 'fair':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'needs_repair':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await loadRecords();
   };
+
+  if (!user || user.role !== 'admin') {
+    return <div className="p-8 text-center text-red-600">Access denied. Admin only.</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-text-primary">Transportation</h1>
-        <p className="text-text-secondary">Manage routes, vehicles, and student assignments</p>
+        <h1 className="text-3xl font-bold text-text-primary">Transport Management</h1>
+        <p className="text-text-secondary">Manage student transport records, routes, and assignments.</p>
       </div>
 
       {message && (
         <div
           className={`rounded-lg p-4 ${
-            message.includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+            message.toLowerCase().includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
           }`}
         >
           {message}
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-4 border-b border-muted">
-        <button
-          onClick={() => setActiveTab('routes')}
-          className={`px-4 py-3 font-medium transition border-b-2 ${
-            activeTab === 'routes'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Routes ({routes.length})
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('vehicles')}
-          className={`px-4 py-3 font-medium transition border-b-2 ${
-            activeTab === 'vehicles'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Bus className="h-4 w-4" />
-            Vehicles ({vehicles.length})
-          </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('assignments')}
-          className={`px-4 py-3 font-medium transition border-b-2 ${
-            activeTab === 'assignments'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Assignments ({assignments.length})
-          </div>
-        </button>
-      </div>
-
-      {/* Routes Tab */}
-      {activeTab === 'routes' && (
-        <div className="space-y-6">
-          <button
-            onClick={() => setEditingRoute({} as TransportRoute)}
-            className="rounded-lg bg-primary px-6 py-2 text-white font-medium hover:opacity-90 transition"
+      <form onSubmit={handleSubmit} className="rounded-lg border border-muted bg-white p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <select
+            value={formValues.studentId}
+            onChange={(e) => handleStudentSelect(e.target.value)}
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
           >
-            Add Route
+            <option value="">-- Select Student --</option>
+            {students.map((student) => (
+              <option key={student._id} value={student._id}>
+                {student.fullName} ({student.studentId})
+              </option>
+            ))}
+          </select>
+          <input
+            value={formValues.studentName}
+            placeholder="Student Name"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled
+          />
+          <input
+            value={formValues.className}
+            placeholder="Class Name"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <input
+            value={formValues.routeName}
+            onChange={(e) => handleInputChange('routeName', e.target.value)}
+            placeholder="Route Name"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          />
+          <input
+            value={formValues.pickupPoint}
+            onChange={(e) => handleInputChange('pickupPoint', e.target.value)}
+            placeholder="Pickup Point"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          />
+          <input
+            value={formValues.dropoffPoint}
+            onChange={(e) => handleInputChange('dropoffPoint', e.target.value)}
+            placeholder="Dropoff Point"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <input
+            value={formValues.driverName}
+            onChange={(e) => handleInputChange('driverName', e.target.value)}
+            placeholder="Driver Name"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+          <input
+            value={formValues.vehicleNumber}
+            onChange={(e) => handleInputChange('vehicleNumber', e.target.value)}
+            placeholder="Vehicle Number"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+          <input
+            type="number"
+            min={0}
+            value={formValues.monthlyFee}
+            onChange={(e) => handleInputChange('monthlyFee', Number(e.target.value))}
+            placeholder="Monthly Fee"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <select
+            value={formValues.status}
+            onChange={(e) => handleInputChange('status', e.target.value)}
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            required
+            disabled={loading}
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <input
+            value={formValues.academicYear}
+            onChange={(e) => handleInputChange('academicYear', e.target.value)}
+            placeholder="Academic Year"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+          <input
+            value={formValues.remarks}
+            onChange={(e) => handleInputChange('remarks', e.target.value)}
+            placeholder="Remarks"
+            className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-primary px-6 py-2 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
+          >
+            {editingId ? 'Update Record' : 'Create Record'}
           </button>
-
-          {editingRoute && (
-            <form onSubmit={handleSaveRoute} className="rounded-lg border border-muted bg-white p-6">
-              <h3 className="text-xl font-semibold mb-4">
-                {editingRoute._id ? 'Edit Route' : 'Add New Route'}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <input
-                  type="text"
-                  placeholder="Route Name"
-                  defaultValue={editingRoute.routeName || ''}
-                  className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-                  disabled={loading}
-                />
-                <input
-                  type="text"
-                  placeholder="Start Point"
-                  defaultValue={editingRoute.startPoint || ''}
-                  className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-                  disabled={loading}
-                />
-                <input
-                  type="text"
-                  placeholder="End Point"
-                  defaultValue={editingRoute.endPoint || ''}
-                  className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-                  disabled={loading}
-                />
-                <input
-                  type="time"
-                  placeholder="Departure Time"
-                  defaultValue={editingRoute.departureTime || ''}
-                  className="rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-                  disabled={loading}
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded-lg bg-primary px-4 py-2 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingRoute(null)}
-                  className="rounded-lg border border-muted px-4 py-2 hover:bg-background transition"
-                  disabled={loading}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
-
-          <div className="overflow-x-auto rounded-lg border border-muted">
-            <table className="w-full">
-              <thead className="bg-background">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Route Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Start - End</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Time</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Students</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Driver</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {routes.map(route => (
-                  <tr key={route._id} className="border-t border-muted hover:bg-background transition">
-                    <td className="px-4 py-3 font-medium">{route.routeName}</td>
-                    <td className="px-4 py-3 text-sm">
-                      {route.startPoint} → {route.endPoint}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {route.departureTime} - {route.arrivalTime}
-                    </td>
-                    <td className="px-4 py-3">{route.studentsCount}</td>
-                    <td className="px-4 py-3 text-sm">{route.driverId || '-'}</td>
-                    <td className="px-4 py-3 space-x-2">
-                      <button
-                        onClick={() => setEditingRoute(route)}
-                        className="text-primary hover:underline text-sm font-medium"
-                        disabled={loading}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRoute(route._id)}
-                        className="text-red-600 hover:underline text-sm font-medium"
-                        disabled={loading}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingId(null);
+              setFormValues(emptyRecord);
+            }}
+            className="rounded-lg border border-muted px-6 py-2 hover:bg-background transition"
+            disabled={loading}
+          >
+            Reset
+          </button>
         </div>
-      )}
+      </form>
 
-      {/* Vehicles Tab */}
-      {activeTab === 'vehicles' && (
-        <div className="overflow-x-auto rounded-lg border border-muted">
-          <table className="w-full">
-            <thead className="bg-background">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Registration</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Type</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Capacity</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Condition</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Driver</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Last Maintenance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vehicles.map(vehicle => (
-                <tr key={vehicle._id} className="border-t border-muted hover:bg-background transition">
-                  <td className="px-4 py-3 font-medium">{vehicle.registrationNumber}</td>
-                  <td className="px-4 py-3">{vehicle.type}</td>
-                  <td className="px-4 py-3">{vehicle.capacity} seats</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getConditionColor(vehicle.condition)}`}>
-                      {vehicle.condition.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{vehicle.driverName || '-'}</td>
-                  <td className="px-4 py-3 text-sm">{new Date(vehicle.lastMaintenance).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <form onSubmit={handleSearch} className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search by student, route, vehicle, or year..."
+          className="flex-1 rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          className="rounded-lg bg-secondary px-6 py-2 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
+          disabled={loading}
+        >
+          Search
+        </button>
+      </form>
 
-      {/* Assignments Tab */}
-      {activeTab === 'assignments' && (
-        <div className="overflow-x-auto rounded-lg border border-muted">
-          <table className="w-full">
-            <thead className="bg-background">
+      <div className="overflow-x-auto rounded-lg border border-muted bg-white">
+        <table className="w-full min-w-[1200px]">
+          <thead className="bg-background">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Student</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Class</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Route</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Pickup</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Dropoff</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Driver</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Vehicle</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Fee</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Year</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {records.length === 0 ? (
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Student</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Route</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Pickup Location</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Dropoff Location</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+                <td colSpan={11} className="px-4 py-8 text-center text-text-secondary">
+                  No transport records found.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {assignments.map(assignment => (
-                <tr key={assignment._id} className="border-t border-muted hover:bg-background transition">
-                  <td className="px-4 py-3 font-medium">{assignment.studentName}</td>
-                  <td className="px-4 py-3 text-sm">{assignment.routeName}</td>
-                  <td className="px-4 py-3 text-sm">{assignment.pickupLocation}</td>
-                  <td className="px-4 py-3 text-sm">{assignment.dropoffLocation}</td>
+            ) : (
+              records.map((record) => (
+                <tr key={record._id} className="border-t border-muted hover:bg-background transition">
+                  <td className="px-4 py-3 font-medium">{record.studentName}</td>
+                  <td className="px-4 py-3">{record.className}</td>
+                  <td className="px-4 py-3">{record.routeName}</td>
+                  <td className="px-4 py-3">{record.pickupPoint}</td>
+                  <td className="px-4 py-3">{record.dropoffPoint || '-'}</td>
+                  <td className="px-4 py-3">{record.driverName || '-'}</td>
+                  <td className="px-4 py-3">{record.vehicleNumber || '-'}</td>
+                  <td className="px-4 py-3">{record.monthlyFee}</td>
+                  <td className="px-4 py-3">{record.academicYear || '-'}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        assignment.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                        record.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {assignment.status}
+                      {record.status}
                     </span>
                   </td>
+                  <td className="px-4 py-3 space-x-2">
+                    <button
+                      onClick={() => handleEdit(record)}
+                      className="text-primary hover:underline text-sm font-medium"
+                      disabled={loading}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(record._id)}
+                      className="text-red-600 hover:underline text-sm font-medium"
+                      disabled={loading}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
