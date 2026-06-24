@@ -36,6 +36,7 @@ import CertificatesPage from '../pages/CertificatesPage';
 import FinancePage from '../pages/FinancePage';
 import TransportPage from '../pages/TransportPage';
 import TeachersPage from '../pages/TeachersPage';
+import SchoolDashboardPage from '../pages/SchoolDashboardPage';
 
 const AppRoutes = () => (
   <Routes>
@@ -85,6 +86,7 @@ const AppRoutes = () => (
         <Route path="finance" element={<FinancePage />} />
         <Route path="transport" element={<TransportPage />} />
         <Route path="teachers" element={<TeachersPage />} />
+        <Route path="school-dashboard" element={<SchoolDashboardPage />} />
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />
