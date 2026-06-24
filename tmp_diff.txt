@@ -1,0 +1,277 @@
+﻿diff --git a/client/src/components/layout/Header.tsx b/client/src/components/layout/Header.tsx
+index 4708f66f..ce7b2d6a 100644
+--- a/client/src/components/layout/Header.tsx
++++ b/client/src/components/layout/Header.tsx
+@@ -1,6 +1,6 @@
+ import { useEffect, useState, FormEvent } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+-import { ShoppingBag, UploadCloud, LogIn, User, Globe, Search, ChevronDown, MapPin, Menu, X, Heart, Bell, LogOut } from 'lucide-react';
++import { ShoppingBag, UploadCloud, LogIn, User, Globe, Search, ChevronDown, MapPin, Menu, X, Heart, Bell, MessageSquare, LogOut } from 'lucide-react';
+ import api from '../../services/api';
+ import { getFavoritesCount } from '../../services/favorites.api';
+ import { getNotificationsCount } from '../../services/notification.api';
+@@ -54,6 +54,10 @@ const Header = () => {
+       }
+     };
+ 
++    const handleNotificationsUpdated = () => {
++      fetchNotificationsCount();
++    };
++
+     fetchCategories();
+     if (user) {
+       fetchFavoriteCount();
+@@ -62,6 +66,11 @@ const Header = () => {
+       setFavoriteCount(0);
+       setNotificationCount(0);
+     }
++
++    window.addEventListener('notificationsUpdated', handleNotificationsUpdated);
++    return () => {
++      window.removeEventListener('notificationsUpdated', handleNotificationsUpdated);
++    };
+   }, [user]);
+ 
+   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+@@ -155,6 +164,13 @@ const Header = () => {
+               <UploadCloud className="w-4 h-4" />
+               Sell
+             </Link>
++            <Link
++              to="/messages"
++              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
++            >
++              <MessageSquare className="w-4 h-4" />
++              Messages
++            </Link>
+             <Link
+               to="/notifications"
+               className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+diff --git a/client/src/pages/DashboardPage.tsx b/client/src/pages/DashboardPage.tsx
+index ace7f8a8..04430fd6 100644
+--- a/client/src/pages/DashboardPage.tsx
++++ b/client/src/pages/DashboardPage.tsx
+@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ import { getProfile } from '../services/auth.api';
+ import { getProducts, updateProduct, deleteProduct } from '../services/product.api';
+-import { Edit3, Trash2, CheckCircle, PlusCircle, Eye, TrendingUp } from 'lucide-react';
++import { getSellerPromotions, PromotionRecord } from '../services/promotion.api';
++import { Edit3, Trash2, CheckCircle, PlusCircle, Eye, TrendingUp, DollarSign, Clock } from 'lucide-react';
+ import { formatViewsCount } from '../utils/views';
+ import { formatPriceKHR, formatPriceUSD } from '../utils/price';
+ 
+ const DashboardPage = () => {
+   const [products, setProducts] = useState<any[]>([]);
++  const [promotions, setPromotions] = useState<PromotionRecord[]>([]);
+   const [loading, setLoading] = useState(false);
+   const [message, setMessage] = useState('');
+   const [user, setUser] = useState<any>(null);
+@@ -21,8 +23,13 @@ const DashboardPage = () => {
+       setUser(profile);
+ 
+       if (profile?.id) {
+-        const response = await getProducts({ seller: profile.id, page: '1', perPage: '50', sort: 'newest' });
+-        setProducts(response.items || []);
++        const [productResponse, promotionResponse] = await Promise.all([
++          getProducts({ seller: profile.id, page: '1', perPage: '50', sort: 'newest' }),
++          getSellerPromotions()
++        ]);
++
++        setProducts(productResponse.items || []);
++        setPromotions(promotionResponse || []);
+       }
+     } catch (error) {
+       setMessage('Unable to load your dashboard. Please try again later.');
+@@ -64,6 +71,24 @@ const DashboardPage = () => {
+     .sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0))
+     .slice(0, 5);
+ 
++  const activePromotionCount = promotions.filter((promotion) => promotion.status === 'active').length;
++  const pendingPromotionCount = promotions.filter((promotion) => promotion.status === 'pending').length;
++  const expiringSoonCount = promotions.filter((promotion) => {
++    if (promotion.status !== 'active' || !promotion.endDate) return false;
++    const now = Date.now();
++    const endDate = new Date(promotion.endDate).getTime();
++    return endDate > now && endDate - now <= 7 * 24 * 60 * 60 * 1000;
++  }).length;
++  const promotionSpend = promotions
++    .filter((promotion) => promotion.status !== 'rejected')
++    .reduce((sum, promotion) => sum + (promotion.price || 0), 0);
++
++  const formatPromotionDate = (dateString?: string | null) => {
++    if (!dateString) return '-';
++    const date = new Date(dateString);
++    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
++  };
++
+   return (
+     <div className="space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+       <header className="rounded-[2rem] bg-white p-8 shadow-xl ring-1 ring-slate-200">
+@@ -125,6 +150,75 @@ const DashboardPage = () => {
+         ))}
+       </section>
+ 
++      <section className="grid gap-6 xl:grid-cols-4">
++        {[
++          { label: 'Active promotions', value: activePromotionCount, icon: TrendingUp },
++          { label: 'Pending promotions', value: pendingPromotionCount, icon: Clock },
++          { label: 'Expiring soon', value: expiringSoonCount, icon: Clock },
++          { label: 'Spent on promotions', value: promotionSpend.toLocaleString(), icon: DollarSign }
++        ].map((stat) => (
++          <article key={stat.label} className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
++            <div className="flex items-center justify-between gap-4">
++              <div>
++                <p className="text-xs uppercase tracking-[0.35em] text-slate-500">{stat.label}</p>
++                <p className="mt-3 text-3xl font-semibold text-slate-900">{stat.value}</p>
++              </div>
++              <div className="rounded-2xl bg-sky-50 p-3">
++                <stat.icon className="w-6 h-6 text-sky-600" />
++              </div>
++            </div>
++          </article>
++        ))}
++      </section>
++
++      <section className="rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-slate-200">
++        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
++          <div>
++            <h2 className="text-2xl font-semibold text-slate-900">Promoted Products</h2>
++            <p className="mt-2 text-sm text-slate-500">Review all promotion activity for your products.</p>
++          </div>
++          <button
++            type="button"
++            onClick={() => navigate('/seller/promotions')}
++            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition"
++          >
++            Promote Another Product
++          </button>
++        </div>
++
++        {promotions.length ? (
++          <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200">
++            <div className="grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr] gap-2 bg-slate-100 px-4 py-3 text-xs uppercase tracking-[0.25em] text-slate-500">
++              <span>Product</span>
++              <span>Plan</span>
++              <span>Start date</span>
++              <span>Expires</span>
++              <span>Status</span>
++            </div>
++            <div className="divide-y divide-slate-200 bg-white">
++              {promotions.map((promotion) => (
++                <div key={promotion._id} className="grid grid-cols-[2.5fr_1fr_1fr_1fr_1fr] gap-2 px-4 py-4 text-sm text-slate-700">
++                  <div className="truncate">{promotion.product?.title || 'Unknown product'}</div>
++                  <div>{promotion.plan.replace('_', ' ')}</div>
++                  <div>{formatPromotionDate(promotion.startDate)}</div>
++                  <div>{formatPromotionDate(promotion.endDate)}</div>
++                  <div>
++                    <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] ${promotion.status === 'active' ? 'bg-emerald-100 text-emerald-700' : promotion.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>
++                      {promotion.status}
++                    </span>
++                  </div>
++                </div>
++              ))}
++            </div>
++          </div>
++        ) : (
++          <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-600">
++            <p className="text-lg font-semibold">No promoted products yet</p>
++            <p className="mt-2 text-sm">Use the promotion page to feature your listings and boost visibility.</p>
++          </div>
++        )}
++      </section>
++
+       <section className="rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-slate-200">
+         <div>
+           <h2 className="text-2xl font-semibold text-slate-900">Most viewed products</h2>
+diff --git a/client/src/pages/NotificationsPage.tsx b/client/src/pages/NotificationsPage.tsx
+index 4c07e66d..d0646a0e 100644
+--- a/client/src/pages/NotificationsPage.tsx
++++ b/client/src/pages/NotificationsPage.tsx
+@@ -1,7 +1,7 @@
+ import { useEffect, useState } from 'react';
++import { Link } from 'react-router-dom';
+ import { Bell, CheckCircle2 } from 'lucide-react';
+ import { getNotifications, markNotificationRead } from '../services/notification.api';
+-import { getProfile } from '../services/auth.api';
+ 
+ const NotificationsPage = () => {
+   const [notifications, setNotifications] = useState<any[]>([]);
+@@ -28,6 +28,7 @@ const NotificationsPage = () => {
+     try {
+       await markNotificationRead(id);
+       setNotifications((current) => current.map((item) => (item._id === id ? { ...item, read: true } : item)));
++      window.dispatchEvent(new Event('notificationsUpdated'));
+     } catch (error) {
+       setMessage('Unable to mark notification as read.');
+     }
+@@ -63,9 +64,9 @@ const NotificationsPage = () => {
+                   <h2 className="text-lg font-semibold text-slate-900">{notification.title}</h2>
+                   <p className="mt-2 text-sm text-slate-600">{notification.message}</p>
+                   {notification.link && (
+-                    <a href={notification.link} className="mt-3 inline-flex text-sm font-semibold text-sky-600 hover:text-sky-700">
++                    <Link to={notification.link} className="mt-3 inline-flex text-sm font-semibold text-sky-600 hover:text-sky-700">
+                       View details
+-                    </a>
++                    </Link>
+                   )}
+                 </div>
+                 <button
+diff --git a/server/services/promotion.service.js b/server/services/promotion.service.js
+index cf811ebc..db409488 100644
+--- a/server/services/promotion.service.js
++++ b/server/services/promotion.service.js
+@@ -38,7 +38,7 @@ const expirePromotions = async () => {
+         type: 'promotion_expired',
+         title: 'Featured promotion expired',
+         message: `Your featured placement for "${promotion.product?.title || 'your product'}" has expired.`,
+-        link: '/seller/promotions'
++        link: promotion.product ? `/products/${promotion.product._id}` : '/seller/promotions'
+       });
+     }
+   }));
+@@ -59,7 +59,7 @@ const notifyExpiringSoon = async () => {
+         type: 'promotion_expiring',
+         title: 'Promotion expiring soon',
+         message: `Your featured placement for "${promotion.product?.title || 'your product'}" will expire on ${promotion.endDate?.toLocaleDateString()}.`,
+-        link: '/seller/promotions'
++        link: promotion.product ? `/products/${promotion.product._id}` : '/seller/promotions'
+       });
+     }
+   }));
+@@ -232,7 +232,7 @@ const approvePromotion = async (promotionId, adminId) => {
+       type: 'promotion_approved',
+       title: 'Featured promotion approved',
+       message: `Your featured placement for "${promotion.product?.title || 'your product'}" has been approved. It will run until ${promotion.endDate?.toLocaleDateString()}.`,
+-      link: '/seller/promotions'
++      link: promotion.product ? `/products/${promotion.product._id}` : '/seller/promotions'
+     });
+   }
+ 
+@@ -270,7 +270,7 @@ const rejectPromotion = async (promotionId, adminId, reason) => {
+       type: 'promotion_rejected',
+       title: 'Featured promotion rejected',
+       message: `Your featured placement for "${promotion.product?.title || 'your product'}" was rejected. ${promotion.rejectionReason}`,
+-      link: '/seller/promotions'
++      link: promotion.product ? `/products/${promotion.product._id}` : '/seller/promotions'
+     });
+   }
+ 
+@@ -325,7 +325,7 @@ const extendPromotion = async (promotionId, extraDays, adminId) => {
+       type: 'promotion_extended',
+       title: 'Featured promotion extended',
+       message: `Your featured placement for "${promotion.product?.title || 'your product'}" has been extended until ${promotion.endDate?.toLocaleDateString()}.`,
+-      link: '/seller/promotions'
++      link: promotion.product ? `/products/${promotion.product._id}` : '/seller/promotions'
+     });
+   }
+ 
+@@ -369,7 +369,7 @@ const cancelPromotion = async (promotionId, adminId) => {
+       type: 'promotion_cancelled',
+       title: 'Featured promotion cancelled',
+       message: `Your featured placement for "${promotion.product?.title || 'your product'}" has been cancelled by the admin team.`,
+-      link: '/seller/promotions'
++      link: promotion.product ? `/products/${promotion.product._id}` : '/seller/promotions'
+     });
+   }
+ 

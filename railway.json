@@ -1,0 +1,29 @@
+{
+  "project": {
+    "name": "marketplace-kh"
+  },
+  "services": [
+    {
+      "name": "server",
+      "path": "server",
+      "build": {
+        "install": "npm install",
+        "start": "npm start"
+      },
+      "env": {
+        "PORT": "4000",
+        "MONGO_URI": "mongodb+srv://REDACTED:REDACTED@REDACTED.mongodb.net/marketplace-kh?retryWrites=true&w=majority",
+        "CLIENT_ORIGIN": "https://REDACTED-frontend.vercel.app",
+        "JWT_SECRET": "REDACTED",
+        "JWT_EXPIRES_IN": "1h",
+        "REFRESH_TOKEN_EXPIRES_IN": "7d",
+        "RATE_LIMIT_WINDOW_MS": "900000",
+        "RATE_LIMIT_MAX": "100",
+        "AUTH_RATE_LIMIT_WINDOW_MS": "900000",
+        "AUTH_RATE_LIMIT_MAX": "10",
+        "UPLOAD_DIR": "uploads",
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# Env variable snippets — copy/paste into platform UI or use locally (values masked)
+
+# Bash (Linux/macOS)
+export MONGO_URI="mongodb+srv://REDACTED:REDACTED@REDACTED.mongodb.net/marketplace-kh?retryWrites=true&w=majority"
+export JWT_SECRET="REDACTED"
+export CLIENT_ORIGIN="https://REDACTED-frontend.vercel.app"
+export VITE_API_BASE_URL="https://api.konpuk.com/api"
+export NODE_ENV=production
+
+# PowerShell (Windows)
+$env:MONGO_URI = "mongodb+srv://REDACTED:REDACTED@REDACTED.mongodb.net/marketplace-kh?retryWrites=true&w=majority"
+$env:JWT_SECRET = "REDACTED"
+$env:CLIENT_ORIGIN = "https://REDACTED-frontend.vercel.app"
+$env:VITE_API_BASE_URL = "https://api.konpuk.com/api"
+$env:NODE_ENV = "production"
+
+# Quick instructions
+# - For Render/Railway/Vercel: open your project's dashboard -> Environment (or Settings) -> Add env var -> paste the KEY and VALUE.
+# - Replace placeholders with your real secrets locally before deploying.

@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "make:admin": "npm --prefix server run make:admin --"
+  },
+  "dependencies": {
+    "lucide-react": "^1.17.0"
+  }
+}

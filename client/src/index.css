@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  @apply bg-background text-text-primary antialiased;
+  font-family: "Kantumruy Pro", Inter, sans-serif;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  body {
+    color: #0f172a;
+  }
+
+  h1 {
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+
+  p,
+  li,
+  label,
+  span,
+  a {
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+  }
+
+  button,
+  header a,
+  header button,
+  .nav-link,
+  .nav-link button {
+    font-weight: 600;
+  }
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+main {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6;
+}

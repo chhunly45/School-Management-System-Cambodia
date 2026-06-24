@@ -1,0 +1,42 @@
+const express = require('express');
+const authRoutes = require('./auth.routes');
+const categoryRoutes = require('./category.routes');
+const productRoutes = require('./product.routes');
+const uploadRoutes = require('./upload.routes');
+const bannerRoutes = require('./banner.routes');
+const chatRoutes = require('./chat.routes');
+const favoriteRoutes = require('./favorite.routes');
+const adminRoutes = require('./admin.routes');
+const reportRoutes = require('./report.routes');
+const notificationRoutes = require('./notification.routes');
+const userRoutes = require('./user.routes');
+const reviewRoutes = require('./review.routes');
+const locationRoutes = require('./location.routes');
+const sellerAnalyticsRoutes = require('./seller-analytics.routes');
+const trafficAnalyticsRoutes = require('./traffic-analytics.routes');
+const promotionRoutes = require('./promotions.routes');
+const verificationRoutes = require('./verification.routes');
+
+const router = express.Router();
+
+router.use('/auth', authRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/products', productRoutes);
+router.use('/favorites', favoriteRoutes);
+router.use('/upload', uploadRoutes);
+router.use('/banners', bannerRoutes);
+router.use('/chats', chatRoutes);
+// Expose legacy/semantic route names for client compatibility
+router.use('/conversations', chatRoutes);
+router.use('/reports', reportRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/reviews', reviewRoutes);
+router.use('/locations', locationRoutes);
+router.use('/seller-analytics', sellerAnalyticsRoutes);
+router.use('/traffic-analytics', trafficAnalyticsRoutes);
+router.use('/promotions', promotionRoutes);
+router.use('/verification', verificationRoutes);
+router.use('/admin', adminRoutes);
+router.use('/users', userRoutes);
+
+module.exports = router;

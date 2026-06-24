@@ -1,0 +1,81 @@
+File,Classification,Type,Path,Purpose,Reuse_Notes
+package.json,🟡 PARTIALLY REUSABLE,Config,/,Root workspace config,Lucide-react only; add SMS dependencies
+README.md,🔴 PROJECT-SPECIFIC,Markdown,/,Konpuk documentation,Replace with SMS-CAM documentation
+vercel.json,🟡 PARTIALLY REUSABLE,Config,/,Vercel deployment,Adapt for SMS-CAM
+railway.json,🟡 PARTIALLY REUSABLE,Config,/,Railway deployment,Adapt for SMS-CAM
+render.yaml,🟡 PARTIALLY REUSABLE,Config,/,Render deployment,Adapt for SMS-CAM
+bundle-check.js,🟡 PARTIALLY REUSABLE,Script,/,Build analysis,Reusable pattern
+verify-build-strings.js,🟡 PARTIALLY REUSABLE,Script,/,Build verification,Reusable pattern
+.gitignore,🟢 REUSABLE,Git Config,/,Git ignore patterns,Use as-is
+client/package.json,🟡 PARTIALLY REUSABLE,Config,client/,Frontend dependencies,Adapt for SMS features
+client/tsconfig.json,🟡 PARTIALLY REUSABLE,Config,client/,TypeScript config,Use as-is
+client/vite.config.ts,🟡 PARTIALLY REUSABLE,Config,client/,Vite build config,Use as-is
+client/jest.config.cjs,🟡 PARTIALLY REUSABLE,Config,client/,Jest test config,Use as-is
+client/tailwind.config.js,🟡 PARTIALLY REUSABLE,Config,client/,Tailwind CSS config,Customize theme for SMS
+client/postcss.config.js,🟡 PARTIALLY REUSABLE,Config,client/,PostCSS config,Use as-is
+client/src/main.tsx,🟡 PARTIALLY REUSABLE,TypeScript,client/src/,Entry point,Update app structure
+client/src/App.tsx,🔴 PROJECT-SPECIFIC,TypeScript,client/src/,Root component,Replace with SMS root
+client/src/index.css,🔴 PROJECT-SPECIFIC,CSS,client/src/,Global styles,Replace with SMS styles
+client/src/components/layout/Header.tsx,🟡 PARTIALLY REUSABLE,TypeScript,client/src/components/,Navigation header,Adapt for SMS navigation
+client/src/components/layout/Footer.tsx,🟡 PARTIALLY REUSABLE,TypeScript,client/src/components/,Footer,Adapt branding
+client/src/components/layout/AdminLayout.tsx,🟡 PARTIALLY REUSABLE,TypeScript,client/src/components/,Admin layout,Keep pattern; customize for SMS admin
+client/src/components/ErrorBoundary.tsx,🟢 REUSABLE,TypeScript,client/src/components/,Error boundary,Use as-is
+client/src/components/SEO.tsx,🟡 PARTIALLY REUSABLE,TypeScript,client/src/components/,SEO optimization,Adapt for SMS meta tags
+client/src/hooks/useAuth.tsx,🟡 PARTIALLY REUSABLE,TypeScript,client/src/hooks/,Auth hook,Adapt for SMS roles (student/teacher/admin)
+client/src/hooks/useSocket.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/hooks/,WebSocket hook,Adapt for SMS real-time features
+client/src/services/api.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/services/,Axios base config,Adapt endpoints
+client/src/services/auth.api.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/services/,Auth endpoints,Adapt for SMS authentication
+client/src/services/chat.api.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/services/,Chat API,Adapt for SMS messaging
+client/src/services/socket.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/services/,Socket.io client,Use pattern; update events
+client/src/services/upload.api.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/services/,File upload API,Adapt for SMS documents
+client/src/utils/password.ts,🟢 REUSABLE,TypeScript,client/src/utils/,Password validation,Use as-is
+client/src/utils/price.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/utils/,Price formatting,Adapt for fees/payments
+client/src/setupTests.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/,Test setup,Use as-is
+client/src/__tests__/auth.api.test.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/__tests__/,Auth tests,Adapt for SMS auth
+client/src/__mocks__/lucide-react.ts,🟡 PARTIALLY REUSABLE,TypeScript,client/src/__mocks__/,Icon mock,Use as-is
+server/package.json,🟡 PARTIALLY REUSABLE,Config,server/,Backend dependencies,Good foundation; add SMS packages
+server/tsconfig.json,🟡 PARTIALLY REUSABLE,Config,server/,TypeScript config,Use as-is
+server/app.js,🟡 PARTIALLY REUSABLE,JavaScript,server/,Express setup,Keep pattern; adapt middleware
+server/server.js,🟡 PARTIALLY REUSABLE,JavaScript,server/,Server entry,Keep pattern; adapt config
+server/.env.example,🟡 PARTIALLY REUSABLE,ENV,server/,Environment template,Add SMS-specific variables
+server/config/database.js,🟢 REUSABLE,JavaScript,server/config/,MongoDB connection,Use as-is
+server/config/index.js,🟡 PARTIALLY REUSABLE,JavaScript,server/config/,Config aggregator,Keep pattern; add SMS configs
+server/config/provinces.js,🟡 PARTIALLY REUSABLE,JavaScript,server/config/,Cambodia locations,Reuse for SMS (schools/districts)
+server/models/User.js,🟡 PARTIALLY REUSABLE,JavaScript,server/models/,User schema,Adapt for student/teacher roles
+server/models/Chat.js,🟡 PARTIALLY REUSABLE,JavaScript,server/models/,Chat schema,Adapt for SMS messaging
+server/models/Message.js,🟡 PARTIALLY REUSABLE,JavaScript,server/models/,Message schema,Adapt for SMS messages
+server/models/Admin.js,🟡 PARTIALLY REUSABLE,JavaScript,server/models/,Admin schema,Adapt for SMS admin
+server/models/AuditLog.js,🟢 REUSABLE,JavaScript,server/models/,Audit logging,Use as-is
+server/models/Product.js,🔴 PROJECT-SPECIFIC,JavaScript,server/models/,Product schema,REPLACE with Student/Teacher/Class models
+server/models/Review.js,🔴 PROJECT-SPECIFIC,JavaScript,server/models/,Review schema,REPLACE with Grade/Feedback models
+server/models/Favorite.js,🔴 PROJECT-SPECIFIC,JavaScript,server/models/,Favorite schema,REPLACE with Bookmark/Resource models
+server/models/index.js,🟡 PARTIALLY REUSABLE,JavaScript,server/models/,Model exports,Adapt with SMS models
+server/middleware/auth.middleware.js,🟢 REUSABLE,JavaScript,server/middleware/,JWT verification,Use as-is
+server/middleware/role.middleware.js,🟡 PARTIALLY REUSABLE,JavaScript,server/middleware/,Role check,Adapt for student/teacher/admin/moderator roles
+server/middleware/error.middleware.js,🟢 REUSABLE,JavaScript,server/middleware/,Error handler,Use as-is
+server/middleware/validation.middleware.js,🟡 PARTIALLY REUSABLE,JavaScript,server/middleware/,Input validation,Use as-is
+server/middleware/upload.middleware.js,🟡 PARTIALLY REUSABLE,JavaScript,server/middleware/,Multer config,Use as-is
+server/middleware/security/password.validator.js,🟢 REUSABLE,JavaScript,server/middleware/,Password strength,Use as-is
+server/services/auth.service.js,🟡 PARTIALLY REUSABLE,JavaScript,server/services/,JWT/passwords,Adapt for SMS authentication flows
+server/services/email.service.js,🟡 PARTIALLY REUSABLE,JavaScript,server/services/,Email sending,Keep pattern; use SMS-CAM provider
+server/services/sms.service.js,🟡 PARTIALLY REUSABLE,JavaScript,server/services/,SMS sending,Adapt for SMS-CAM SMS provider
+server/services/chat.service.js,🟡 PARTIALLY REUSABLE,JavaScript,server/services/,Chat logic,Adapt for SMS messaging patterns
+server/services/notification.service.js,🟡 PARTIALLY REUSABLE,JavaScript,server/services/,Notifications,Adapt for SMS notifications
+server/services/upload.service.js,🟡 PARTIALLY REUSABLE,JavaScript,server/services/,File upload,Keep Cloudinary pattern or replace
+server/services/product.service.js,🔴 PROJECT-SPECIFIC,JavaScript,server/services/,Product logic,REPLACE with educational domain services
+server/controllers/auth.controller.js,🟡 PARTIALLY REUSABLE,JavaScript,server/controllers/,Auth handlers,Adapt for SMS authentication
+server/controllers/user.controller.js,🟡 PARTIALLY REUSABLE,JavaScript,server/controllers/,User handlers,Adapt for SMS user management
+server/controllers/admin.controller.js,🟡 PARTIALLY REUSABLE,JavaScript,server/controllers/,Admin handlers,Adapt for SMS admin operations
+server/controllers/product.controller.js,🔴 PROJECT-SPECIFIC,JavaScript,server/controllers/,Product handlers,REPLACE with educational controllers
+server/routes/auth.routes.js,🟡 PARTIALLY REUSABLE,JavaScript,server/routes/,Auth endpoints,Adapt for SMS auth routes
+server/routes/user.routes.js,🟡 PARTIALLY REUSABLE,JavaScript,server/routes/,User endpoints,Adapt for SMS user routes
+server/routes/admin.routes.js,🟡 PARTIALLY REUSABLE,JavaScript,server/routes/,Admin endpoints,Adapt for SMS admin routes
+server/routes/product.routes.js,🔴 PROJECT-SPECIFIC,JavaScript,server/routes/,Product endpoints,REPLACE with educational routes
+server/routes/index.js,🟡 PARTIALLY REUSABLE,JavaScript,server/routes/,Route aggregator,Keep pattern; add SMS routes
+server/__tests__/auth.service.test.js,🟡 PARTIALLY REUSABLE,JavaScript,server/__tests__/,Auth tests,Adapt for SMS auth tests
+server/__tests__/phone.util.test.js,🟢 REUSABLE,JavaScript,server/__tests__/,Phone tests,Use as-is (Cambodia format)
+server/utils/phone.js,🟢 REUSABLE,JavaScript,server/utils/,Phone validation,Use as-is (Cambodia phone numbers)
+server/scripts/make-admin.js,🟡 PARTIALLY REUSABLE,JavaScript,server/scripts/,Admin creation,Adapt for SMS admin creation
+server/scripts/normalize-phone-numbers.js,🟢 REUSABLE,JavaScript,server/scripts/,Phone cleanup,Use as-is
+docs/PRD.md,🔴 PROJECT-SPECIFIC,Markdown,docs/,Product requirements,REPLACE with SMS-CAM PRD
+docs/README.md,🟡 PARTIALLY REUSABLE,Markdown,docs/,Documentation,Adapt structure for SMS-CAM
