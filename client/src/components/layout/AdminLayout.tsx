@@ -1,18 +1,15 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Users, ShoppingBag, FileText, TrendingUp, BarChart3, ShieldCheck, Activity } from 'lucide-react';
+import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: Home },
-  { label: 'Users', to: '/admin/users', icon: Users },
-  { label: 'Sellers', to: '/admin/sellers', icon: Users },
-  { label: 'Products', to: '/admin/products', icon: ShoppingBag },
-  { label: 'Reports', to: '/admin/reports', icon: FileText },
-  { label: 'Verifications', to: '/admin/verification', icon: ShieldCheck },
-  { label: 'Revenue', to: '/admin/revenue', icon: TrendingUp },
-  { label: 'Traffic', to: '/admin/traffic', icon: Activity },
-  { label: 'Promotions', to: '/admin/promotions', icon: TrendingUp },
-  { label: 'Analytics', to: '/admin/analytics', icon: BarChart3 },
-  { label: 'Audit', to: '/admin/audit', icon: ShieldCheck }
+  { label: 'Students', to: '/admin/students', icon: Users },
+  { label: 'Payments', to: '/admin/payments', icon: ShoppingBag },
+  { label: 'Attendance', to: '/admin/attendance', icon: CheckCircle },
+  { label: 'Academic', to: '/admin/academic', icon: BookOpen },
+  { label: 'Certificates', to: '/admin/certificates', icon: Award },
+  { label: 'Finance', to: '/admin/finance', icon: TrendingUp },
+  { label: 'Transport', to: '/admin/transport', icon: Bus }
 ];
 
 const AdminLayout = () => {
@@ -22,8 +19,8 @@ const AdminLayout = () => {
         <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
           <aside className="rounded-[2rem] border border-muted bg-white p-6 shadow-xl ring-1 ring-muted">
             <div className="mb-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-text-secondary">Admin menu</p>
-              <h2 className="mt-3 text-2xl font-semibold text-text-primary">Manage platform</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-text-secondary">School Admin</p>
+              <h2 className="mt-3 text-2xl font-semibold text-text-primary">Manage School</h2>
             </div>
             <nav className="space-y-2">
               {navItems.map((item) => {

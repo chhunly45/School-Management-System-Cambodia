@@ -16,6 +16,7 @@ const PageView = require('./PageView');
 const Search = require('./Search');
 const Visitor = require('./Visitor');
 const SellerVerification = require('./SellerVerification');
+const Student = require('./Student');
 
 module.exports = {
   User,
@@ -35,5 +36,6 @@ module.exports = {
   PageView,
   Search,
   Visitor,
-  SellerVerification
+  SellerVerification,
+  Student
 };

@@ -28,6 +28,13 @@ import AdminVerificationReviewPage from '../pages/AdminVerificationReviewPage';
 import AboutPage from '../pages/AboutPage';
 import GuidePage from '../pages/GuidePage';
 import HelpPage from '../pages/HelpPage';
+import StudentsPage from '../pages/StudentsPage';
+import PaymentsPage from '../pages/PaymentsPage';
+import AttendancePage from '../pages/AttendancePage';
+import AcademicPage from '../pages/AcademicPage';
+import CertificatesPage from '../pages/CertificatesPage';
+import FinancePage from '../pages/FinancePage';
+import TransportPage from '../pages/TransportPage';
 
 const AppRoutes = () => (
   <Routes>
@@ -69,6 +76,13 @@ const AppRoutes = () => (
         <Route path="analytics" element={<AdminDashboardPage />} />
         <Route path="audit" element={<AdminDashboardPage />} />
         <Route path="banners" element={<AdminBannersPage />} />
+        <Route path="students" element={<StudentsPage />} />
+        <Route path="payments" element={<PaymentsPage />} />
+        <Route path="attendance" element={<AttendancePage />} />
+        <Route path="academic" element={<AcademicPage />} />
+        <Route path="certificates" element={<CertificatesPage />} />
+        <Route path="finance" element={<FinancePage />} />
+        <Route path="transport" element={<TransportPage />} />
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />

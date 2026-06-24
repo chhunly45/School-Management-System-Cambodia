@@ -16,6 +16,7 @@ const sellerAnalyticsRoutes = require('./seller-analytics.routes');
 const trafficAnalyticsRoutes = require('./traffic-analytics.routes');
 const promotionRoutes = require('./promotions.routes');
 const verificationRoutes = require('./verification.routes');
+const studentRoutes = require('./student.routes');
 
 const router = express.Router();
 
@@ -38,5 +39,6 @@ router.use('/promotions', promotionRoutes);
 router.use('/verification', verificationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/users', userRoutes);
+router.use('/students', studentRoutes);
 
 module.exports = router;
