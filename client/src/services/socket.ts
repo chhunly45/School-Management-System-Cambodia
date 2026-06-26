@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-import { getViteEnv } from '../utils/viteEnv';
+import { getViteEnv, safeImportMetaEnv } from '../utils/viteEnv';
 
 const getSocketBaseUrl = () => {
   const rawUrl = getViteEnv('VITE_API_BASE_URL', '') || getViteEnv('VITE_API_URL', '') || getViteEnv('VITE_PUBLIC_API_URL', '');

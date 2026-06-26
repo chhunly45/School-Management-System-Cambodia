@@ -4,7 +4,7 @@ export const getViteEnv = (key: string, fallback: string): string => {
   return value || fallback;
 };
 
-const safeImportMetaEnv = (): Record<string, string> => {
+export const safeImportMetaEnv = (): Record<string, string> => {
   try {
     // Use eval to access import.meta.env without introducing raw `import.meta` syntax
     // that can break Jest's parser in non-ESM test environments.
