@@ -1,4 +1,6 @@
-﻿import { useEffect, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
+import { getSchoolSettings, type SchoolSettings } from '../services/schoolSettings.api';
+import { getCurrencyFormatter } from '../utils/price';
 import {
   getRevenueMetrics,
   getDailyRevenue,
@@ -44,13 +46,15 @@ const AdminRevenuePage = () => {
   const [sellerData, setSellerData] = useState<SellerRevenue[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [activeChart, setActiveChart] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
-  };
+  const currencyFormatter = useMemo(
+    () => getCurrencyFormatter(schoolSettings?.defaultCurrency || 'USD'),
+    [schoolSettings?.defaultCurrency]
+  );
 
   const loadMetrics = async () => {
     try {
@@ -106,6 +110,15 @@ const AdminRevenuePage = () => {
       await loadSellerData();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSettings = async () => {
+    try {
+      const response = await getSchoolSettings();
+      setSchoolSettings(response.data || null);
+    } catch {
+      // ignore settings failures and keep default USD formatting
     }
   };
 
@@ -167,9 +180,7 @@ const AdminRevenuePage = () => {
   };
 
   useEffect(() => {
-    loadMetrics();
-    loadCharts();
-    loadSellerData();
+    void Promise.all([loadSettings(), loadMetrics(), loadCharts(), loadSellerData()]);
   }, []);
 
   const chartData = activeChart === 'daily' ? dailyData : activeChart === 'weekly' ? weeklyData : monthlyData;
@@ -217,23 +228,23 @@ const AdminRevenuePage = () => {
       <section className="grid gap-6 xl:grid-cols-5">
         <article className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-border">
           <p className="text-sm uppercase tracking-[0.35em] text-muted">Total Revenue</p>
-          <p className="mt-4 text-2xl font-semibold text-text-primary">{formatCurrency(metrics.totalRevenue)}</p>
+          <p className="mt-4 text-2xl font-semibold text-text-primary">{currencyFormatter.format(metrics.totalRevenue)}</p>
         </article>
         <article className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-border">
           <p className="text-sm uppercase tracking-[0.35em] text-muted">Today</p>
-          <p className="mt-4 text-2xl font-semibold text-text-primary">{formatCurrency(metrics.todayRevenue)}</p>
+          <p className="mt-4 text-2xl font-semibold text-text-primary">{currencyFormatter.format(metrics.todayRevenue)}</p>
         </article>
         <article className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-border">
           <p className="text-sm uppercase tracking-[0.35em] text-muted">This Week</p>
-          <p className="mt-4 text-2xl font-semibold text-text-primary">{formatCurrency(metrics.weekRevenue)}</p>
+          <p className="mt-4 text-2xl font-semibold text-text-primary">{currencyFormatter.format(metrics.weekRevenue)}</p>
         </article>
         <article className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-border">
           <p className="text-sm uppercase tracking-[0.35em] text-muted">This Month</p>
-          <p className="mt-4 text-2xl font-semibold text-text-primary">{formatCurrency(metrics.monthRevenue)}</p>
+          <p className="mt-4 text-2xl font-semibold text-text-primary">{currencyFormatter.format(metrics.monthRevenue)}</p>
         </article>
         <article className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-border">
           <p className="text-sm uppercase tracking-[0.35em] text-muted">This Year</p>
-          <p className="mt-4 text-2xl font-semibold text-text-primary">{formatCurrency(metrics.yearRevenue)}</p>
+          <p className="mt-4 text-2xl font-semibold text-text-primary">{currencyFormatter.format(metrics.yearRevenue)}</p>
         </article>
       </section>
 
@@ -306,7 +317,7 @@ const AdminRevenuePage = () => {
                       className="flex items-center justify-end rounded-full bg-gradient-to-r from-primary/100 to-primary pr-4 text-xs font-semibold text-white transition-all"
                       style={{ width: `${Math.max((item.revenue / maxRevenue) * 100, 5)}%` }}
                     >
-                      {formatCurrency(item.revenue)}
+                      {currencyFormatter.format(item.revenue)}
                     </div>
                   </div>
                 </div>
@@ -347,7 +358,7 @@ const AdminRevenuePage = () => {
                       <div className="text-text-secondary">{seller.sellerEmail}</div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="font-semibold text-text-primary">{formatCurrency(seller.revenue)}</div>
+                      <div className="font-semibold text-text-primary">{currencyFormatter.format(seller.revenue)}</div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="text-text-secondary">{seller.transactionCount}</div>

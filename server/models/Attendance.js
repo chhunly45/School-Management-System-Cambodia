@@ -5,6 +5,9 @@ const AttendanceSchema = new Schema({
   studentId: { type: String, required: true, trim: true },
   studentName: { type: String, required: true, trim: true },
   className: { type: String, required: true, trim: true },
+  academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear' },
+  gradeId: { type: Schema.Types.ObjectId, ref: 'Grade' },
+  classId: { type: Schema.Types.ObjectId, ref: 'Class' },
   date: { type: Date, required: true },
   status: {
     type: String,
@@ -23,6 +26,10 @@ AttendanceSchema.index({ studentId: 1 });
 AttendanceSchema.index({ date: -1 });
 AttendanceSchema.index({ className: 1, date: 1 });
 AttendanceSchema.index({ academicYear: 1, semester: 1 });
+AttendanceSchema.index({ academicYearId: 1 });
+AttendanceSchema.index({ gradeId: 1 });
+AttendanceSchema.index({ classId: 1, date: -1 });
+AttendanceSchema.index({ date: 1, status: 1, classId: 1 });
 AttendanceSchema.index({ studentId: 1, date: 1 }, { unique: true });
 
 module.exports = model('Attendance', AttendanceSchema);

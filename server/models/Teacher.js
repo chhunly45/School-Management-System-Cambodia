@@ -14,6 +14,8 @@ const TeacherSchema = new Schema({
   experienceYears: { type: Number, min: 0, default: 0 },
   className: { type: String, trim: true },
   subjects: [{ type: String, trim: true }],
+  subjectIds: [{ type: Schema.Types.ObjectId, ref: 'Subject' }],
+  homeroomClassId: { type: Schema.Types.ObjectId, ref: 'Class' },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   joinDate: { type: Date },
   remarks: { type: String, trim: true },
@@ -26,6 +28,8 @@ const TeacherSchema = new Schema({
 TeacherSchema.index({ teacherId: 1 }, { unique: true, sparse: true });
 TeacherSchema.index({ status: 1 });
 TeacherSchema.index({ className: 1 });
+TeacherSchema.index({ homeroomClassId: 1 });
+TeacherSchema.index({ subjectIds: 1 });
 TeacherSchema.index({ fullName: 'text', specialization: 'text', email: 'text', phone: 'text' });
 
 module.exports = model('Teacher', TeacherSchema);

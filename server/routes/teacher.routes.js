@@ -14,8 +14,11 @@ router.get(
   query('search').optional().trim().isString(),
   query('status').optional().isIn(['active', 'inactive']),
   query('className').optional().trim().isString(),
+  query('subjectId').optional().isMongoId(),
+  query('homeroomClassId').optional().isMongoId(),
+  query('includeRelations').optional().isBoolean().toBoolean(),
   query('page').optional().isInt({ min: 1 }),
-  query('perPage').optional().isInt({ min: 1 }),
+  query('perPage').optional().isInt({ min: 1, max: 100 }),
   validate,
   teacherController.listTeachers
 );
@@ -24,6 +27,7 @@ router.get(
   '/:id',
   adminOnly,
   param('id').isMongoId(),
+  query('includeRelations').optional().isBoolean().toBoolean(),
   validate,
   teacherController.getTeacher
 );
@@ -43,6 +47,9 @@ router.post(
   body('experienceYears').optional().isInt({ min: 0 }),
   body('className').optional().trim().isString(),
   body('subjects').optional().isArray(),
+  body('subjectIds').optional().isArray(),
+  body('subjectIds.*').optional().isMongoId(),
+  body('homeroomClassId').optional().isMongoId(),
   body('status').optional().isIn(['active', 'inactive']),
   body('joinDate').optional().isISO8601(),
   body('remarks').optional().trim().isString(),
@@ -66,6 +73,9 @@ router.put(
   body('experienceYears').optional().isInt({ min: 0 }),
   body('className').optional().trim().isString(),
   body('subjects').optional().isArray(),
+  body('subjectIds').optional().isArray(),
+  body('subjectIds.*').optional().isMongoId(),
+  body('homeroomClassId').optional().isMongoId(),
   body('status').optional().isIn(['active', 'inactive']),
   body('joinDate').optional().isISO8601(),
   body('remarks').optional().trim().isString(),

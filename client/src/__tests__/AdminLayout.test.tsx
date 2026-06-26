@@ -10,11 +10,10 @@ describe('AdminLayout', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/Manage platform/i)).toBeInTheDocument();
-    expect(screen.getByText(/Admin menu/i)).toBeInTheDocument();
-    // common nav items
-    expect(screen.getByText(/Users/i)).toBeInTheDocument();
-    expect(screen.getByText(/Products/i)).toBeInTheDocument();
-    expect(screen.getByText(/Verifications/i)).toBeInTheDocument();
+    expect(screen.getByText(/Manage School/i)).toBeInTheDocument();
+    expect(screen.getByText(/School Admin/i)).toBeInTheDocument();
+    expect(screen.getByText(/Students/i)).toBeInTheDocument();
+    expect(screen.getByText(/Teachers/i)).toBeInTheDocument();
+    expect(screen.getByText(/Payments/i)).toBeInTheDocument();
   });
 });

@@ -1,14 +1,33 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import ProductDetailPage from '../pages/ProductDetailPage';
 import * as productApi from '../services/product.api';
 import * as favoritesApi from '../services/favorites.api';
 import * as authApi from '../services/auth.api';
 import { useAuth } from '../hooks/useAuth';
 
-jest.mock('../services/product.api');
-jest.mock('../services/favorites.api');
-jest.mock('../services/auth.api');
+jest.mock('../services/product.api', () => ({
+  __esModule: true,
+  getProductById: jest.fn(),
+  getProductBySlug: jest.fn(),
+  getProducts: jest.fn(),
+  trackProductView: jest.fn(),
+  updateProduct: jest.fn(),
+  deleteProduct: jest.fn(),
+  getFeaturedProducts: jest.fn()
+}));
+jest.mock('../services/favorites.api', () => ({
+  __esModule: true,
+  checkFavorite: jest.fn(),
+  addFavorite: jest.fn(),
+  removeFavorite: jest.fn(),
+  getFavoritesCount: jest.fn()
+}));
+jest.mock('../services/auth.api', () => ({
+  __esModule: true,
+  getProfile: jest.fn()
+}));
 jest.mock('../hooks/useAuth', () => ({
   useAuth: jest.fn()
 }));
@@ -36,7 +55,7 @@ describe('ProductDetailPage', () => {
   });
 
   it('loads and renders product details', async () => {
-    mockedProductApi.getProductById.mockResolvedValue({
+    mockedProductApi.getProductBySlug.mockResolvedValue({
       _id: '123',
       title: 'Detailed Product',
       description: 'A detailed product description',
@@ -50,14 +69,16 @@ describe('ProductDetailPage', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/products/123']}>
-        <Routes>
-          <Route path="/products/:id" element={<ProductDetailPage />} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={['/products/123']}>
+          <Routes>
+            <Route path="/products/:slug" element={<ProductDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
-    await waitFor(() => expect(mockedProductApi.getProductById).toHaveBeenCalledWith('123'));
+    await waitFor(() => expect(mockedProductApi.getProductBySlug).toHaveBeenCalledWith('123'));
     expect(mockedFavoritesApi.checkFavorite).not.toHaveBeenCalled();
     expect(screen.getByRole('heading', { name: /Detailed Product/i })).toBeInTheDocument();
     expect(screen.getByText(/A detailed product description/i)).toBeInTheDocument();
@@ -65,7 +86,7 @@ describe('ProductDetailPage', () => {
   });
 
   it('renders fallback content when no product images are available', async () => {
-    mockedProductApi.getProductById.mockResolvedValue({
+    mockedProductApi.getProductBySlug.mockResolvedValue({
       _id: '456',
       title: 'No Image Product',
       description: 'Product without images',
@@ -79,28 +100,32 @@ describe('ProductDetailPage', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/products/456']}>
-        <Routes>
-          <Route path="/products/:id" element={<ProductDetailPage />} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={['/products/456']}>
+          <Routes>
+            <Route path="/products/:slug" element={<ProductDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
-    await waitFor(() => expect(mockedProductApi.getProductById).toHaveBeenCalledWith('456'));
+    await waitFor(() => expect(mockedProductApi.getProductBySlug).toHaveBeenCalledWith('456'));
     expect(screen.queryByRole('img', { name: /Product image/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/Gallery/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/No Image Product/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /No Image Product/i })).toBeInTheDocument();
   });
 
   it('shows an error message when product load fails', async () => {
-    mockedProductApi.getProductById.mockRejectedValue(new Error('Network failure'));
+    mockedProductApi.getProductBySlug.mockRejectedValue(new Error('Network failure'));
 
     render(
-      <MemoryRouter initialEntries={['/products/999']}>
-        <Routes>
-          <Route path="/products/:id" element={<ProductDetailPage />} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={['/products/999']}>
+          <Routes>
+            <Route path="/products/:slug" element={<ProductDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
     await waitFor(() => expect(screen.getByText(/Unable to load product/i)).toBeInTheDocument());
@@ -118,7 +143,7 @@ describe('ProductDetailPage', () => {
       setUser: jest.fn() as any
     });
 
-    mockedProductApi.getProductById.mockResolvedValue({
+    mockedProductApi.getProductBySlug.mockResolvedValue({
       _id: '321',
       title: 'Authenticated Product',
       description: 'Product visible to authenticated users',
@@ -133,11 +158,13 @@ describe('ProductDetailPage', () => {
     mockedFavoritesApi.checkFavorite.mockResolvedValueOnce(true);
 
     render(
-      <MemoryRouter initialEntries={['/products/321']}>
-        <Routes>
-          <Route path="/products/:id" element={<ProductDetailPage />} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={['/products/321']}>
+          <Routes>
+            <Route path="/products/:slug" element={<ProductDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
     await waitFor(() => expect(mockedFavoritesApi.checkFavorite).toHaveBeenCalledWith('321'));

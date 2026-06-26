@@ -1,15 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-
-const getViteEnv = (key: string, fallback: string) => {
-  try {
-    // @ts-ignore
-    const value = (import.meta && import.meta.env && import.meta.env[key]) || process.env[key];
-    return value || fallback;
-  } catch {
-    return fallback;
-  }
-};
+import { getViteEnv } from '../utils/viteEnv';
 
 const defaultSiteUrl = getViteEnv('VITE_SITE_URL', 'https://konpuk.com');
 const defaultImage = `${defaultSiteUrl}/logo.png`;
@@ -29,6 +20,16 @@ const SEO: React.FC<SEOProps> = ({ title, description, url, image, type = 'websi
   const metaDescription = description || 'Cambodian marketplace for buyers and sellers.';
   const metaImage = image || defaultImage;
   const metaUrl = url || (typeof window !== 'undefined' ? window.location.href : defaultSiteUrl);
+  const structuredJson = structuredData || {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Konpuk',
+    url: defaultSiteUrl,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Konpuk'
+    }
+  };
 
   return (
     <Helmet>
@@ -54,8 +55,8 @@ const SEO: React.FC<SEOProps> = ({ title, description, url, image, type = 'websi
 
       <link rel="canonical" href={metaUrl} />
 
-      {structuredData && (
-        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+      {structuredJson && (
+        <script type="application/ld+json" data-seo>{JSON.stringify(structuredJson)}</script>
       )}
     </Helmet>
   );

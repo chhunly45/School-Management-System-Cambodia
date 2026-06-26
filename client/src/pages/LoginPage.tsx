@@ -3,17 +3,10 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { resendLoginOtp, resendPhoneOtp, requestPhoneOtp, verifyPhoneOtp } from '../services/auth.api';
 import { useAuth } from '../hooks/useAuth';
 
-const safeImportMetaEnv = () => {
-  try {
-    return eval('import.meta.env') as Record<string, string>;
-  } catch {
-    return {} as Record<string, string>;
-  }
-};
+import { getViteEnv } from '../utils/viteEnv';
 
-const env = safeImportMetaEnv();
-const loginOtpEnabled = env.VITE_LOGIN_OTP_ENABLED === 'true';
-const phoneOtpEnabled = env.VITE_PHONE_OTP_ENABLED === 'true';
+const loginOtpEnabled = getViteEnv('VITE_LOGIN_OTP_ENABLED', 'false') === 'true';
+const phoneOtpEnabled = getViteEnv('VITE_PHONE_OTP_ENABLED', 'false') === 'true';
 
 const LoginPage = () => {
   const { login, verifyLoginOtp } = useAuth();
@@ -101,7 +94,8 @@ const LoginPage = () => {
 
         const payload = {
           identifier: buildIdentifier(formData.emailOrPhone),
-          password: formData.password
+          password: formData.password,
+          useOtp: false
         };
 
         const result = await login(payload as any);

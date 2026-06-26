@@ -9,6 +9,15 @@ const listAttendance = async (req, res, next) => {
   }
 };
 
+const getMonthlyReport = async (req, res, next) => {
+  try {
+    const report = await attendanceService.getMonthlyAttendanceReport(req.query);
+    res.json({ success: true, data: report });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getAttendance = async (req, res, next) => {
   try {
     const attendance = await attendanceService.getAttendanceById(req.params.id);
@@ -48,6 +57,7 @@ const deleteAttendance = async (req, res, next) => {
 
 module.exports = {
   listAttendance,
+  getMonthlyReport,
   getAttendance,
   createAttendance,
   updateAttendance,

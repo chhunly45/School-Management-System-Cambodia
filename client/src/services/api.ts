@@ -1,24 +1,17 @@
 import axios from 'axios';
 
-const getViteEnv = (key: string, fallback: string) => {
-  const env = safeImportMetaEnv();
-  const value = env[key];
-  return value || fallback;
-};
+import { getViteEnv } from '../utils/viteEnv';
 
-const safeImportMetaEnv = () => {
-  try {
-    return eval('import.meta.env') as Record<string, string>;
-  } catch {
-    // Fallback to Node `process.env` when running in non-Vite environments (tests)
-    // Cast to Record<string,string> for compatibility
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (typeof process !== 'undefined' && (process as any).env) ? (process as any).env : ({} as Record<string, string>);
-  }
-};
+const resolvedApiBaseUrl = getViteEnv('VITE_API_BASE_URL', 'http://localhost:5000/api');
+const resolvedMode = String(getViteEnv('MODE', getViteEnv('DEV', ''))).toLowerCase();
+
+if (resolvedMode === 'development' || resolvedMode === 'true') {
+  // Temporary debug log to confirm environment resolution during local development.
+  console.log('[api] Resolved base URL:', resolvedApiBaseUrl);
+}
 
 const created = axios.create({
-  baseURL: getViteEnv('VITE_API_BASE_URL', 'https://api.konpuk.com/api'),
+  baseURL: resolvedApiBaseUrl,
   headers: {
     'Content-Type': 'application/json'
   },

@@ -1,16 +1,19 @@
+import { HelmetProvider } from 'react-helmet-async';
 import { render, waitFor } from '@testing-library/react';
 import SEO from '../components/SEO';
 
 describe('SEO component', () => {
   it('updates document head metadata', async () => {
     render(
-      <SEO
-        title="Test Page"
-        description="A test description"
-        url="https://konpuk.com/test"
-        image="https://konpuk.com/test-image.png"
-        type="website"
-      />
+      <HelmetProvider>
+        <SEO
+          title="Test Page"
+          description="A test description"
+          url="https://konpuk.com/test"
+          image="https://konpuk.com/test-image.png"
+          type="website"
+        />
+      </HelmetProvider>
     );
 
     await waitFor(() => {
@@ -27,7 +30,11 @@ describe('SEO component', () => {
   });
 
   it('supports custom robots directives', async () => {
-    render(<SEO title="Noindex Page" robots="noindex" url="https://konpuk.com/noindex" />);
+    render(
+      <HelmetProvider>
+        <SEO title="Noindex Page" robots="noindex" url="https://konpuk.com/noindex" />
+      </HelmetProvider>
+    );
 
     await waitFor(() => {
       expect(document.querySelector('meta[name="robots"]')).toBeInTheDocument();
@@ -38,7 +45,11 @@ describe('SEO component', () => {
   });
 
   it('uses default metadata and structured data when no props are provided', async () => {
-    render(<SEO />);
+    render(
+      <HelmetProvider>
+        <SEO />
+      </HelmetProvider>
+    );
 
     await waitFor(() => {
       expect(document.querySelector('meta[name="description"]')).toBeInTheDocument();
@@ -58,7 +69,11 @@ describe('SEO component', () => {
 
   it('inserts custom structured data when provided', async () => {
     const customData = { '@context': 'https://schema.org', '@type': 'Product', name: 'Custom Product' };
-    render(<SEO title="Custom" structuredData={customData} />);
+    render(
+      <HelmetProvider>
+        <SEO title="Custom" structuredData={customData} />
+      </HelmetProvider>
+    );
 
     await waitFor(() => {
       expect(document.querySelector('script[type="application/ld+json"][data-seo]')).toBeInTheDocument();

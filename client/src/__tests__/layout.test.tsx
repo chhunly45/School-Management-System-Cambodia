@@ -37,6 +37,7 @@ describe('AppShell layout', () => {
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getByText(/Test Content/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Konpuk/i })).toBeInTheDocument();
+    const konpukLinks = screen.getAllByRole('link', { name: /Konpuk/i });
+    expect(konpukLinks.length).toBeGreaterThan(0);
   });
 });

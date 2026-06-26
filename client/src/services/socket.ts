@@ -1,17 +1,9 @@
 import { io } from 'socket.io-client';
 
-const safeImportMetaEnv = () => {
-  try {
-    // eslint-disable-next-line no-eval
-    return (eval('import.meta.env') as Record<string, string>) || {};
-  } catch {
-    return {} as Record<string, string>;
-  }
-};
+import { getViteEnv } from '../utils/viteEnv';
 
 const getSocketBaseUrl = () => {
-  const env = safeImportMetaEnv();
-  const rawUrl = env.VITE_API_BASE_URL || env.VITE_API_URL || env.VITE_PUBLIC_API_URL || '';
+  const rawUrl = getViteEnv('VITE_API_BASE_URL', '') || getViteEnv('VITE_API_URL', '') || getViteEnv('VITE_PUBLIC_API_URL', '');
   if (rawUrl) {
     return rawUrl.replace(/\/api\/?$/, '');
   }

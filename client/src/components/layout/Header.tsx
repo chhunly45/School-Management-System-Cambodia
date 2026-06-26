@@ -175,7 +175,11 @@ const Header = () => {
             <span className="hidden sm:inline">·</span>
             <Link to="/about" className="hover:text-white">About</Link>
             <span className="hidden sm:inline">·</span>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-white text-[0.8rem]">
+            <div
+              role="group"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-white text-[0.8rem]"
+              aria-label="Language switcher"
+            >
               <span className="inline-flex items-center gap-1 font-semibold">
                 <Globe className="w-4 h-4" />
                 English

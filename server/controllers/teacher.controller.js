@@ -11,7 +11,7 @@ const listTeachers = async (req, res, next) => {
 
 const getTeacher = async (req, res, next) => {
   try {
-    const teacher = await teacherService.getTeacherById(req.params.id);
+    const teacher = await teacherService.getTeacherById(req.params.id, req.query);
     res.json({ success: true, data: teacher });
   } catch (error) {
     next(error);

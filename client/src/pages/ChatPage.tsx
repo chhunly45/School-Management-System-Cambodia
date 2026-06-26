@@ -2,6 +2,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { connectSocket, disconnectSocket } from '../services/socket';
 import { getChat, listChats, markChatRead } from '../services/chat.api';
+import { getViteEnv } from '../utils/viteEnv';
 
 const decodeTokenUserId = (): string | null => {
   const token = localStorage.getItem('authToken');
@@ -16,13 +17,7 @@ const decodeTokenUserId = (): string | null => {
 };
 
 const getIsDev = (): boolean => {
-  try {
-    // eslint-disable-next-line no-eval
-    const env = eval('import.meta.env') as Record<string, unknown>;
-    return Boolean(env?.DEV);
-  } catch {
-    return process.env.NODE_ENV === 'development';
-  }
+  return getViteEnv('DEV', process.env.NODE_ENV || '').toLowerCase() === 'development';
 };
 
 const ChatPage = () => {

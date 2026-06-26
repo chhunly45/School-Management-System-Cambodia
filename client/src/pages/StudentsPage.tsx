@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { listStudents, createStudent, updateStudent, deleteStudent } from '../services/student.api';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
+import { listAcademicYears, type AcademicYear } from '../services/academicYear.api';
+import { listGrades, type Grade } from '../services/grade.api';
+import { listClasses, type ClassItem } from '../services/class.api';
 
 interface Student {
   _id: string;
@@ -14,11 +18,31 @@ interface Student {
   guardianName: string;
   guardianPhone: string;
   className: string;
+  academicYearId?: string | { _id: string; code: string; name: string };
+  gradeId?: string | { _id: string; code: string; name: string; level: number };
+  classId?: string | { _id: string; className: string };
   status: 'active' | 'inactive' | 'graduated';
 }
 
-const emptyStudentForm: Student = {
-  _id: '',
+interface StudentFormValues {
+  studentId: string;
+  fullName: string;
+  gender: 'male' | 'female' | 'other';
+  dateOfBirth: string;
+  phone: string;
+  address: string;
+  guardianName: string;
+  guardianPhone: string;
+  className: string;
+  academicYearId: string;
+  gradeId: string;
+  classId: string;
+  status: 'active' | 'inactive' | 'graduated';
+}
+
+type StudentField = keyof StudentFormValues;
+
+const emptyStudentForm: StudentFormValues = {
   studentId: '',
   fullName: '',
   gender: 'other',
@@ -28,19 +52,31 @@ const emptyStudentForm: Student = {
   guardianName: '',
   guardianPhone: '',
   className: '',
+  academicYearId: '',
+  gradeId: '',
+  classId: '',
   status: 'active'
 };
+
+const getAcademicYearId = (value: Student['academicYearId']) => (typeof value === 'string' ? value : value?._id || '');
+const getGradeId = (value: Student['gradeId']) => (typeof value === 'string' ? value : value?._id || '');
+const getClassId = (value: Student['classId']) => (typeof value === 'string' ? value : value?._id || '');
 
 const StudentsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
-  const [formValues, setFormValues] = useState<Student>(emptyStudentForm);
+  const [formValues, setFormValues] = useState<StudentFormValues>(emptyStudentForm);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [classes, setClasses] = useState<ClassItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [accessDenied, setAccessDenied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [formErrors, setFormErrors] = useState<Partial<Record<StudentField, string>>>({});
+  const [pendingDeleteStudent, setPendingDeleteStudent] = useState<Student | null>(null);
 
   useEffect(() => {
     if (!user) return navigate('/login');
@@ -48,9 +84,26 @@ const StudentsPage = () => {
       setAccessDenied(true);
       return;
     }
-    loadStudents();
+    void Promise.all([loadLookups(), loadStudents()]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const loadLookups = async () => {
+    try {
+      const [yearsResp, gradesResp, classesResp] = await Promise.all([
+        listAcademicYears({ perPage: 100 }),
+        listGrades({ perPage: 100 }),
+        listClasses({ perPage: 100 })
+      ]);
+
+      setAcademicYears(yearsResp.data?.items || []);
+      setGrades(gradesResp.data?.items || []);
+      setClasses(classesResp.data?.items || []);
+    } catch (err) {
+      console.error(err);
+      setMessage('Unable to load academic lookups.');
+    }
+  };
 
   const loadStudents = async (search = '') => {
     setLoading(true);
@@ -76,19 +129,80 @@ const StudentsPage = () => {
     await loadStudents(searchTerm);
   };
 
-  const handleChange = (key: keyof Student, value: string) => {
+  const handleChange = (key: StudentField, value: string) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
+
+  const validateStudentForm = () => {
+    const nextErrors: Partial<Record<StudentField, string>> = {};
+
+    if (!formValues.studentId.trim()) {
+      nextErrors.studentId = 'Student ID is required.';
+    } else if (!/^[A-Za-z0-9-_/]{2,30}$/.test(formValues.studentId.trim())) {
+      nextErrors.studentId = 'Use 2-30 letters, numbers, or - _ / characters.';
+    }
+
+    if (!formValues.fullName.trim()) {
+      nextErrors.fullName = 'Full name is required.';
+    } else if (formValues.fullName.trim().length < 2) {
+      nextErrors.fullName = 'Full name must be at least 2 characters.';
+    }
+
+    if (formValues.phone.trim() && !/^\+?[0-9\s-]{7,20}$/.test(formValues.phone.trim())) {
+      nextErrors.phone = 'Enter a valid phone number.';
+    }
+
+    if (formValues.guardianPhone.trim() && !/^\+?[0-9\s-]{7,20}$/.test(formValues.guardianPhone.trim())) {
+      nextErrors.guardianPhone = 'Enter a valid guardian phone number.';
+    }
+
+    if (formValues.dateOfBirth) {
+      const dob = new Date(formValues.dateOfBirth);
+      const now = new Date();
+      if (Number.isNaN(dob.getTime())) {
+        nextErrors.dateOfBirth = 'Enter a valid date of birth.';
+      } else if (dob > now) {
+        nextErrors.dateOfBirth = 'Date of birth cannot be in the future.';
+      }
+    }
+
+    setFormErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const getFieldClassName = (field: StudentField) =>
+    `w-full rounded-lg border px-4 py-2 outline-none focus:border-primary ${formErrors[field] ? 'border-rose-400 bg-rose-50' : 'border-muted'}`;
 
   const handleAdd = () => {
     setEditingId(null);
     setFormValues(emptyStudentForm);
+    setFormErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEdit = (student: Student) => {
     setEditingId(student._id);
-    setFormValues(student);
+    setFormValues({
+      studentId: student.studentId,
+      fullName: student.fullName,
+      gender: student.gender,
+      dateOfBirth: student.dateOfBirth,
+      phone: student.phone,
+      address: student.address,
+      guardianName: student.guardianName,
+      guardianPhone: student.guardianPhone,
+      className: student.className || '',
+      academicYearId: getAcademicYearId(student.academicYearId),
+      gradeId: getGradeId(student.gradeId),
+      classId: getClassId(student.classId),
+      status: student.status
+    });
+    setFormErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -96,6 +210,12 @@ const StudentsPage = () => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+
+    if (!validateStudentForm()) {
+      setLoading(false);
+      setMessage('Please fix the highlighted fields.');
+      return;
+    }
 
     const payload = {
       studentId: formValues.studentId,
@@ -107,6 +227,9 @@ const StudentsPage = () => {
       guardianName: formValues.guardianName,
       guardianPhone: formValues.guardianPhone,
       className: formValues.className,
+      academicYearId: formValues.academicYearId || undefined,
+      gradeId: formValues.gradeId || undefined,
+      classId: formValues.classId || undefined,
       status: formValues.status
     };
 
@@ -120,6 +243,7 @@ const StudentsPage = () => {
       }
       setEditingId(null);
       setFormValues(emptyStudentForm);
+      setFormErrors({});
       await loadStudents(searchTerm);
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Failed to save student.');
@@ -129,14 +253,15 @@ const StudentsPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this student record?')) return;
+  const handleDelete = async () => {
+    if (!pendingDeleteStudent) return;
     setLoading(true);
     setMessage('');
 
     try {
-      await deleteStudent(id);
+      await deleteStudent(pendingDeleteStudent._id);
       setMessage('Student deleted successfully.');
+      setPendingDeleteStudent(null);
       await loadStudents(searchTerm);
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Failed to delete student.');
@@ -147,11 +272,47 @@ const StudentsPage = () => {
   };
 
   const filteredStudents = students.filter((student) =>
-    [student.studentId, student.fullName, student.className, student.guardianName, student.phone]
+    [
+      student.studentId,
+      student.fullName,
+      student.className,
+      student.guardianName,
+      student.phone,
+      typeof student.academicYearId === 'string' ? student.academicYearId : `${student.academicYearId?.code || ''} ${student.academicYearId?.name || ''}`,
+      typeof student.gradeId === 'string' ? student.gradeId : `${student.gradeId?.code || ''} ${student.gradeId?.name || ''}`,
+      typeof student.classId === 'string' ? student.classId : student.classId?.className || ''
+    ]
       .join(' ')
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
+
+  const getAcademicYearLabel = (student: Student) => {
+    if (typeof student.academicYearId !== 'string' && student.academicYearId) {
+      return `${student.academicYearId.code} - ${student.academicYearId.name}`;
+    }
+
+    const selected = academicYears.find((item) => item._id === getAcademicYearId(student.academicYearId));
+    return selected ? `${selected.code} - ${selected.name}` : '-';
+  };
+
+  const getGradeLabel = (student: Student) => {
+    if (typeof student.gradeId !== 'string' && student.gradeId) {
+      return `${student.gradeId.code} - ${student.gradeId.name}`;
+    }
+
+    const selected = grades.find((item) => item._id === getGradeId(student.gradeId));
+    return selected ? `${selected.code} - ${selected.name}` : '-';
+  };
+
+  const getClassLabel = (student: Student) => {
+    if (typeof student.classId !== 'string' && student.classId) {
+      return student.classId.className;
+    }
+
+    const selected = classes.find((item) => item._id === getClassId(student.classId));
+    return selected?.className || student.className || '-';
+  };
 
   if (accessDenied) {
     return <div className="p-8 text-center text-red-600">Access Denied - Admin Only</div>;
@@ -178,7 +339,7 @@ const StudentsPage = () => {
         <form onSubmit={handleSearch} className="flex flex-1 gap-2">
           <input
             type="text"
-            placeholder="Search by student ID, name, or class..."
+            placeholder="Search by student ID, name, class, year, or grade..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -207,30 +368,83 @@ const StudentsPage = () => {
             <input
               value={formValues.studentId}
               onChange={(e) => handleChange('studentId', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('studentId')}
               placeholder="Student ID"
               required
               disabled={loading}
             />
+            {formErrors.studentId && <p className="text-sm text-rose-600">{formErrors.studentId}</p>}
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium">Full Name</span>
             <input
               value={formValues.fullName}
               onChange={(e) => handleChange('fullName', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('fullName')}
               placeholder="Full Name"
               required
               disabled={loading}
             />
+            {formErrors.fullName && <p className="text-sm text-rose-600">{formErrors.fullName}</p>}
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-medium">Academic Year</span>
+            <select
+              value={formValues.academicYearId}
+              onChange={(e) => handleChange('academicYearId', e.target.value)}
+              className={getFieldClassName('academicYearId')}
+              disabled={loading}
+            >
+              <option value="">Select Academic Year (optional)</option>
+              {academicYears.map((item) => (
+                <option key={item._id} value={item._id}>{`${item.code} - ${item.name}`}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-medium">Grade</span>
+            <select
+              value={formValues.gradeId}
+              onChange={(e) => handleChange('gradeId', e.target.value)}
+              className={getFieldClassName('gradeId')}
+              disabled={loading}
+            >
+              <option value="">Select Grade (optional)</option>
+              {grades.map((item) => (
+                <option key={item._id} value={item._id}>{`${item.code} - ${item.name}`}</option>
+              ))}
+            </select>
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium">Class</span>
+            <select
+              value={formValues.classId}
+              onChange={(e) => {
+                const classId = e.target.value;
+                handleChange('classId', classId);
+                const selected = classes.find((item) => item._id === classId);
+                if (selected) {
+                  handleChange('className', selected.className);
+                }
+              }}
+              className={getFieldClassName('classId')}
+              disabled={loading}
+            >
+              <option value="">Select Class (optional)</option>
+              {classes.map((item) => (
+                <option key={item._id} value={item._id}>
+                  {item.className}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-medium">Class Name (Legacy)</span>
             <input
               value={formValues.className}
               onChange={(e) => handleChange('className', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
-              placeholder="Class"
+              className={getFieldClassName('className')}
+              placeholder="Class name fallback"
               disabled={loading}
             />
           </label>
@@ -239,7 +453,7 @@ const StudentsPage = () => {
             <select
               value={formValues.gender}
               onChange={(e) => handleChange('gender', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('gender')}
               disabled={loading}
             >
               <option value="male">Male</option>
@@ -252,17 +466,18 @@ const StudentsPage = () => {
             <input
               value={formValues.dateOfBirth}
               onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('dateOfBirth')}
               type="date"
               disabled={loading}
             />
+            {formErrors.dateOfBirth && <p className="text-sm text-rose-600">{formErrors.dateOfBirth}</p>}
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium">Status</span>
             <select
               value={formValues.status}
               onChange={(e) => handleChange('status', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('status')}
               disabled={loading}
             >
               <option value="active">Active</option>
@@ -275,17 +490,18 @@ const StudentsPage = () => {
             <input
               value={formValues.phone}
               onChange={(e) => handleChange('phone', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('phone')}
               placeholder="Phone"
               disabled={loading}
             />
+            {formErrors.phone && <p className="text-sm text-rose-600">{formErrors.phone}</p>}
           </label>
           <label className="space-y-2 md:col-span-3">
             <span className="text-sm font-medium">Address</span>
             <input
               value={formValues.address}
               onChange={(e) => handleChange('address', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('address')}
               placeholder="Address"
               disabled={loading}
             />
@@ -295,7 +511,7 @@ const StudentsPage = () => {
             <input
               value={formValues.guardianName}
               onChange={(e) => handleChange('guardianName', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('guardianName')}
               placeholder="Guardian Name"
               disabled={loading}
             />
@@ -305,10 +521,11 @@ const StudentsPage = () => {
             <input
               value={formValues.guardianPhone}
               onChange={(e) => handleChange('guardianPhone', e.target.value)}
-              className="w-full rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary"
+              className={getFieldClassName('guardianPhone')}
               placeholder="Guardian Phone"
               disabled={loading}
             />
+            {formErrors.guardianPhone && <p className="text-sm text-rose-600">{formErrors.guardianPhone}</p>}
           </label>
         </div>
         <div className="flex gap-2">
@@ -324,6 +541,7 @@ const StudentsPage = () => {
             onClick={() => {
               setEditingId(null);
               setFormValues(emptyStudentForm);
+              setFormErrors({});
             }}
             className="rounded-lg border border-muted px-4 py-2 hover:bg-background transition"
             disabled={loading}
@@ -339,6 +557,8 @@ const StudentsPage = () => {
             <tr>
               <th className="px-4 py-3 text-left text-sm font-semibold">Student ID</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Full Name</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Academic Year</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Grade</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Class</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Phone</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Guardian</th>
@@ -349,13 +569,13 @@ const StudentsPage = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                <td colSpan={9} className="px-4 py-8 text-center text-text-secondary">
                   Loading...
                 </td>
               </tr>
             ) : filteredStudents.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-text-secondary">
+                <td colSpan={9} className="px-4 py-8 text-center text-text-secondary">
                   No students found.
                 </td>
               </tr>
@@ -364,7 +584,9 @@ const StudentsPage = () => {
                 <tr key={student._id} className="border-t border-muted hover:bg-background transition">
                   <td className="px-4 py-3 font-medium">{student.studentId}</td>
                   <td className="px-4 py-3">{student.fullName}</td>
-                  <td className="px-4 py-3">{student.className}</td>
+                  <td className="px-4 py-3">{getAcademicYearLabel(student)}</td>
+                  <td className="px-4 py-3">{getGradeLabel(student)}</td>
+                  <td className="px-4 py-3">{getClassLabel(student)}</td>
                   <td className="px-4 py-3">{student.phone}</td>
                   <td className="px-4 py-3">{student.guardianName}</td>
                   <td className="px-4 py-3">
@@ -389,7 +611,7 @@ const StudentsPage = () => {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(student._id)}
+                      onClick={() => setPendingDeleteStudent(student)}
                       className="text-red-600 hover:underline text-sm font-medium"
                       disabled={loading}
                     >
@@ -402,6 +624,17 @@ const StudentsPage = () => {
           </tbody>
         </table>
       </div>
+
+      <DeleteConfirmationModal
+        isOpen={Boolean(pendingDeleteStudent)}
+        title="Delete Student"
+        description={pendingDeleteStudent ? `Are you sure you want to delete ${pendingDeleteStudent.fullName} (${pendingDeleteStudent.studentId})? This action cannot be undone.` : 'Are you sure you want to delete this student record?'}
+        confirmLabel="Delete Student"
+        cancelLabel="Cancel"
+        isProcessing={loading}
+        onCancel={() => setPendingDeleteStudent(null)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

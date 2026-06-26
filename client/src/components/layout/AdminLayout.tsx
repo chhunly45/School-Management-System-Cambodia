@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus, GraduationCap } from 'lucide-react';
+import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus, GraduationCap, CalendarRange, Layers, Building2, Settings2 } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: Home },
@@ -7,10 +7,21 @@ const navItems = [
   { label: 'Teachers', to: '/admin/teachers', icon: GraduationCap },
   { label: 'Payments', to: '/admin/payments', icon: ShoppingBag },
   { label: 'Attendance', to: '/admin/attendance', icon: CheckCircle },
+  { label: 'Employee Attendance', to: '/admin/employee-attendance', icon: Users },
   { label: 'Academic', to: '/admin/academic', icon: BookOpen },
+  { label: 'Academic Years', to: '/admin/academic-years', icon: CalendarRange },
+  { label: 'Grades', to: '/admin/grades', icon: Layers },
+  { label: 'Subjects', to: '/admin/subjects', icon: BookOpen },
+  { label: 'Classes', to: '/admin/classes', icon: Building2 },
   { label: 'Certificates', to: '/admin/certificates', icon: Award },
   { label: 'Finance', to: '/admin/finance', icon: TrendingUp },
-  { label: 'Transport', to: '/admin/transport', icon: Bus }
+  { label: 'Transport', to: '/admin/transport', icon: Bus },
+  { label: 'Vehicles', to: '/admin/vehicles', icon: Bus },
+  { label: 'Routes', to: '/admin/routes', icon: Bus },
+  { label: 'Transport Assignments', to: '/admin/transport-assignments', icon: Bus },
+  { label: 'Fuel Management', to: '/admin/fuel', icon: Bus },
+  { label: 'Expense Management', to: '/admin/expenses', icon: TrendingUp },
+  { label: 'School Settings', to: '/admin/school-settings', icon: Settings2 }
 ];
 
 const AdminLayout = () => {

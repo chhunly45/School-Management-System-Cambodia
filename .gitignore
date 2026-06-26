@@ -28,3 +28,9 @@ Thumbs.db
 *.log
 *.lock
 .vercel
+
+# Temporary artifacts
+server/dev-emails/
+server/smoke-test-debug.txt
+server/tmp-*
+server/scripts/tmp-*

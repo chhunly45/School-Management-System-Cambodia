@@ -1,18 +1,74 @@
 const mongoose = require('mongoose');
-const { Student } = require('../models');
+const { Student, AcademicYear, Grade, Class: ClassModel } = require('../models');
+
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const ensureMongoId = (id, fieldName) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const error = new Error(`Invalid ${fieldName}`);
+    error.statusCode = 400;
+    throw error;
+  }
+};
+
+const ensureReferencesExist = async ({ academicYearId, gradeId, classId }) => {
+  const checks = [];
+
+  if (academicYearId) {
+    ensureMongoId(academicYearId, 'academicYearId');
+    checks.push(
+      AcademicYear.exists({ _id: academicYearId }).then((exists) => {
+        if (!exists) {
+          const error = new Error('Academic year not found');
+          error.statusCode = 404;
+          throw error;
+        }
+      })
+    );
+  }
+
+  if (gradeId) {
+    ensureMongoId(gradeId, 'gradeId');
+    checks.push(
+      Grade.exists({ _id: gradeId }).then((exists) => {
+        if (!exists) {
+          const error = new Error('Grade not found');
+          error.statusCode = 404;
+          throw error;
+        }
+      })
+    );
+  }
+
+  if (classId) {
+    ensureMongoId(classId, 'classId');
+    checks.push(
+      ClassModel.exists({ _id: classId }).then((exists) => {
+        if (!exists) {
+          const error = new Error('Class not found');
+          error.statusCode = 404;
+          throw error;
+        }
+      })
+    );
+  }
+
+  await Promise.all(checks);
+};
 
 const listStudents = async (filters = {}) => {
   const query = {};
 
   if (filters.search) {
-    const search = filters.search.trim();
+    const search = String(filters.search).trim();
     if (search) {
+      const safeSearch = escapeRegex(search);
       query.$or = [
-        { studentId: new RegExp(search, 'i') },
-        { fullName: new RegExp(search, 'i') },
-        { className: new RegExp(search, 'i') },
-        { guardianName: new RegExp(search, 'i') },
-        { phone: new RegExp(search, 'i') }
+        { studentId: new RegExp(safeSearch, 'i') },
+        { fullName: new RegExp(safeSearch, 'i') },
+        { className: new RegExp(safeSearch, 'i') },
+        { guardianName: new RegExp(safeSearch, 'i') },
+        { phone: new RegExp(safeSearch, 'i') }
       ];
     }
   }
@@ -22,7 +78,22 @@ const listStudents = async (filters = {}) => {
   }
 
   if (filters.className) {
-    query.className = new RegExp(filters.className.trim(), 'i');
+    query.className = new RegExp(escapeRegex(String(filters.className).trim()), 'i');
+  }
+
+  if (filters.academicYearId) {
+    ensureMongoId(filters.academicYearId, 'academicYearId');
+    query.academicYearId = filters.academicYearId;
+  }
+
+  if (filters.gradeId) {
+    ensureMongoId(filters.gradeId, 'gradeId');
+    query.gradeId = filters.gradeId;
+  }
+
+  if (filters.classId) {
+    ensureMongoId(filters.classId, 'classId');
+    query.classId = filters.classId;
   }
 
   const page = Number(filters.page) || 1;
@@ -30,7 +101,14 @@ const listStudents = async (filters = {}) => {
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    Student.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Student.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('academicYearId', 'code name status')
+      .populate('gradeId', 'code name level status')
+      .populate('classId', 'className academicYearId gradeId status')
+      .lean(),
     Student.countDocuments(query)
   ]);
 
@@ -44,7 +122,11 @@ const getStudentById = async (id) => {
     throw error;
   }
 
-  const student = await Student.findById(id).lean();
+  const student = await Student.findById(id)
+    .populate('academicYearId', 'code name status')
+    .populate('gradeId', 'code name level status')
+    .populate('classId', 'className academicYearId gradeId status')
+    .lean();
   if (!student) {
     const error = new Error('Student not found');
     error.statusCode = 404;
@@ -61,6 +143,12 @@ const createStudent = async (payload) => {
     error.statusCode = 409;
     throw error;
   }
+
+  await ensureReferencesExist({
+    academicYearId: payload.academicYearId,
+    gradeId: payload.gradeId,
+    classId: payload.classId
+  });
 
   const student = await Student.create(payload);
   return student;
@@ -88,6 +176,12 @@ const updateStudent = async (id, payload) => {
       throw error;
     }
   }
+
+  await ensureReferencesExist({
+    academicYearId: payload.academicYearId,
+    gradeId: payload.gradeId,
+    classId: payload.classId
+  });
 
   Object.assign(student, payload);
   await student.save();

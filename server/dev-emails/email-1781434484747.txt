@@ -1,6 +1,0 @@
-To: phone-user@example.com
-Subject: Konpuk login verification code
-
-Your Konpuk login verification code is 771648. It expires in 5 minutes. Do not share this code with anyone.
-
-<p>Your Konpuk login verification code is 771648. It expires in 5 minutes. Do not share this code with anyone.</p>

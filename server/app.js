@@ -46,12 +46,12 @@ app.use(helmet({
     }
   }
 }));
+app.use(cookieParser());
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
 
 app.use(mongoSanitize());
 app.use(xssClean());
@@ -95,7 +95,17 @@ app.use('/api/auth', (req, res, next) => {
 app.use(apiLimiter);
 
 const authCsrfExceptionPaths = new Set(['/api/auth/login', '/api/auth/login/verify']);
-const csrfProtection = csurf({ cookie: { httpOnly: true, secure: config.nodeEnv === 'production', sameSite: 'none' } });
+const isProduction = String(config.nodeEnv).toLowerCase() === 'production';
+const csrfCookieOptions = {
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax'
+};
+const csrfProtection = csurf({
+  cookie: {
+    httpOnly: true,
+    ...csrfCookieOptions
+  }
+});
 
 const isAllowedOriginOrReferer = (req) => {
   const origin = req.headers.origin;
@@ -137,8 +147,7 @@ app.use((req, res, next) => {
     const token = req.csrfToken();
     res.cookie('XSRF-TOKEN', token, {
       httpOnly: false,
-      secure: config.nodeEnv === 'production',
-      sameSite: 'none'
+      ...csrfCookieOptions
     });
   }
   next();

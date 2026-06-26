@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Clock3, AlertTriangle, TrendingUp } from 'lucide-react';
 import { getFinanceSummary, getFinancePaymentsReport } from '../services/finance.api';
+import { getSchoolSettings, type SchoolSettings } from '../services/schoolSettings.api';
+import { getCurrencyFormatter } from '../utils/price';
 
 interface PendingOverdue {
   count: number;
@@ -59,13 +61,6 @@ const defaultSummary: FinanceSummary = {
   incomeByClass: []
 };
 
-const currency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-});
-
 const FinancePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -73,9 +68,14 @@ const FinancePage = () => {
   const [summary, setSummary] = useState<FinanceSummary>(defaultSummary);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [meta, setMeta] = useState<PaymentsMeta>({ page: 1, limit: 20, total: 0 });
+  const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null);
   const [loading, setLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const currencyFormatter = useMemo(
+    () => getCurrencyFormatter(schoolSettings?.defaultCurrency || 'USD'),
+    [schoolSettings?.defaultCurrency]
+  );
   const [filters, setFilters] = useState({
     academicYear: '',
     semester: '',
@@ -89,10 +89,18 @@ const FinancePage = () => {
     if (!user) return navigate('/login');
     if (user.role !== 'admin') return;
 
-    loadSummary();
-    loadPaymentsReport(1);
+    void Promise.all([loadSettings(), loadSummary(), loadPaymentsReport(1)]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const loadSettings = async () => {
+    try {
+      const response = await getSchoolSettings();
+      setSchoolSettings(response.data || null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const loadSummary = async () => {
     setLoading(true);
@@ -172,7 +180,7 @@ const FinancePage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-secondary">Total Income</p>
-              <p className="text-2xl font-bold text-text-primary">{currency.format(summary.totalIncome)}</p>
+              <p className="text-2xl font-bold text-text-primary">{currencyFormatter.format(summary.totalIncome)}</p>
             </div>
             <DollarSign className="h-8 w-8 text-primary opacity-20" />
           </div>
@@ -182,7 +190,7 @@ const FinancePage = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-secondary">Monthly Income</p>
-              <p className="text-2xl font-bold text-green-600">{currency.format(summary.monthlyIncome)}</p>
+              <p className="text-2xl font-bold text-green-600">{currencyFormatter.format(summary.monthlyIncome)}</p>
             </div>
             <TrendingUp className="h-8 w-8 text-green-600 opacity-20" />
           </div>
@@ -193,7 +201,7 @@ const FinancePage = () => {
             <div>
               <p className="text-sm text-text-secondary">Pending Payments</p>
               <p className="text-lg font-bold text-amber-600">
-                {summary.pendingPayments.count} / {currency.format(summary.pendingPayments.total)}
+                {summary.pendingPayments.count} / {currencyFormatter.format(summary.pendingPayments.total)}
               </p>
             </div>
             <Clock3 className="h-8 w-8 text-amber-600 opacity-20" />
@@ -205,7 +213,7 @@ const FinancePage = () => {
             <div>
               <p className="text-sm text-text-secondary">Overdue Payments</p>
               <p className="text-lg font-bold text-red-600">
-                {summary.overduePayments.count} / {currency.format(summary.overduePayments.total)}
+                {summary.overduePayments.count} / {currencyFormatter.format(summary.overduePayments.total)}
               </p>
             </div>
             <AlertTriangle className="h-8 w-8 text-red-600 opacity-20" />
@@ -247,7 +255,7 @@ const FinancePage = () => {
                   summary.incomeByMonth.map((item) => (
                     <tr key={item.month} className="border-t border-muted hover:bg-background transition">
                       <td className="px-4 py-3 text-sm">{item.month}</td>
-                      <td className="px-4 py-3 text-sm font-semibold">{currency.format(item.total)}</td>
+                      <td className="px-4 py-3 text-sm font-semibold">{currencyFormatter.format(item.total)}</td>
                     </tr>
                   ))
                 )}
@@ -285,7 +293,7 @@ const FinancePage = () => {
                     <tr key={item.className} className="border-t border-muted hover:bg-background transition">
                       <td className="px-4 py-3 text-sm">{item.className}</td>
                       <td className="px-4 py-3 text-sm">{item.count}</td>
-                      <td className="px-4 py-3 text-sm font-semibold">{currency.format(item.total)}</td>
+                      <td className="px-4 py-3 text-sm font-semibold">{currencyFormatter.format(item.total)}</td>
                     </tr>
                   ))
                 )}
@@ -393,7 +401,7 @@ const FinancePage = () => {
                     <td className="px-4 py-3 text-sm">{payment.receiptNumber}</td>
                     <td className="px-4 py-3 text-sm">{payment.studentName}</td>
                     <td className="px-4 py-3 text-sm">{payment.className}</td>
-                    <td className="px-4 py-3 text-sm font-semibold">{currency.format(payment.amount)}</td>
+                    <td className="px-4 py-3 text-sm font-semibold">{currencyFormatter.format(payment.amount)}</td>
                     <td className="px-4 py-3 text-sm">{payment.academicYear || '-'} / {payment.semester || '-'}</td>
                     <td className="px-4 py-3">
                       <span

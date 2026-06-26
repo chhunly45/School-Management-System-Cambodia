@@ -6,7 +6,29 @@ const PaymentSchema = new Schema({
   studentId: { type: String, required: true, trim: true },
   studentName: { type: String, required: true, trim: true },
   className: { type: String, required: true, trim: true },
+  academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear' },
+  gradeId: { type: Schema.Types.ObjectId, ref: 'Grade' },
+  classId: { type: Schema.Types.ObjectId, ref: 'Class' },
+  paymentType: {
+    type: String,
+    enum: ['monthly', 'quarterly', 'yearly'],
+    default: 'monthly'
+  },
+  paymentPlan: {
+    type: String,
+    enum: ['monthly', 'quarterly', 'yearly'],
+    default: 'monthly'
+  },
+  tuitionAmount: { type: Number, min: 0, default: 0 },
   amount: { type: Number, required: true, min: 0 },
+  discount: { type: Number, min: 0, default: 0 },
+  remainingBalance: { type: Number, min: 0, default: 0 },
+  dueDate: { type: Date },
+  monthlyDueDay: { type: Number, min: 1, max: 31, default: 1 },
+  quarterlyDueDates: [{ type: String, trim: true }],
+  yearlyDueDate: { type: String, trim: true },
+  gracePeriodDays: { type: Number, min: 0, default: 0 },
+  cashier: { type: String, trim: true },
   paymentDate: { type: Date, required: true },
   paymentMethod: { 
     type: String, 
@@ -30,7 +52,10 @@ const PaymentSchema = new Schema({
 PaymentSchema.index({ receiptNumber: 1 }, { unique: true, sparse: true });
 PaymentSchema.index({ studentId: 1 });
 PaymentSchema.index({ paymentDate: -1 });
+PaymentSchema.index({ dueDate: 1 });
 PaymentSchema.index({ academicYear: 1, semester: 1 });
+PaymentSchema.index({ academicYearId: 1, gradeId: 1, classId: 1 });
+PaymentSchema.index({ studentId: 1, paymentPlan: 1, paymentDate: -1 });
 PaymentSchema.index({ studentName: 'text', className: 'text', academicYear: 'text' });
 PaymentSchema.index({ status: 1 });
 

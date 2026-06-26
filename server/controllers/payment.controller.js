@@ -11,8 +11,17 @@ const listPayments = async (req, res, next) => {
 
 const getPayment = async (req, res, next) => {
   try {
-    const payment = await paymentService.getPaymentById(req.params.id);
+    const payment = await paymentService.getPaymentById(req.params.id, req.query);
     res.json({ success: true, data: payment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMonthlySummary = async (req, res, next) => {
+  try {
+    const summary = await paymentService.getMonthlyPaymentSummary(req.query);
+    res.json({ success: true, data: summary });
   } catch (error) {
     next(error);
   }
@@ -47,6 +56,7 @@ const deletePayment = async (req, res, next) => {
 
 module.exports = {
   listPayments,
+  getMonthlySummary,
   getPayment,
   createPayment,
   updatePayment,

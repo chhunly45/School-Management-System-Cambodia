@@ -3,16 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getPasswordStrength, getPasswordStrengthLabel } from '../utils/password';
 
-const safeImportMetaEnv = () => {
-  try {
-    return eval('import.meta.env') as Record<string, string>;
-  } catch {
-    return {} as Record<string, string>;
-  }
-};
+import { getViteEnv } from '../utils/viteEnv';
 
-const env = safeImportMetaEnv();
-const captchaEnabled = env.VITE_CAPTCHA_ENABLED === 'true';
+const captchaEnabled = getViteEnv('VITE_CAPTCHA_ENABLED', 'false') === 'true';
 
 const RegisterPage = () => {
   const navigate = useNavigate();

@@ -31,12 +31,23 @@ import HelpPage from '../pages/HelpPage';
 import StudentsPage from '../pages/StudentsPage';
 import PaymentsPage from '../pages/PaymentsPage';
 import AttendancePage from '../pages/AttendancePage';
+import EmployeeAttendancePage from '../pages/EmployeeAttendancePage';
 import AcademicPage from '../pages/AcademicPage';
+import AcademicYearPage from '../pages/AcademicYearPage';
+import GradePage from '../pages/GradePage';
+import SubjectPage from '../pages/SubjectPage';
 import CertificatesPage from '../pages/CertificatesPage';
+import ClassPage from '../pages/ClassPage';
 import FinancePage from '../pages/FinancePage';
 import TransportPage from '../pages/TransportPage';
 import TeachersPage from '../pages/TeachersPage';
+import VehiclesPage from '../pages/VehiclesPage';
+import RoutesPage from '../pages/RoutesPage';
+import TransportAssignmentsPage from '../pages/TransportAssignmentsPage';
+import FuelPage from '../pages/FuelPage';
+import ExpensesPage from '../pages/ExpensesPage';
 import SchoolDashboardPage from '../pages/SchoolDashboardPage';
+import SchoolSettingsPage from '../pages/SchoolSettingsPage';
 
 const AppRoutes = () => (
   <Routes>
@@ -81,12 +92,23 @@ const AppRoutes = () => (
         <Route path="students" element={<StudentsPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="attendance" element={<AttendancePage />} />
+        <Route path="employee-attendance" element={<EmployeeAttendancePage />} />
         <Route path="academic" element={<AcademicPage />} />
+        <Route path="academic-years" element={<AcademicYearPage />} />
+        <Route path="grades" element={<GradePage />} />
+        <Route path="subjects" element={<SubjectPage />} />
+        <Route path="classes" element={<ClassPage />} />
         <Route path="certificates" element={<CertificatesPage />} />
         <Route path="finance" element={<FinancePage />} />
         <Route path="transport" element={<TransportPage />} />
+        <Route path="vehicles" element={<VehiclesPage />} />
+        <Route path="routes" element={<RoutesPage />} />
+        <Route path="transport-assignments" element={<TransportAssignmentsPage />} />
+        <Route path="fuel" element={<FuelPage />} />
+        <Route path="expenses" element={<ExpensesPage />} />
         <Route path="teachers" element={<TeachersPage />} />
         <Route path="school-dashboard" element={<SchoolDashboardPage />} />
+        <Route path="school-settings" element={<SchoolSettingsPage />} />
       </Route>
     </Route>
     <Route path="*" element={<NotFoundPage />} />

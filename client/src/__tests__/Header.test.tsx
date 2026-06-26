@@ -73,7 +73,7 @@ describe('Header component', () => {
 
     expect(screen.getByAltText('Konpuk')).toBeInTheDocument();
     expect(screen.getAllByText(/Help/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByLabelText(/Language switcher/i)).toBeInTheDocument();
+    expect(screen.getByText(/English/i)).toBeInTheDocument();
   });
 
   it('renders authenticated state with favorite/notification counts', async () => {
