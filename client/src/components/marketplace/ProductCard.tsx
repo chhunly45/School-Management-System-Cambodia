@@ -35,7 +35,6 @@ const ProductCard = ({ title, titleKh, titleEn, price, location, category, id, i
   }, [isFavorite]);
 
   const fallback = '/no-image.png';
-  console.log('IMAGE SRC:', imageUrl);
   const src = imageUrl || fallback;
 
   const formatPrice = (p: string | number): { usd: string; khr: string } => ({
@@ -58,11 +57,8 @@ const ProductCard = ({ title, titleKh, titleEn, price, location, category, id, i
             alt={altText}
             loading="lazy"
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105 rounded-t-2xl"
-            onLoad={() => {
-              console.log('IMAGE LOADED:', src);
-            }}
+            onLoad={() => undefined}
             onError={(e) => {
-              console.log('IMAGE FAILED:', src);
               e.currentTarget.src = fallback;
             }}
           />

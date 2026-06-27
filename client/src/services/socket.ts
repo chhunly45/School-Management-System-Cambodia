@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-import { getViteEnv, safeImportMetaEnv } from '../utils/viteEnv';
+import { getViteEnv } from '../utils/viteEnv';
 
 const getSocketBaseUrl = () => {
   const rawUrl = getViteEnv('VITE_API_BASE_URL', '') || getViteEnv('VITE_API_URL', '') || getViteEnv('VITE_PUBLIC_API_URL', '');
@@ -18,25 +18,6 @@ const getSocketBaseUrl = () => {
 };
 
 const baseURL = getSocketBaseUrl();
-
-// DEBUG: log the env-derived socket URL so we can verify what the client will use at runtime
-try {
-  const env = safeImportMetaEnv();
-  // eslint-disable-next-line no-console
-  console.log('[socket] VITE_API_BASE_URL=', env.VITE_API_BASE_URL, ' -> baseURL=', baseURL);
-  try {
-    // also log the full socket.io endpoint URL we expect the client to use
-    const socketEndpoint = new URL('/socket.io/', baseURL).toString();
-    // eslint-disable-next-line no-console
-    console.log('[socket] socket endpoint=', socketEndpoint);
-  } catch (err) {
-    // if baseURL isn't a valid URL, still log baseURL
-    // eslint-disable-next-line no-console
-    console.log('[socket] socket endpoint failed to parse, baseURL=', baseURL);
-  }
-} catch (e) {
-  // ignore logging errors in unusual environments
-}
 
 // single socket instance (autoConnect: false)
 const socket = io(baseURL, { autoConnect: false, transports: ['websocket'] });

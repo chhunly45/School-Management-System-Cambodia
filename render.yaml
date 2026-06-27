@@ -10,22 +10,28 @@ services:
     startCommand: npm start
     envVars:
       - key: MONGODB_URI
-        value: "mongodb+srv://username:password@cluster.mongodb.net/konpuk?retryWrites=true&w=majority"
+        value: "MONGODB_URI"
         sync: false
       - key: JWT_SECRET
-        value: "your-secret-key-here"
+        value: "JWT_SECRET"
         sync: false
       - key: CLIENT_URL
-        value: "https://konpuk.com"
+        value: "CLIENT_URL"
+        sync: false
+      - key: RESEND_API_KEY
+        value: "RESEND_API_KEY"
+        sync: false
+      - key: EMAIL_FROM
+        value: "EMAIL_FROM"
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
-        value: "your-cloud-name"
+        value: "CLOUDINARY_CLOUD_NAME"
         sync: false
       - key: CLOUDINARY_API_KEY
-        value: "your-api-key"
+        value: "CLOUDINARY_API_KEY"
         sync: false
       - key: CLOUDINARY_API_SECRET
-        value: "your-api-secret"
+        value: "CLOUDINARY_API_SECRET"
         sync: false
       - key: NODE_ENV
         value: production

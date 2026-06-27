@@ -4,10 +4,6 @@ import { getViteEnv } from '../utils/viteEnv';
 
 const resolvedApiBaseUrl = getViteEnv('VITE_API_BASE_URL', 'http://localhost:5000/api');
 
-console.log('[DEBUG] import.meta.env.VITE_API_BASE_URL =', import.meta.env.VITE_API_BASE_URL);
-console.log('[DEBUG] resolvedApiBaseUrl =', resolvedApiBaseUrl);
-console.log('[DEBUG] import.meta.env =', import.meta.env);
-
 const created = axios.create({
   baseURL: resolvedApiBaseUrl,
   headers: {
