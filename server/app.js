@@ -157,6 +157,14 @@ app.get('/api/csrf-token', (req, res) => {
   res.json({ success: true, csrfToken: req.csrfToken() });
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'sms-cam-api',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/api', routes);
 
