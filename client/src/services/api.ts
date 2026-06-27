@@ -3,12 +3,10 @@ import axios from 'axios';
 import { getViteEnv } from '../utils/viteEnv';
 
 const resolvedApiBaseUrl = getViteEnv('VITE_API_BASE_URL', 'http://localhost:5000/api');
-const resolvedMode = String(getViteEnv('MODE', getViteEnv('DEV', ''))).toLowerCase();
 
-if (resolvedMode === 'development' || resolvedMode === 'true') {
-  // Temporary debug log to confirm environment resolution during local development.
-  console.log('[api] Resolved base URL:', resolvedApiBaseUrl);
-}
+console.log('[DEBUG] import.meta.env.VITE_API_BASE_URL =', import.meta.env.VITE_API_BASE_URL);
+console.log('[DEBUG] resolvedApiBaseUrl =', resolvedApiBaseUrl);
+console.log('[DEBUG] import.meta.env =', import.meta.env);
 
 const created = axios.create({
   baseURL: resolvedApiBaseUrl,
@@ -42,7 +40,7 @@ const fetchCsrfToken = async () => {
 };
 
 const clearExpiredSession = () => {
-  localStorage.removeItem('authToken');
+  localStorage.removeItem('authToken')
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
   window.dispatchEvent(new Event('sessionExpired'));
