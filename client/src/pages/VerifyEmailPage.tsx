@@ -30,10 +30,19 @@ const VerifyEmailPage = () => {
     };
   }, [resendCooldown]);
 
+  const normalizePhoneDigits = (input: string) => {
+    const digits = input.replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('0')) return digits.replace(/^0+/, '855');
+    if (digits.startsWith('855')) return digits;
+    return digits;
+  };
+
   const buildIdentifier = (input: string) => {
     const normalized = input.trim();
+    if (!normalized) return '';
     if (normalized.includes('@')) return normalized.toLowerCase();
-    return `${normalized.replace(/\D/g, '') || 'user'}@marketplace.kh`;
+    return normalizePhoneDigits(normalized);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

@@ -231,15 +231,6 @@ const loginUser = async (identifier, password, options = {}) => {
   // Default to OTP if not explicitly disabled
   const useOtp = options.useOtp !== false;
   const requestLoginOtp = useOtp && loginOtpEnabled && !!(user.email || user.phoneNumber);
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[LOGIN_FLOW]', {
-      useOtp,
-      loginOtpEnabled,
-      hasEmail: Boolean(user.email),
-      hasPhone: Boolean(user.phoneNumber),
-      requestLoginOtp
-    });
-  }
 
   if (requestLoginOtp) {
     const now = new Date();
@@ -602,7 +593,9 @@ const verifyEmail = async (identifier, code) => {
     return { verified: true };
   }
 
-  if (!user.emailVerificationHash || !user.emailVerificationExpiresAt || new Date() > user.emailVerificationExpiresAt) {
+  const isExpired = !user.emailVerificationHash || !user.emailVerificationExpiresAt || new Date() > user.emailVerificationExpiresAt;
+
+  if (isExpired) {
     user.emailVerificationHash = undefined;
     user.emailVerificationExpiresAt = undefined;
     user.emailVerificationRequestedAt = undefined;

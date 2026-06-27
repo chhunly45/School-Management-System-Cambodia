@@ -6,7 +6,11 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const normalizeEmail = (email) => {
   if (!email || typeof email !== 'string') return '';
-  return email.trim().toLowerCase();
+  return email
+    .trim()
+    .replace(/^\[+/, '')
+    .replace(/\]+$/, '')
+    .toLowerCase();
 };
 
 const printUsage = () => {

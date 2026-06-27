@@ -14,6 +14,10 @@ const apiKeyLog = apiKey ? 'present' : '<missing>';
 
 console.log(`[Cloudinary] configured with cloud_name=${cloudNameLog} api_key=${apiKeyLog}`);
 
+if (config.isProduction && (!cloudName || !apiKey || !apiSecret)) {
+  throw new Error('Missing required Cloudinary environment variables for production startup.');
+}
+
 if (!cloudName || !apiKey || !apiSecret) {
   console.warn(
     '[Cloudinary] missing required environment variables. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.'

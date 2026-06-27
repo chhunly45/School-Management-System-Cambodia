@@ -1,12 +1,25 @@
 const path = require('path');
 
-module.exports = {
+const getEnvValue = (...names) => {
+  for (const name of names) {
+    const value = process.env[name];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+};
+
+const nodeEnv = process.env.NODE_ENV || 'development';
+const isProduction = nodeEnv === 'production';
+
+const config = {
   port: Number(process.env.PORT) || 5000,
-  mongoUri: process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/konpuk',
-  jwtSecret: process.env.JWT_SECRET || 'change_this_secret',
+  mongoUri: getEnvValue('MONGODB_URI', 'MONGO_URI') || (isProduction ? '' : 'mongodb://localhost:27017/konpuk'),
+  jwtSecret: getEnvValue('JWT_SECRET') || (isProduction ? '' : 'dev-jwt-secret-change-me'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-  clientOrigin: process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || process.env.FRONTEND_URL || process.env.FRONTEND || 'http://localhost:5173',
+  clientOrigin: getEnvValue('CLIENT_URL', 'CLIENT_ORIGIN', 'FRONTEND_URL', 'FRONTEND') || (isProduction ? '' : 'http://localhost:5173'),
   allowedOrigins: (() => {
     const defaultOrigins = [
       'http://localhost:5173',
@@ -15,7 +28,7 @@ module.exports = {
       'https://konpuk.com',
       'https://www.konpuk.com'
     ];
-    const envClient = process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || process.env.FRONTEND_URL || process.env.FRONTEND;
+    const envClient = getEnvValue('CLIENT_URL', 'CLIENT_ORIGIN', 'FRONTEND_URL', 'FRONTEND');
     if (envClient && !defaultOrigins.includes(envClient)) defaultOrigins.push(envClient);
     return defaultOrigins;
   })(),
@@ -28,14 +41,38 @@ module.exports = {
   emailSecure: process.env.EMAIL_SECURE === 'true',
   emailUser: process.env.EMAIL_USER || '',
   emailPass: process.env.EMAIL_PASS || '',
-  resendApiKey: process.env.RESEND_API_KEY || '',
-  emailFrom: process.env.EMAIL_FROM || 'no-reply@konpuk.com',
+  resendApiKey: getEnvValue('RESEND_API_KEY') || '',
+  emailFrom: getEnvValue('EMAIL_FROM') || (isProduction ? '' : 'no-reply@localhost'),
   uploadDir: path.resolve(process.cwd(), process.env.UPLOAD_DIR || 'uploads'),
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
+  isProduction,
   cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
-    apiKey: process.env.CLOUDINARY_API_KEY || '',
-    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
+    cloudName: getEnvValue('CLOUDINARY_CLOUD_NAME') || '',
+    apiKey: getEnvValue('CLOUDINARY_API_KEY') || '',
+    apiSecret: getEnvValue('CLOUDINARY_API_SECRET') || '',
     folder: process.env.CLOUDINARY_FOLDER || 'marketplace'
   }
 };
+
+config.validateEnvironment = () => {
+  const requiredVars = [
+    { key: 'MONGODB_URI', value: config.mongoUri },
+    { key: 'JWT_SECRET', value: config.jwtSecret },
+    { key: 'CLIENT_URL', value: config.clientOrigin },
+    { key: 'RESEND_API_KEY', value: config.resendApiKey },
+    { key: 'EMAIL_FROM', value: config.emailFrom },
+    { key: 'CLOUDINARY_CLOUD_NAME', value: config.cloudinary.cloudName },
+    { key: 'CLOUDINARY_API_KEY', value: config.cloudinary.apiKey },
+    { key: 'CLOUDINARY_API_SECRET', value: config.cloudinary.apiSecret }
+  ];
+
+  const missing = requiredVars.filter(({ value }) => !value).map(({ key }) => key);
+
+  if (isProduction && missing.length > 0) {
+    throw new Error(`Missing required environment variables for production startup: ${missing.join(', ')}`);
+  }
+
+  return missing;
+};
+
+module.exports = config;
