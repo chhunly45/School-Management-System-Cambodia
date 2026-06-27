@@ -25,6 +25,7 @@ const config = {
       'http://localhost:5173',
       'http://localhost:5174',
       'https://kh-product.vercel.app',
+      'https://school-management-system-cambodia.vercel.app',
       'https://konpuk.com',
       'https://www.konpuk.com'
     ];
