@@ -8,6 +8,7 @@ import {
   deleteCertificate
 } from '../services/certificate.api';
 import { listStudents } from '../services/student.api';
+import { formatDateForApi, formatDateForDisplay, formatDateForInput } from '../utils/date';
 
 interface Certificate {
   _id: string;
@@ -37,7 +38,7 @@ const emptyCertificate: Certificate = {
   studentName: '',
   className: '',
   certificateType: 'graduation',
-  issueDate: new Date().toISOString().slice(0, 10),
+  issueDate: formatDateForInput(new Date()),
   academicYear: '',
   issuedBy: '',
   remarks: '',
@@ -90,7 +91,7 @@ const CertificatesPage = () => {
         items.map((item: any) => ({
           ...item,
           studentId: typeof item.studentId === 'string' ? item.studentId : item.studentId?._id,
-          issueDate: item.issueDate ? new Date(item.issueDate).toISOString().slice(0, 10) : ''
+          issueDate: item.issueDate ? formatDateForInput(item.issueDate) : ''
         }))
       );
     } catch (err) {
@@ -131,7 +132,7 @@ const CertificatesPage = () => {
       studentName: formValues.studentName,
       className: formValues.className,
       certificateType: formValues.certificateType,
-      issueDate: formValues.issueDate,
+      issueDate: formatDateForApi(formValues.issueDate) || undefined,
       academicYear: formValues.academicYear,
       issuedBy: formValues.issuedBy,
       remarks: formValues.remarks,
@@ -400,7 +401,7 @@ const CertificatesPage = () => {
                     <td className="px-4 py-3 font-medium">{cert.studentName}</td>
                     <td className="px-4 py-3">{cert.className}</td>
                     <td className="px-4 py-3 text-sm">{getCertificateTypeLabel(cert.certificateType)}</td>
-                    <td className="px-4 py-3 text-sm">{new Date(cert.issueDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm">{formatDateForDisplay(cert.issueDate)}</td>
                     <td className="px-4 py-3 text-sm">{cert.academicYear}</td>
                     <td className="px-4 py-3 text-sm">{cert.issuedBy || '-'}</td>
                     <td className="px-4 py-3 text-sm text-text-secondary">{cert.remarks || '-'}</td>

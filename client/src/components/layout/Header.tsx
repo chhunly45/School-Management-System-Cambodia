@@ -199,104 +199,12 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Categories dropdown centered on desktop */}
-          <div className="hidden lg:flex items-center justify-center flex-1">
-            <div className="relative">
-              <button
-                ref={categoriesButtonRef}
-                type="button"
-                onClick={() => setCategoriesOpen((s) => !s)}
-                className="inline-flex items-center gap-2 rounded-3xl border border-muted bg-white px-4 py-2 text-sm font-medium text-text-primary hover:shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                aria-haspopup="menu"
-                aria-expanded={categoriesOpen}
-                aria-controls="categories-menu"
-              >
-                ក្រុមផលិតផល
-              </button>
-              {categoriesOpen && (
-                <div
-                  id="categories-menu"
-                  ref={categoriesMenuRef}
-                  className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-60 bg-white rounded-2xl shadow-lg border border-muted p-3 z-50"
-                  role="menu"
-                  aria-label="Categories"
-                  onKeyDown={(e) => {
-                    const links = categoriesMenuRef.current?.querySelectorAll('a');
-                    if (!links || links.length === 0) return;
-                    const focusable = Array.from(links) as HTMLElement[];
-                    const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault();
-                      const next = focusable[(currentIndex + 1) % focusable.length];
-                      next.focus();
-                    } else if (e.key === 'ArrowUp') {
-                      e.preventDefault();
-                      const prev = focusable[(currentIndex - 1 + focusable.length) % focusable.length];
-                      prev.focus();
-                    } else if (e.key === 'Home') {
-                      e.preventDefault();
-                      (focusable[0] as HTMLElement).focus();
-                    } else if (e.key === 'End') {
-                      e.preventDefault();
-                      (focusable[focusable.length - 1] as HTMLElement).focus();
-                    } else if (e.key === 'Escape') {
-                      e.preventDefault();
-                      setCategoriesOpen(false);
-                      categoriesButtonRef.current?.focus();
-                    }
-                  }}
-                >
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link onClick={handleCategoryClick} to="/products?category=food" role="menuitem" tabIndex={0} className="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <span className="text-lg">🍜</span>
-                      <span>ម្ហូប</span>
-                    </Link>
-                    <Link onClick={handleCategoryClick} to="/products?category=phones" role="menuitem" tabIndex={0} className="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <span className="text-lg">📱</span>
-                      <span>ទូរស័ព្ទ</span>
-                    </Link>
-                    <Link onClick={handleCategoryClick} to="/products?category=electronics" role="menuitem" tabIndex={0} className="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <span className="text-lg">🔌</span>
-                      <span>អេឡិចត្រូនិក</span>
-                    </Link>
-                    <Link onClick={handleCategoryClick} to="/products?category=auto" role="menuitem" tabIndex={0} className="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <span className="text-lg">🚗</span>
-                      <span>យានយន្ត</span>
-                    </Link>
-                    <Link onClick={handleCategoryClick} to="/products?category=real-estate" role="menuitem" tabIndex={0} className="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <span className="text-lg">🏠</span>
-                      <span>អចលនទ្រព្យ</span>
-                    </Link>
-                    <Link onClick={handleCategoryClick} to="/products?category=clothing" role="menuitem" tabIndex={0} className="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <span className="text-lg">👕</span>
-                      <span>សម្លៀកបំពាក់</span>
-                    </Link>
-                    <Link onClick={handleCategoryClick} to="/products?category=furniture" role="menuitem" tabIndex={0} className="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <span className="text-lg">🛋️</span>
-                      <span>គ្រឿងសង្ហារឹម</span>
-                    </Link>
-                    <Link onClick={handleCategoryClick} to="/products?category=services" role="menuitem" tabIndex={0} className="flex items-center gap-2 px-3 py-2 text-sm rounded hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                      <span className="text-lg">🛠️</span>
-                      <span>សេវាកម្ម</span>
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <div className="hidden lg:flex items-center justify-center flex-1" />
 
           <div className="flex items-center gap-3">
             <Link to="/help" className="hidden lg:inline-flex items-center justify-center rounded-3xl border border-muted bg-white px-4 py-2 text-sm font-medium text-text-secondary hover:bg-white/90 transition">
               Help
             </Link>
-            <Link
-              to="/post-product"
-              className="inline-flex items-center gap-2 rounded-3xl bg-[#0F766E] px-4 py-2 text-sm font-medium text-white hover:bg-[#0f6f63] transition"
-            >
-              <UploadCloud className="w-4 h-4" />
-              លក់ទំនិញ
-            </Link>
-
             {user ? (
               <div className="hidden lg:relative lg:inline-flex group">
                 <button
@@ -426,9 +334,6 @@ const Header = () => {
 
               <nav className="space-y-2">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Home</Link>
-                <Link to="/products" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Browse Products</Link>
-                <Link to="/post-product" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl bg-[#0F766E] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0e6e60]">Post Product</Link>
-                <Link to="/messages" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Messages</Link>
                 <Link to="/notifications" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-between rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">
                   <span>Notifications</span>
                   {notificationCount > 0 && <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-rose-600 px-2 text-[0.65rem] font-semibold text-white">{notificationCount > 9 ? '9+' : notificationCount}</span>}

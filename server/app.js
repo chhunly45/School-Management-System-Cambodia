@@ -83,6 +83,14 @@ const apiLimiter = rateLimit({
   message: { success: false, message: 'Too many requests, please try again later.' }
 });
 
+const categoryLimiter = rateLimit({
+  windowMs: config.categoryRateLimitWindowMs,
+  max: config.categoryRateLimitMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many category requests, please try again later.' }
+});
+
 // Exclude the public "me" endpoint from the strict auth limiter to avoid
 // accidental 429s from frequent client-side profile checks. We still apply
 // a lighter limiter for GET /api/auth/me to protect from abuse.
@@ -91,6 +99,12 @@ app.use('/api/auth', (req, res, next) => {
     return authMeLimiter(req, res, next);
   }
   return authLimiter(req, res, next);
+});
+app.use('/api/categories', (req, res, next) => {
+  if (req.method === 'GET') {
+    return categoryLimiter(req, res, next);
+  }
+  return apiLimiter(req, res, next);
 });
 app.use(apiLimiter);
 
@@ -110,10 +124,35 @@ const csrfProtection = csurf({
 const isAllowedOriginOrReferer = (req) => {
   const origin = req.headers.origin;
   const referer = req.headers.referer;
-  return (
-    (typeof origin === 'string' && config.allowedOrigins.includes(origin)) ||
-    (typeof referer === 'string' && config.allowedOrigins.some((allowedOrigin) => referer.startsWith(allowedOrigin)))
-  );
+
+  const normalizeOrigin = (value) => {
+    if (typeof value !== 'string' || !value) return '';
+    try {
+      return new URL(value).origin;
+    } catch {
+      return value;
+    }
+  };
+
+  const normalizedOrigin = normalizeOrigin(origin);
+  const normalizedReferer = normalizeOrigin(referer);
+
+  const allowedOriginMatches = config.allowedOrigins.some((allowedOrigin) => {
+    const normalizedAllowedOrigin = normalizeOrigin(allowedOrigin);
+    return normalizedOrigin === normalizedAllowedOrigin || normalizedReferer === normalizedAllowedOrigin;
+  });
+
+  if (allowedOriginMatches) {
+    return true;
+  }
+
+  const loopbackOriginMatches = [
+    'http://127.0.0.1',
+    'http://localhost',
+    'http://[::1]'
+  ].some((loopbackOrigin) => normalizedOrigin.startsWith(loopbackOrigin) || normalizedReferer.startsWith(loopbackOrigin));
+
+  return loopbackOriginMatches;
 };
 
 const authCsrfFallback = (req) => {
@@ -132,12 +171,15 @@ const authCsrfFallback = (req) => {
   return true;
 };
 
+const shouldBypassCsrf = (req) => {
+  if (req.method === 'GET') return true;
+  return authCsrfFallback(req);
+};
+
 app.use(csrfProtection);
 app.use((err, req, res, next) => {
-  if (err && err.code === 'EBADCSRFTOKEN' && req.method === 'POST' && authCsrfExceptionPaths.has(req.path)) {
-    if (authCsrfFallback(req)) {
-      return next();
-    }
+  if (err && err.code === 'EBADCSRFTOKEN' && shouldBypassCsrf(req)) {
+    return next();
   }
   next(err);
 });

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
+import { formatDateForApi, formatDateForDisplay, formatDateForInput, parseLocalDate } from '../utils/date';
 import { formatAmount } from '../utils/price';
 import {
   createFuelRecord,
@@ -34,7 +35,7 @@ interface FuelFormValues {
 const emptyFuelForm: FuelFormValues = {
   vehicleId: '',
   transportAssignmentId: '',
-  assignmentDate: new Date().toISOString().slice(0, 10),
+  assignmentDate: formatDateForInput(new Date()),
   odometer: 0,
   fuelType: 'gasoline',
   liters: 0,
@@ -164,7 +165,11 @@ const FuelPage = () => {
     const nextErrors: Partial<Record<FuelField, string>> = {};
 
     if (!formValues.vehicleId) nextErrors.vehicleId = 'Vehicle is required.';
-    if (!formValues.assignmentDate) nextErrors.assignmentDate = 'Date is required.';
+    if (!formValues.assignmentDate) {
+      nextErrors.assignmentDate = 'Date is required.';
+    } else if (!parseLocalDate(formValues.assignmentDate)) {
+      nextErrors.assignmentDate = 'Date is invalid.';
+    }
     if (formValues.odometer < 0) nextErrors.odometer = 'Odometer must be zero or greater.';
     if (formValues.liters <= 0) nextErrors.liters = 'Liters must be greater than zero.';
     if (formValues.pricePerLiter < 0) nextErrors.pricePerLiter = 'Price per liter must be zero or greater.';
@@ -202,7 +207,7 @@ const FuelPage = () => {
     const payload: FuelRecordPayload = {
       vehicleId: formValues.vehicleId,
       transportAssignmentId: formValues.transportAssignmentId || undefined,
-      assignmentDate: formValues.assignmentDate,
+      assignmentDate: formatDateForApi(formValues.assignmentDate) || formValues.assignmentDate,
       odometer: formValues.odometer,
       fuelType: formValues.fuelType,
       liters: formValues.liters,
@@ -247,7 +252,7 @@ const FuelPage = () => {
     setFormValues({
       vehicleId,
       transportAssignmentId,
-      assignmentDate: record.assignmentDate ? new Date(record.assignmentDate).toISOString().slice(0, 10) : '',
+      assignmentDate: formatDateForInput(record.assignmentDate),
       odometer: record.odometer,
       fuelType: record.fuelType,
       liters: record.liters,
@@ -443,7 +448,7 @@ const FuelPage = () => {
               ) : (
                 records.map((record) => (
                   <tr key={record._id} className="border-b border-muted text-sm text-text-primary">
-                    <td className="px-4 py-3">{new Date(record.assignmentDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">{formatDateForDisplay(record.assignmentDate)}</td>
                     <td className="px-4 py-3">{getVehicleDisplay(record)}</td>
                     <td className="px-4 py-3">{getAssignmentDisplay(record)}</td>
                     <td className="px-4 py-3">{record.odometer}</td>

@@ -38,7 +38,6 @@ import GradePage from '../pages/GradePage';
 import SubjectPage from '../pages/SubjectPage';
 import CertificatesPage from '../pages/CertificatesPage';
 import ClassPage from '../pages/ClassPage';
-import FinancePage from '../pages/FinancePage';
 import TransportPage from '../pages/TransportPage';
 import TeachersPage from '../pages/TeachersPage';
 import VehiclesPage from '../pages/VehiclesPage';
@@ -99,7 +98,7 @@ const AppRoutes = () => (
         <Route path="subjects" element={<SubjectPage />} />
         <Route path="classes" element={<ClassPage />} />
         <Route path="certificates" element={<CertificatesPage />} />
-        <Route path="finance" element={<FinancePage />} />
+        <Route path="finance" element={<PaymentsPage />} />
         <Route path="transport" element={<TransportPage />} />
         <Route path="vehicles" element={<VehiclesPage />} />
         <Route path="routes" element={<RoutesPage />} />

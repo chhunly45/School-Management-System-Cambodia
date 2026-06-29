@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import { getSchoolSettings, type SchoolSettings } from '../services/schoolSettings.api';
+import { formatDateForApi, formatDateForDisplay, formatDateForInput, parseLocalDate } from '../utils/date';
 import { formatAmount } from '../utils/price';
 import {
   createExpense,
@@ -48,7 +49,7 @@ const PAYMENT_OPTIONS: Array<{ value: ExpensePaymentMethod; label: string }> = [
 ];
 
 const emptyExpenseForm: ExpenseFormValues = {
-  expenseDate: new Date().toISOString().slice(0, 10),
+  expenseDate: formatDateForInput(new Date()),
   category: 'other',
   description: '',
   amount: 0,
@@ -147,7 +148,11 @@ const ExpensesPage = () => {
   const validateExpenseForm = () => {
     const nextErrors: Partial<Record<ExpenseField, string>> = {};
 
-    if (!formValues.expenseDate) nextErrors.expenseDate = 'Expense date is required.';
+    if (!formValues.expenseDate) {
+      nextErrors.expenseDate = 'Expense date is required.';
+    } else if (!parseLocalDate(formValues.expenseDate)) {
+      nextErrors.expenseDate = 'Expense date is invalid.';
+    }
     if (!formValues.description.trim()) nextErrors.description = 'Description is required.';
     if (formValues.amount <= 0) nextErrors.amount = 'Amount must be greater than zero.';
     if (!supportedCurrencies.includes(formValues.currency)) nextErrors.currency = 'Currency must follow School Settings.';
@@ -167,7 +172,7 @@ const ExpensesPage = () => {
     }
 
     const payload: ExpensePayload = {
-      expenseDate: formValues.expenseDate,
+      expenseDate: formatDateForApi(formValues.expenseDate) || formValues.expenseDate,
       category: formValues.category,
       description: formValues.description,
       amount: formValues.amount,
@@ -201,7 +206,7 @@ const ExpensesPage = () => {
 
   const handleEdit = (expense: Expense) => {
     setFormValues({
-      expenseDate: expense.expenseDate ? new Date(expense.expenseDate).toISOString().slice(0, 10) : '',
+      expenseDate: formatDateForInput(expense.expenseDate),
       category: expense.category,
       description: expense.description,
       amount: expense.amount,
@@ -359,7 +364,7 @@ const ExpensesPage = () => {
               ) : (
                 expenses.map((expense) => (
                   <tr key={expense._id} className="border-b border-muted text-sm text-text-primary">
-                    <td className="px-4 py-3">{new Date(expense.expenseDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">{formatDateForDisplay(expense.expenseDate)}</td>
                     <td className="px-4 py-3">{toLabel(expense.category)}</td>
                     <td className="px-4 py-3">{expense.description}</td>
                     <td className="px-4 py-3">{formatAmount(expense.amount, expense.currency)}</td>

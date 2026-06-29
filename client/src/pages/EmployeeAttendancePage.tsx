@@ -8,6 +8,7 @@ import {
   updateEmployeeAttendance,
   type EmployeeAttendancePayload
 } from '../services/employeeAttendance.api';
+import { formatDateForApi, formatDateForDisplay, formatDateForInput } from '../utils/date';
 
 interface EmployeeAttendanceRecord extends EmployeeAttendancePayload {
   _id: string;
@@ -31,7 +32,7 @@ const emptyRecord: EmployeeAttendancePayload = {
   scheduleLabel: '',
   workStartTime: '',
   workEndTime: '',
-  date: new Date().toISOString().slice(0, 10),
+  date: formatDateForInput(new Date()),
   status: 'present',
   remarks: ''
 };
@@ -41,7 +42,7 @@ const EmployeeAttendancePage = () => {
   const navigate = useNavigate();
   const [records, setRecords] = useState<EmployeeAttendanceRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(formatDateForInput(new Date()));
   const [selectedType, setSelectedType] = useState('');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<EmployeeAttendanceListMeta>({ page: 1, limit: 20, total: 0 });
@@ -70,7 +71,7 @@ const EmployeeAttendancePage = () => {
 
       setRecords((response.data?.items || []).map((item: any) => ({
         ...item,
-        date: item.date ? new Date(item.date).toISOString().slice(0, 10) : selectedDate
+        date: item.date ? formatDateForInput(item.date) : selectedDate
       })));
       setMeta(response.data?.meta || { page, limit: 10, total: 0 });
       setMessage('');
@@ -142,7 +143,7 @@ const EmployeeAttendancePage = () => {
         scheduleLabel: formValues.scheduleLabel?.trim() || undefined,
         workStartTime: formValues.workStartTime?.trim() || undefined,
         workEndTime: formValues.workEndTime?.trim() || undefined,
-        date: formValues.date,
+        date: formatDateForApi(formValues.date) || '',
         status: formValues.status,
         remarks: formValues.remarks?.trim() || undefined
       };
@@ -364,7 +365,7 @@ const EmployeeAttendancePage = () => {
                         ? `${record.scheduleLabel || 'Shift'} ${record.workStartTime || '--:--'}-${record.workEndTime || '--:--'}`
                         : '-'}
                     </td>
-                    <td className="py-2 pr-3">{record.date}</td>
+                    <td className="py-2 pr-3">{formatDateForDisplay(record.date)}</td>
                     <td className="py-2 pr-3">{record.status}</td>
                     <td className="py-2 pr-3">{record.remarks || '-'}</td>
                     <td className="py-2">

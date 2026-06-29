@@ -10,6 +10,7 @@ import {
   type AcademicYear,
   type AcademicYearPayload
 } from '../services/academicYear.api';
+import { formatDateForApi, formatDateForDisplay, formatDateForInput, parseLocalDate } from '../utils/date';
 
 type AcademicYearField = keyof AcademicYearPayload;
 
@@ -64,8 +65,8 @@ const AcademicYearPage = () => {
       setItems(
         responseItems.map((item) => ({
           ...item,
-          startDate: item.startDate ? new Date(item.startDate).toISOString().slice(0, 10) : '',
-          endDate: item.endDate ? new Date(item.endDate).toISOString().slice(0, 10) : ''
+          startDate: item.startDate ? formatDateForInput(item.startDate) : '',
+          endDate: item.endDate ? formatDateForInput(item.endDate) : ''
         }))
       );
 
@@ -116,9 +117,9 @@ const AcademicYearPage = () => {
     }
 
     if (formValues.startDate && formValues.endDate) {
-      const start = new Date(formValues.startDate);
-      const end = new Date(formValues.endDate);
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      const start = parseLocalDate(formValues.startDate);
+      const end = parseLocalDate(formValues.endDate);
+      if (!start || !end) {
         nextErrors.startDate = 'Use valid start and end dates.';
       } else if (start >= end) {
         nextErrors.endDate = 'End date must be after start date.';
@@ -146,8 +147,8 @@ const AcademicYearPage = () => {
     const payload: AcademicYearPayload = {
       code: formValues.code.trim().toUpperCase(),
       name: formValues.name.trim(),
-      startDate: formValues.startDate,
-      endDate: formValues.endDate,
+      startDate: formatDateForApi(formValues.startDate) || formatDateForInput(formValues.startDate),
+      endDate: formatDateForApi(formValues.endDate) || formatDateForInput(formValues.endDate),
       status: formValues.status,
       isCurrent: formValues.isCurrent,
       remarks: formValues.remarks?.trim() || undefined
@@ -407,8 +408,8 @@ const AcademicYearPage = () => {
                 <tr key={item._id} className="border-t border-muted hover:bg-background transition">
                   <td className="px-4 py-3 font-medium">{item.code}</td>
                   <td className="px-4 py-3">{item.name}</td>
-                  <td className="px-4 py-3">{item.startDate}</td>
-                  <td className="px-4 py-3">{item.endDate}</td>
+                  <td className="px-4 py-3">{formatDateForDisplay(item.startDate)}</td>
+                  <td className="px-4 py-3">{formatDateForDisplay(item.endDate)}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${

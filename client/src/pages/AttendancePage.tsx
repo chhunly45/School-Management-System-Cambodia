@@ -12,6 +12,7 @@ import {
 import { listAcademicYears, type AcademicYear } from '../services/academicYear.api';
 import { listGrades, type Grade } from '../services/grade.api';
 import { listClasses, type ClassItem } from '../services/class.api';
+import { formatDateForApi, formatDateForDisplay, formatDateForInput } from '../utils/date';
 
 interface AttendanceRecord {
   _id: string;
@@ -56,7 +57,7 @@ const emptyRecord: AttendanceRecord = {
   academicYearId: '',
   gradeId: '',
   classId: '',
-  date: new Date().toISOString().slice(0, 10),
+  date: formatDateForInput(new Date()),
   status: 'present',
   remarks: '',
   academicYear: '',
@@ -70,12 +71,12 @@ const AttendancePage = () => {
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(formatDateForInput(new Date()));
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
   const [selectedGradeId, setSelectedGradeId] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
-  const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [reportMonth, setReportMonth] = useState(formatDateForInput(new Date()).slice(0, 7));
   const [monthlyReport, setMonthlyReport] = useState<MonthlyReportData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -130,7 +131,7 @@ const AttendancePage = () => {
       setAttendance(
         items.map((item: any) => ({
           ...item,
-          date: item.date ? new Date(item.date).toISOString().slice(0, 10) : selectedDate
+          date: item.date ? formatDateForInput(item.date) : selectedDate
         }))
       );
     } catch (err) {
@@ -218,7 +219,7 @@ const AttendancePage = () => {
       academicYearId: getAcademicYearId(formValues.academicYearId) || undefined,
       gradeId: getGradeId(formValues.gradeId) || undefined,
       classId: getClassId(formValues.classId) || undefined,
-      date: formValues.date,
+      date: formatDateForApi(formValues.date) || '',
       status: formValues.status,
       remarks: formValues.remarks || undefined,
       academicYear: formValues.academicYear || undefined,
@@ -713,7 +714,7 @@ const AttendancePage = () => {
                       <td className="px-4 py-3 text-sm text-gray-700">{getAcademicYearLabel(record)}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{getGradeLabel(record)}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{getClassLabel(record)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{record.date}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{formatDateForDisplay(record.date)}</td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(record.status)}`}>
                           {record.status}

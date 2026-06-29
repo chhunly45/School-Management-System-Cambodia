@@ -35,6 +35,8 @@ const config = {
   })(),
   rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   rateLimitMax: Number(process.env.RATE_LIMIT_MAX) || 100,
+  categoryRateLimitWindowMs: Number(process.env.CATEGORY_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  categoryRateLimitMax: Number(process.env.CATEGORY_RATE_LIMIT_MAX) || 200,
   authRateLimitWindowMs: Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX) || 10,
   emailHost: process.env.EMAIL_HOST || '',
@@ -58,7 +60,10 @@ const config = {
 config.validateEnvironment = () => {
   const requiredVars = [
     { key: 'MONGODB_URI', value: config.mongoUri },
-    { key: 'JWT_SECRET', value: config.jwtSecret },
+    { key: 'JWT_SECRET', value: config.jwtSecret }
+  ];
+
+  const optionalVars = [
     { key: 'CLIENT_URL', value: config.clientOrigin },
     { key: 'RESEND_API_KEY', value: config.resendApiKey },
     { key: 'EMAIL_FROM', value: config.emailFrom },
@@ -67,13 +72,20 @@ config.validateEnvironment = () => {
     { key: 'CLOUDINARY_API_SECRET', value: config.cloudinary.apiSecret }
   ];
 
-  const missing = requiredVars.filter(({ value }) => !value).map(({ key }) => key);
+  const missingRequired = requiredVars.filter(({ value }) => !value).map(({ key }) => key);
+  const missingOptional = optionalVars.filter(({ value }) => !value).map(({ key }) => key);
 
-  if (isProduction && missing.length > 0) {
-    throw new Error(`Missing required environment variables for production startup: ${missing.join(', ')}`);
+  if (isProduction && missingRequired.length > 0) {
+    throw new Error(`Missing required environment variables for production startup: ${missingRequired.join(', ')}`);
   }
 
-  return missing;
+  if (missingOptional.length > 0) {
+    console.warn(
+      `[Config] optional environment variables missing: ${missingOptional.join(', ')}`
+    );
+  }
+
+  return [...missingRequired, ...missingOptional];
 };
 
 module.exports = config;

@@ -12,6 +12,7 @@ import {
 import { listSubjects, type Subject } from '../services/subject.api';
 import { listClasses, type ClassItem } from '../services/class.api';
 import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
+import { formatDateForApi, formatDateForInput, parseLocalDate } from '../utils/date';
 
 type TeacherField = keyof TeacherPayload;
 
@@ -51,7 +52,7 @@ const emptyTeacher: TeacherFormValues = {
   subjectIds: [],
   homeroomClassId: '',
   status: 'active',
-  joinDate: new Date().toISOString().slice(0, 10),
+  joinDate: formatDateForInput(new Date()),
   remarks: ''
 };
 
@@ -106,8 +107,8 @@ const TeachersPage = () => {
       setTeachers(
         items.map((item: any) => ({
           ...item,
-          dateOfBirth: item.dateOfBirth ? new Date(item.dateOfBirth).toISOString().slice(0, 10) : '',
-          joinDate: item.joinDate ? new Date(item.joinDate).toISOString().slice(0, 10) : ''
+          dateOfBirth: item.dateOfBirth ? formatDateForInput(item.dateOfBirth) : '',
+          joinDate: item.joinDate ? formatDateForInput(item.joinDate) : ''
         }))
       );
     } catch (err) {
@@ -182,8 +183,8 @@ const TeachersPage = () => {
     }
 
     if (formValues.dateOfBirth) {
-      const dob = new Date(formValues.dateOfBirth);
-      if (Number.isNaN(dob.getTime())) {
+      const dob = parseLocalDate(formValues.dateOfBirth);
+      if (!dob) {
         nextErrors.dateOfBirth = 'Enter a valid date of birth.';
       } else if (dob > new Date()) {
         nextErrors.dateOfBirth = 'Date of birth cannot be in the future.';
@@ -191,8 +192,8 @@ const TeachersPage = () => {
     }
 
     if (formValues.joinDate) {
-      const joinDate = new Date(formValues.joinDate);
-      if (Number.isNaN(joinDate.getTime())) {
+      const joinDate = parseLocalDate(formValues.joinDate);
+      if (!joinDate) {
         nextErrors.joinDate = 'Enter a valid join date.';
       }
     }
@@ -216,7 +217,7 @@ const TeachersPage = () => {
       teacherId: formValues.teacherId,
       fullName: formValues.fullName,
       gender: formValues.gender,
-      dateOfBirth: formValues.dateOfBirth || undefined,
+      dateOfBirth: formatDateForApi(formValues.dateOfBirth) || undefined,
       phone: formValues.phone || undefined,
       email: formValues.email || undefined,
       address: formValues.address || undefined,
@@ -228,7 +229,7 @@ const TeachersPage = () => {
       subjectIds: formValues.subjectIds.length ? formValues.subjectIds : undefined,
       homeroomClassId: formValues.homeroomClassId || undefined,
       status: formValues.status,
-      joinDate: formValues.joinDate || undefined,
+      joinDate: formatDateForApi(formValues.joinDate) || undefined,
       remarks: formValues.remarks || undefined
     };
 
@@ -255,7 +256,7 @@ const TeachersPage = () => {
       teacherId: teacher.teacherId,
       fullName: teacher.fullName,
       gender: teacher.gender,
-      dateOfBirth: teacher.dateOfBirth ? new Date(teacher.dateOfBirth).toISOString().slice(0, 10) : '',
+      dateOfBirth: teacher.dateOfBirth ? formatDateForInput(teacher.dateOfBirth) : '',
       phone: teacher.phone || '',
       email: teacher.email || '',
       address: teacher.address || '',
@@ -267,7 +268,7 @@ const TeachersPage = () => {
       subjectIds: getSubjectIds(teacher.subjectIds),
       homeroomClassId: getHomeroomClassId(teacher.homeroomClassId),
       status: teacher.status,
-      joinDate: teacher.joinDate ? new Date(teacher.joinDate).toISOString().slice(0, 10) : '',
+      joinDate: teacher.joinDate ? formatDateForInput(teacher.joinDate) : '',
       remarks: teacher.remarks || ''
     });
     setEditingId(teacher._id);

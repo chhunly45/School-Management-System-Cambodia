@@ -1,0 +1,1252 @@
+﻿[
+  {
+    "file": "academicRecord.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "academicRecord.routes.js",
+    "line": 26,
+    "text": "router.get("
+  },
+  {
+    "file": "academicRecord.routes.js",
+    "line": 34,
+    "text": "router.post("
+  },
+  {
+    "file": "academicRecord.routes.js",
+    "line": 50,
+    "text": "router.put("
+  },
+  {
+    "file": "academicRecord.routes.js",
+    "line": 67,
+    "text": "router.delete("
+  },
+  {
+    "file": "academicYear.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "academicYear.routes.js",
+    "line": 23,
+    "text": "router.get("
+  },
+  {
+    "file": "academicYear.routes.js",
+    "line": 31,
+    "text": "router.post("
+  },
+  {
+    "file": "academicYear.routes.js",
+    "line": 45,
+    "text": "router.put("
+  },
+  {
+    "file": "academicYear.routes.js",
+    "line": 60,
+    "text": "router.delete("
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 13,
+    "text": "router.use(authMiddleware, roleMiddleware(['admin', 'moderator']));"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 25,
+    "text": "router.use(adminLimiter);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 27,
+    "text": "router.get('/overview', adminController.getOverview);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 28,
+    "text": "router.get('/analytics/products-by-province', adminController.getProductsByProvince);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 29,
+    "text": "router.get('/revenue/metrics', adminController.getRevenueMetrics);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 30,
+    "text": "router.get('/revenue/daily', adminController.getDailyRevenue);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 31,
+    "text": "router.get('/revenue/weekly', adminController.getWeeklyRevenue);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 32,
+    "text": "router.get('/revenue/monthly', adminController.getMonthlyRevenue);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 33,
+    "text": "router.get('/revenue/by-seller', adminController.getRevenueBySeller);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 34,
+    "text": "router.get('/users', adminController.listUsers);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 35,
+    "text": "router.patch('/users/:id/status',"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 45,
+    "text": "router.get('/products', adminController.listProducts);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 46,
+    "text": "router.patch('/products/:id/status', param('id').isMongoId(), body('status').isIn(['published','sold','archived','flagged']).withMessage('Invalid status'), validate, adminController.updateProductStatus);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 47,
+    "text": "router.patch('/products/:id/featured', param('id').isMongoId(), body('featured').isBoolean(), validate, adminController.updateProductFeatured);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 48,
+    "text": "router.get('/promotions', adminController.listPromotions);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 49,
+    "text": "router.get('/promotions/metrics', adminController.getPromotionMetrics);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 50,
+    "text": "router.patch('/promotions/:id/approve', param('id').isMongoId(), validate, adminController.approvePromotion);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 51,
+    "text": "router.patch('/promotions/:id/reject', param('id').isMongoId(), body('reason').optional().trim(), validate, adminController.rejectPromotion);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 52,
+    "text": "router.patch('/promotions/:id/extend', param('id').isMongoId(), body('extraDays').isInt({ min: 1 }).withMessage('extraDays must be at least 1'), validate, adminController.extendPromotion);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 53,
+    "text": "router.patch('/promotions/:id/cancel', param('id').isMongoId(), validate, adminController.cancelPromotion);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 54,
+    "text": "router.get('/reports', adminController.listReports);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 55,
+    "text": "router.patch('/reports/:id', param('id').isMongoId(), body('status').isIn(['pending','reviewed','resolved','rejected']).withMessage('Invalid report status'), validate, adminController.updateReportStatus);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 56,
+    "text": "router.patch('/verification/:id', param('id').isMongoId(), body('status').isIn(['approved','rejected']).withMessage('Invalid verification status'), validate, verificationController.reviewVerification);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 57,
+    "text": "router.get('/audit-logs', adminController.listAuditLogs);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 58,
+    "text": "router.delete('/reviews/:id', param('id').isMongoId(), validate, adminController.deleteReview);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 59,
+    "text": "router.post('/email/test', body('to').isEmail(), validate, adminController.sendTestEmail);"
+  },
+  {
+    "file": "admin.routes.js",
+    "line": 60,
+    "text": "router.post('/backfill/product-sellers', adminController.backfillProductSellers);"
+  },
+  {
+    "file": "attendance.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "attendance.routes.js",
+    "line": 30,
+    "text": "router.get("
+  },
+  {
+    "file": "attendance.routes.js",
+    "line": 43,
+    "text": "router.get("
+  },
+  {
+    "file": "attendance.routes.js",
+    "line": 51,
+    "text": "router.post("
+  },
+  {
+    "file": "attendance.routes.js",
+    "line": 69,
+    "text": "router.put("
+  },
+  {
+    "file": "attendance.routes.js",
+    "line": 88,
+    "text": "router.delete("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 29,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 39,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 47,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 55,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 62,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 71,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 80,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 89,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 97,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 104,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 111,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 119,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 128,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 135,
+    "text": "router.post('/refresh', authController.refreshToken);"
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 136,
+    "text": "router.post('/logout', authMiddleware, authController.logout);"
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 137,
+    "text": "router.get('/me', authMiddleware, authController.getProfile);"
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 138,
+    "text": "router.put('/me', authMiddleware, authController.updateProfile);"
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 139,
+    "text": "router.post("
+  },
+  {
+    "file": "auth.routes.js",
+    "line": 147,
+    "text": "router.post('/verification-request', authMiddleware, body('details').optional().trim().isString(), validate, authController.requestVerification);"
+  },
+  {
+    "file": "banner.routes.js",
+    "line": 12,
+    "text": "router.get('/active',"
+  },
+  {
+    "file": "banner.routes.js",
+    "line": 19,
+    "text": "router.use(authMiddleware, roleMiddleware(['admin']));"
+  },
+  {
+    "file": "banner.routes.js",
+    "line": 21,
+    "text": "router.get('/', bannerController.listBanners);"
+  },
+  {
+    "file": "banner.routes.js",
+    "line": 23,
+    "text": "router.post('/',"
+  },
+  {
+    "file": "banner.routes.js",
+    "line": 31,
+    "text": "router.post('/upload', upload.single('image'), bannerController.uploadImage);"
+  },
+  {
+    "file": "banner.routes.js",
+    "line": 33,
+    "text": "router.patch('/:id', param('id').isMongoId(), validate, bannerController.updateBanner);"
+  },
+  {
+    "file": "banner.routes.js",
+    "line": 35,
+    "text": "router.delete('/:id', param('id').isMongoId(), validate, bannerController.deleteBanner);"
+  },
+  {
+    "file": "category.routes.js",
+    "line": 10,
+    "text": "router.get('/', categoryController.listCategories);"
+  },
+  {
+    "file": "category.routes.js",
+    "line": 11,
+    "text": "router.get('/:id', param('id').isMongoId(), validate, categoryController.getCategory);"
+  },
+  {
+    "file": "category.routes.js",
+    "line": 13,
+    "text": "router.post("
+  },
+  {
+    "file": "category.routes.js",
+    "line": 23,
+    "text": "router.put("
+  },
+  {
+    "file": "category.routes.js",
+    "line": 34,
+    "text": "router.delete('/:id', authMiddleware, roleMiddleware(['admin']), param('id').isMongoId(), validate, categoryController.deleteCategory);"
+  },
+  {
+    "file": "certificate.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "certificate.routes.js",
+    "line": 25,
+    "text": "router.get("
+  },
+  {
+    "file": "certificate.routes.js",
+    "line": 33,
+    "text": "router.post("
+  },
+  {
+    "file": "certificate.routes.js",
+    "line": 50,
+    "text": "router.put("
+  },
+  {
+    "file": "certificate.routes.js",
+    "line": 68,
+    "text": "router.delete("
+  },
+  {
+    "file": "chat.routes.js",
+    "line": 10,
+    "text": "router.use(authMiddleware);"
+  },
+  {
+    "file": "chat.routes.js",
+    "line": 21,
+    "text": "router.get('/', chatController.listChats);"
+  },
+  {
+    "file": "chat.routes.js",
+    "line": 22,
+    "text": "router.get('/:id', param('id').isMongoId(), validate, chatController.getChat);"
+  },
+  {
+    "file": "chat.routes.js",
+    "line": 23,
+    "text": "router.post("
+  },
+  {
+    "file": "chat.routes.js",
+    "line": 31,
+    "text": "router.post('/:id/messages', messagingLimiter, param('id').isMongoId(), body('message').notEmpty().withMessage('Message text is required'), validate, chatController.sendMessage);"
+  },
+  {
+    "file": "chat.routes.js",
+    "line": 32,
+    "text": "router.patch('/:id/read', param('id').isMongoId(), validate, chatController.markAsRead);"
+  },
+  {
+    "file": "class.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "class.routes.js",
+    "line": 24,
+    "text": "router.get("
+  },
+  {
+    "file": "class.routes.js",
+    "line": 32,
+    "text": "router.post("
+  },
+  {
+    "file": "class.routes.js",
+    "line": 45,
+    "text": "router.put("
+  },
+  {
+    "file": "class.routes.js",
+    "line": 59,
+    "text": "router.delete("
+  },
+  {
+    "file": "employeeAttendance.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "employeeAttendance.routes.js",
+    "line": 24,
+    "text": "router.get("
+  },
+  {
+    "file": "employeeAttendance.routes.js",
+    "line": 32,
+    "text": "router.post("
+  },
+  {
+    "file": "employeeAttendance.routes.js",
+    "line": 49,
+    "text": "router.put("
+  },
+  {
+    "file": "employeeAttendance.routes.js",
+    "line": 67,
+    "text": "router.delete("
+  },
+  {
+    "file": "expense.routes.js",
+    "line": 14,
+    "text": "router.get("
+  },
+  {
+    "file": "expense.routes.js",
+    "line": 28,
+    "text": "router.get("
+  },
+  {
+    "file": "expense.routes.js",
+    "line": 36,
+    "text": "router.post("
+  },
+  {
+    "file": "expense.routes.js",
+    "line": 51,
+    "text": "router.put("
+  },
+  {
+    "file": "expense.routes.js",
+    "line": 67,
+    "text": "router.delete("
+  },
+  {
+    "file": "favorite.routes.js",
+    "line": 9,
+    "text": "router.use(authMiddleware);"
+  },
+  {
+    "file": "favorite.routes.js",
+    "line": 11,
+    "text": "router.get('/', favoriteController.listFavorites);"
+  },
+  {
+    "file": "favorite.routes.js",
+    "line": 12,
+    "text": "router.get('/count', favoriteController.getFavoritesCount);"
+  },
+  {
+    "file": "favorite.routes.js",
+    "line": 13,
+    "text": "router.get('/check/:productId', param('productId').isMongoId(), validate, favoriteController.checkFavorite);"
+  },
+  {
+    "file": "favorite.routes.js",
+    "line": 14,
+    "text": "router.post('/:productId', param('productId').isMongoId(), validate, favoriteController.addFavorite);"
+  },
+  {
+    "file": "favorite.routes.js",
+    "line": 15,
+    "text": "router.delete('/:productId', param('productId').isMongoId(), validate, favoriteController.removeFavorite);"
+  },
+  {
+    "file": "finance.routes.js",
+    "line": 11,
+    "text": "router.get('/summary', adminOnly, financeController.getSummary);"
+  },
+  {
+    "file": "finance.routes.js",
+    "line": 13,
+    "text": "router.get("
+  },
+  {
+    "file": "fuelRecord.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "fuelRecord.routes.js",
+    "line": 25,
+    "text": "router.get("
+  },
+  {
+    "file": "fuelRecord.routes.js",
+    "line": 33,
+    "text": "router.post("
+  },
+  {
+    "file": "fuelRecord.routes.js",
+    "line": 52,
+    "text": "router.put("
+  },
+  {
+    "file": "fuelRecord.routes.js",
+    "line": 72,
+    "text": "router.delete("
+  },
+  {
+    "file": "grade.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "grade.routes.js",
+    "line": 23,
+    "text": "router.get("
+  },
+  {
+    "file": "grade.routes.js",
+    "line": 31,
+    "text": "router.post("
+  },
+  {
+    "file": "grade.routes.js",
+    "line": 43,
+    "text": "router.put("
+  },
+  {
+    "file": "grade.routes.js",
+    "line": 56,
+    "text": "router.delete("
+  },
+  {
+    "file": "index.js",
+    "line": 42,
+    "text": "router.use('/auth', authRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 43,
+    "text": "router.use('/categories', categoryRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 44,
+    "text": "router.use('/products', productRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 45,
+    "text": "router.use('/favorites', favoriteRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 46,
+    "text": "router.use('/upload', uploadRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 47,
+    "text": "router.use('/banners', bannerRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 48,
+    "text": "router.use('/chats', chatRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 50,
+    "text": "router.use('/conversations', chatRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 51,
+    "text": "router.use('/reports', reportRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 52,
+    "text": "router.use('/notifications', notificationRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 53,
+    "text": "router.use('/reviews', reviewRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 54,
+    "text": "router.use('/locations', locationRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 55,
+    "text": "router.use('/seller-analytics', sellerAnalyticsRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 56,
+    "text": "router.use('/traffic-analytics', trafficAnalyticsRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 57,
+    "text": "router.use('/promotions', promotionRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 58,
+    "text": "router.use('/verification', verificationRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 59,
+    "text": "router.use('/admin', adminRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 60,
+    "text": "router.use('/users', userRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 61,
+    "text": "router.use('/students', studentRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 62,
+    "text": "router.use('/payments', paymentRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 63,
+    "text": "router.use('/attendances', attendanceRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 64,
+    "text": "router.use('/academic-records', academicRecordRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 65,
+    "text": "router.use('/academic-years', academicYearRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 66,
+    "text": "router.use('/grades', gradeRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 67,
+    "text": "router.use('/subjects', subjectRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 68,
+    "text": "router.use('/classes', classRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 69,
+    "text": "router.use('/certificates', certificateRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 70,
+    "text": "router.use('/transport', transportRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 71,
+    "text": "router.use('/teachers', teacherRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 72,
+    "text": "router.use('/employee-attendances', employeeAttendanceRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 73,
+    "text": "router.use('/vehicles', vehicleRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 74,
+    "text": "router.use('/routes', routeRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 75,
+    "text": "router.use('/transport-assignments', transportAssignmentRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 76,
+    "text": "router.use('/fuel-records', fuelRecordRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 77,
+    "text": "router.use('/expenses', expenseRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 78,
+    "text": "router.use('/school-dashboard', schoolDashboardRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 79,
+    "text": "router.use('/finance', financeRoutes);"
+  },
+  {
+    "file": "index.js",
+    "line": 80,
+    "text": "router.use('/school-settings', schoolSettingRoutes);"
+  },
+  {
+    "file": "location.routes.js",
+    "line": 5,
+    "text": "router.get('/provinces', locationController.getProvinces);"
+  },
+  {
+    "file": "location.routes.js",
+    "line": 6,
+    "text": "router.get('/provinces/:provinceId/districts', locationController.getDistricts);"
+  },
+  {
+    "file": "notification.routes.js",
+    "line": 9,
+    "text": "router.use(authMiddleware);"
+  },
+  {
+    "file": "notification.routes.js",
+    "line": 10,
+    "text": "router.get("
+  },
+  {
+    "file": "notification.routes.js",
+    "line": 19,
+    "text": "router.get('/count', notificationController.getNotificationCount);"
+  },
+  {
+    "file": "notification.routes.js",
+    "line": 20,
+    "text": "router.patch('/read-all', notificationController.markAllNotificationsRead);"
+  },
+  {
+    "file": "notification.routes.js",
+    "line": 21,
+    "text": "router.patch('/:id/read', param('id').isMongoId().withMessage('Valid notification id is required'), validate, notificationController.markNotificationRead);"
+  },
+  {
+    "file": "payment.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "payment.routes.js",
+    "line": 32,
+    "text": "router.get("
+  },
+  {
+    "file": "payment.routes.js",
+    "line": 44,
+    "text": "router.get("
+  },
+  {
+    "file": "payment.routes.js",
+    "line": 53,
+    "text": "router.post("
+  },
+  {
+    "file": "payment.routes.js",
+    "line": 85,
+    "text": "router.put("
+  },
+  {
+    "file": "payment.routes.js",
+    "line": 118,
+    "text": "router.delete("
+  },
+  {
+    "file": "product.routes.js",
+    "line": 10,
+    "text": "router.get('/',"
+  },
+  {
+    "file": "product.routes.js",
+    "line": 24,
+    "text": "router.get('/featured', validate, productController.listFeaturedProducts);"
+  },
+  {
+    "file": "product.routes.js",
+    "line": 25,
+    "text": "router.get('/slug/:slug', validate, productController.getProductBySlug);"
+  },
+  {
+    "file": "product.routes.js",
+    "line": 28,
+    "text": "router.get('/:id', param('id').isMongoId(), async (req, res, next) => {"
+  },
+  {
+    "file": "product.routes.js",
+    "line": 43,
+    "text": "router.get('/:id', param('id').isMongoId(), validate, productController.getProduct);"
+  },
+  {
+    "file": "product.routes.js",
+    "line": 44,
+    "text": "router.post('/:id/views', param('id').isMongoId(), validate, productController.addProductView);"
+  },
+  {
+    "file": "product.routes.js",
+    "line": 46,
+    "text": "router.post("
+  },
+  {
+    "file": "product.routes.js",
+    "line": 60,
+    "text": "router.put('/:id', authMiddleware, param('id').isMongoId(), body('coverImage').optional().isMongoId().withMessage('Cover image must be a valid image id'), validate, productController.updateProduct);"
+  },
+  {
+    "file": "product.routes.js",
+    "line": 61,
+    "text": "router.delete('/:id', authMiddleware, param('id').isMongoId(), validate, productController.deleteProduct);"
+  },
+  {
+    "file": "promotions.routes.js",
+    "line": 9,
+    "text": "router.use(authMiddleware, roleMiddleware(['seller']));"
+  },
+  {
+    "file": "promotions.routes.js",
+    "line": 11,
+    "text": "router.get('/plans', promotionController.getPromotionPlans);"
+  },
+  {
+    "file": "promotions.routes.js",
+    "line": 12,
+    "text": "router.post("
+  },
+  {
+    "file": "promotions.routes.js",
+    "line": 19,
+    "text": "router.get('/', promotionController.getSellerPromotions);"
+  },
+  {
+    "file": "report.routes.js",
+    "line": 11,
+    "text": "router.post("
+  },
+  {
+    "file": "report.routes.js",
+    "line": 22,
+    "text": "router.get('/me', authMiddleware, reportController.getMyReports);"
+  },
+  {
+    "file": "review.routes.js",
+    "line": 9,
+    "text": "router.post("
+  },
+  {
+    "file": "review.routes.js",
+    "line": 20,
+    "text": "router.get("
+  },
+  {
+    "file": "route.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "route.routes.js",
+    "line": 22,
+    "text": "router.get("
+  },
+  {
+    "file": "route.routes.js",
+    "line": 30,
+    "text": "router.post("
+  },
+  {
+    "file": "route.routes.js",
+    "line": 45,
+    "text": "router.put("
+  },
+  {
+    "file": "route.routes.js",
+    "line": 61,
+    "text": "router.delete("
+  },
+  {
+    "file": "schoolDashboard.routes.js",
+    "line": 9,
+    "text": "router.get('/stats', adminOnly, schoolDashboardController.getSchoolStats);"
+  },
+  {
+    "file": "schoolSetting.routes.js",
+    "line": 43,
+    "text": "router.get('/', adminOnly, validate, schoolSettingController.getSchoolSettings);"
+  },
+  {
+    "file": "schoolSetting.routes.js",
+    "line": 45,
+    "text": "router.post('/', adminOnly, ...baseValidators, validate, schoolSettingController.createSchoolSettings);"
+  },
+  {
+    "file": "schoolSetting.routes.js",
+    "line": 47,
+    "text": "router.put('/', adminOnly, ...baseValidators, validate, schoolSettingController.updateSchoolSettings);"
+  },
+  {
+    "file": "schoolSetting.routes.js",
+    "line": 49,
+    "text": "router.delete('/', adminOnly, validate, schoolSettingController.deleteSchoolSettings);"
+  },
+  {
+    "file": "seller-analytics.routes.js",
+    "line": 9,
+    "text": "router.use(authMiddleware);"
+  },
+  {
+    "file": "seller-analytics.routes.js",
+    "line": 15,
+    "text": "router.get('/', analyticsController.getSellerAnalytics);"
+  },
+  {
+    "file": "seller-analytics.routes.js",
+    "line": 22,
+    "text": "router.get("
+  },
+  {
+    "file": "seller-analytics.routes.js",
+    "line": 34,
+    "text": "router.get("
+  },
+  {
+    "file": "seller-analytics.routes.js",
+    "line": 45,
+    "text": "router.get("
+  },
+  {
+    "file": "seller-analytics.routes.js",
+    "line": 56,
+    "text": "router.get("
+  },
+  {
+    "file": "seller-analytics.routes.js",
+    "line": 67,
+    "text": "router.get("
+  },
+  {
+    "file": "seller-analytics.routes.js",
+    "line": 78,
+    "text": "router.get('/insights', analyticsController.getSellerInsights);"
+  },
+  {
+    "file": "sitemap.routes.js",
+    "line": 18,
+    "text": "router.get('/sitemap.xml', async (req, res) => {"
+  },
+  {
+    "file": "student.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "student.routes.js",
+    "line": 26,
+    "text": "router.get("
+  },
+  {
+    "file": "student.routes.js",
+    "line": 34,
+    "text": "router.post("
+  },
+  {
+    "file": "student.routes.js",
+    "line": 54,
+    "text": "router.put("
+  },
+  {
+    "file": "student.routes.js",
+    "line": 75,
+    "text": "router.delete("
+  },
+  {
+    "file": "subject.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "subject.routes.js",
+    "line": 22,
+    "text": "router.get("
+  },
+  {
+    "file": "subject.routes.js",
+    "line": 30,
+    "text": "router.post("
+  },
+  {
+    "file": "subject.routes.js",
+    "line": 42,
+    "text": "router.put("
+  },
+  {
+    "file": "subject.routes.js",
+    "line": 55,
+    "text": "router.delete("
+  },
+  {
+    "file": "teacher.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "teacher.routes.js",
+    "line": 26,
+    "text": "router.get("
+  },
+  {
+    "file": "teacher.routes.js",
+    "line": 35,
+    "text": "router.post("
+  },
+  {
+    "file": "teacher.routes.js",
+    "line": 60,
+    "text": "router.put("
+  },
+  {
+    "file": "teacher.routes.js",
+    "line": 86,
+    "text": "router.delete("
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 10,
+    "text": "router.use(authMiddleware);"
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 11,
+    "text": "router.use(roleMiddleware(['admin']));"
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 17,
+    "text": "router.get("
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 29,
+    "text": "router.get("
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 42,
+    "text": "router.get("
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 55,
+    "text": "router.get("
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 69,
+    "text": "router.get("
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 83,
+    "text": "router.get("
+  },
+  {
+    "file": "traffic-analytics.routes.js",
+    "line": 97,
+    "text": "router.get("
+  },
+  {
+    "file": "transport.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "transport.routes.js",
+    "line": 25,
+    "text": "router.get("
+  },
+  {
+    "file": "transport.routes.js",
+    "line": 33,
+    "text": "router.post("
+  },
+  {
+    "file": "transport.routes.js",
+    "line": 52,
+    "text": "router.put("
+  },
+  {
+    "file": "transport.routes.js",
+    "line": 72,
+    "text": "router.delete("
+  },
+  {
+    "file": "transportAssignment.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "transportAssignment.routes.js",
+    "line": 23,
+    "text": "router.get("
+  },
+  {
+    "file": "transportAssignment.routes.js",
+    "line": 31,
+    "text": "router.post("
+  },
+  {
+    "file": "transportAssignment.routes.js",
+    "line": 45,
+    "text": "router.put("
+  },
+  {
+    "file": "transportAssignment.routes.js",
+    "line": 60,
+    "text": "router.delete("
+  },
+  {
+    "file": "upload.routes.js",
+    "line": 10,
+    "text": "router.post("
+  },
+  {
+    "file": "upload.routes.js",
+    "line": 19,
+    "text": "router.delete("
+  },
+  {
+    "file": "user.routes.js",
+    "line": 16,
+    "text": "router.get('/profile/:id', userController.getProfileById);"
+  },
+  {
+    "file": "user.routes.js",
+    "line": 40,
+    "text": "router.put('/profile', authMiddleware, userController.updateProfile);"
+  },
+  {
+    "file": "vehicle.routes.js",
+    "line": 11,
+    "text": "router.get("
+  },
+  {
+    "file": "vehicle.routes.js",
+    "line": 23,
+    "text": "router.get("
+  },
+  {
+    "file": "vehicle.routes.js",
+    "line": 31,
+    "text": "router.post("
+  },
+  {
+    "file": "vehicle.routes.js",
+    "line": 48,
+    "text": "router.put("
+  },
+  {
+    "file": "vehicle.routes.js",
+    "line": 66,
+    "text": "router.delete("
+  },
+  {
+    "file": "verification.routes.js",
+    "line": 9,
+    "text": "router.post("
+  },
+  {
+    "file": "verification.routes.js",
+    "line": 20,
+    "text": "router.get('/status', authMiddleware, verificationController.getVerificationStatus);"
+  }
+]

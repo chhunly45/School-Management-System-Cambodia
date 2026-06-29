@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
+import { formatDateForApi, formatDateForDisplay, formatDateForInput, parseLocalDate } from '../utils/date';
 import {
   createTransportAssignment,
   deleteTransportAssignment,
@@ -32,7 +33,7 @@ interface AssignmentFormValues {
 }
 
 const emptyAssignment: AssignmentFormValues = {
-  assignmentDate: new Date().toISOString().slice(0, 10),
+  assignmentDate: formatDateForInput(new Date()),
   vehicleId: '',
   routeId: '',
   driverEmployeeCode: '',
@@ -138,7 +139,11 @@ const TransportAssignmentsPage = () => {
   const validateForm = () => {
     const nextErrors: Partial<Record<AssignmentField, string>> = {};
 
-    if (!formValues.assignmentDate) nextErrors.assignmentDate = 'Assignment date is required.';
+    if (!formValues.assignmentDate) {
+      nextErrors.assignmentDate = 'Assignment date is required.';
+    } else if (!parseLocalDate(formValues.assignmentDate)) {
+      nextErrors.assignmentDate = 'Assignment date is invalid.';
+    }
     if (!formValues.vehicleId) nextErrors.vehicleId = 'Vehicle is required.';
     if (!formValues.routeId) nextErrors.routeId = 'Route is required.';
     if (!formValues.driverEmployeeCode.trim()) nextErrors.driverEmployeeCode = 'Driver code is required.';
@@ -163,7 +168,7 @@ const TransportAssignmentsPage = () => {
     }
 
     const payload: TransportAssignmentPayload = {
-      assignmentDate: formValues.assignmentDate,
+      assignmentDate: formatDateForApi(formValues.assignmentDate) || formValues.assignmentDate,
       vehicleId: formValues.vehicleId,
       routeId: formValues.routeId,
       driverEmployeeCode: formValues.driverEmployeeCode,
@@ -195,7 +200,7 @@ const TransportAssignmentsPage = () => {
     const vehicleId = typeof item.vehicleId === 'string' ? item.vehicleId : item.vehicleId?._id || '';
     const routeId = typeof item.routeId === 'string' ? item.routeId : item.routeId?._id || '';
     setFormValues({
-      assignmentDate: item.assignmentDate ? new Date(item.assignmentDate).toISOString().slice(0, 10) : '',
+      assignmentDate: formatDateForInput(item.assignmentDate),
       vehicleId,
       routeId,
       driverEmployeeCode: item.driverEmployeeCode,
@@ -365,7 +370,7 @@ const TransportAssignmentsPage = () => {
               ) : (
                 assignments.map((item) => (
                   <tr key={item._id} className="border-b border-muted text-sm text-text-primary">
-                    <td className="px-4 py-3">{new Date(item.assignmentDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">{formatDateForDisplay(item.assignmentDate)}</td>
                     <td className="px-4 py-3">{getVehicleDisplay(item)}</td>
                     <td className="px-4 py-3">{getRouteDisplay(item)}</td>
                     <td className="px-4 py-3">{item.driverEmployeeCode} - {item.driverName}</td>

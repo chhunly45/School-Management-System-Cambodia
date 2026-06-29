@@ -6,6 +6,7 @@ import DeleteConfirmationModal from '../components/common/DeleteConfirmationModa
 import { listAcademicYears, type AcademicYear } from '../services/academicYear.api';
 import { listGrades, type Grade } from '../services/grade.api';
 import { listClasses, type ClassItem } from '../services/class.api';
+import { formatDateForApi, formatDateForInput, parseLocalDate } from '../utils/date';
 
 interface Student {
   _id: string;
@@ -88,37 +89,70 @@ const StudentsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const loadLookups = async () => {
-    try {
-      const [yearsResp, gradesResp, classesResp] = await Promise.all([
-        listAcademicYears({ perPage: 100 }),
-        listGrades({ perPage: 100 }),
-        listClasses({ perPage: 100 })
-      ]);
+  const getResponseItems = <T,>(response: any): T[] => {
+    if (!response) return [];
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response.data)) return response.data;
+    if (Array.isArray(response.items)) return response.items;
+    if (Array.isArray(response.data?.items)) return response.data.items;
+    return [];
+  };
 
-      setAcademicYears(yearsResp.data?.items || []);
-      setGrades(gradesResp.data?.items || []);
-      setClasses(classesResp.data?.items || []);
+  const loadLookups = async () => {
+    let lookupError = false;
+
+    try {
+      const yearsResp = await listAcademicYears({ perPage: 100 });
+      setAcademicYears(getResponseItems<AcademicYear>(yearsResp));
     } catch (err) {
-      console.error(err);
-      setMessage('Unable to load academic lookups.');
+      lookupError = true;
+      console.error('Unable to load academic years lookup.', err);
+    }
+
+    try {
+      const gradesResp = await listGrades({ perPage: 100 });
+      setGrades(getResponseItems<Grade>(gradesResp));
+    } catch (err) {
+      lookupError = true;
+      console.error('Unable to load grades lookup.', err);
+    }
+
+    try {
+      const classesResp = await listClasses({ perPage: 100 });
+      setClasses(getResponseItems<ClassItem>(classesResp));
+    } catch (err) {
+      lookupError = true;
+      console.error('Unable to load classes lookup.', err);
+    }
+
+    if (lookupError) {
+      setMessage('Unable to load some academic lookup data.');
     }
   };
 
-  const loadStudents = async (search = '') => {
+  const loadStudents = async (search = '', options: { preserveMessage?: boolean } = {}) => {
+    const { preserveMessage = false } = options;
     setLoading(true);
+    if (!preserveMessage) {
+      setMessage('');
+    }
     try {
-      const response = await listStudents({ search, perPage: 200 });
-      const items = response.data?.items || [];
+      const response = await listStudents({ search, perPage: 200 }).catch((err: any) => {
+        if (err?.response?.status === 304 && err.response.data) {
+          return err.response.data;
+        }
+        throw err;
+      });
+      const items = getResponseItems<Student>(response);
       setStudents(
         items.map((item: any) => ({
           ...item,
-          dateOfBirth: item.dateOfBirth ? new Date(item.dateOfBirth).toISOString().slice(0, 10) : ''
+          dateOfBirth: item.dateOfBirth ? formatDateForInput(item.dateOfBirth) : ''
         }))
       );
-    } catch (err) {
-      setMessage('Unable to load students.');
-      console.error(err);
+    } catch (err: any) {
+      setMessage(err?.response?.data?.message || 'Unable to load students.');
+      console.error('Unable to load students.', err);
     } finally {
       setLoading(false);
     }
@@ -162,9 +196,9 @@ const StudentsPage = () => {
     }
 
     if (formValues.dateOfBirth) {
-      const dob = new Date(formValues.dateOfBirth);
+      const dob = parseLocalDate(formValues.dateOfBirth);
       const now = new Date();
-      if (Number.isNaN(dob.getTime())) {
+      if (!dob) {
         nextErrors.dateOfBirth = 'Enter a valid date of birth.';
       } else if (dob > now) {
         nextErrors.dateOfBirth = 'Date of birth cannot be in the future.';
@@ -191,7 +225,7 @@ const StudentsPage = () => {
       studentId: student.studentId,
       fullName: student.fullName,
       gender: student.gender,
-      dateOfBirth: student.dateOfBirth,
+      dateOfBirth: formatDateForInput(student.dateOfBirth),
       phone: student.phone,
       address: student.address,
       guardianName: student.guardianName,
@@ -221,7 +255,7 @@ const StudentsPage = () => {
       studentId: formValues.studentId,
       fullName: formValues.fullName,
       gender: formValues.gender,
-      dateOfBirth: formValues.dateOfBirth || undefined,
+      dateOfBirth: formatDateForApi(formValues.dateOfBirth) || undefined,
       phone: formValues.phone,
       address: formValues.address,
       guardianName: formValues.guardianName,
@@ -244,7 +278,7 @@ const StudentsPage = () => {
       setEditingId(null);
       setFormValues(emptyStudentForm);
       setFormErrors({});
-      await loadStudents(searchTerm);
+      await loadStudents(searchTerm, { preserveMessage: true });
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Failed to save student.');
       console.error(err);
@@ -262,7 +296,7 @@ const StudentsPage = () => {
       await deleteStudent(pendingDeleteStudent._id);
       setMessage('Student deleted successfully.');
       setPendingDeleteStudent(null);
-      await loadStudents(searchTerm);
+      await loadStudents(searchTerm, { preserveMessage: true });
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Failed to delete student.');
       console.error(err);

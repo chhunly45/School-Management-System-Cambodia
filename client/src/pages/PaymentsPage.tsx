@@ -19,6 +19,7 @@ import { listGrades, type Grade } from '../services/grade.api';
 import { listClasses, type ClassItem } from '../services/class.api';
 import { getSchoolSettings, type SchoolSettings } from '../services/schoolSettings.api';
 import { getCurrencyFormatter } from '../utils/price';
+import { formatDateForApi, formatDateForDisplay, formatDateForInput } from '../utils/date';
 
 type AcademicYearRef = string | { _id: string; code: string; name: string };
 type GradeRef = string | { _id: string; code: string; name: string; level: number };
@@ -90,8 +91,8 @@ interface PaymentFormValues {
   remarks: string;
 }
 
-const today = new Date().toISOString().slice(0, 10);
-const monthKeyDefault = new Date().toISOString().slice(0, 7);
+const today = formatDateForInput(new Date());
+const monthKeyDefault = formatDateForInput(new Date()).slice(0, 7);
 
 const emptyPaymentForm: PaymentFormValues = {
   receiptNumber: '',
@@ -235,7 +236,7 @@ const PaymentsPage = () => {
         gradeId: selectedGradeId || undefined,
         classId: selectedClassId || undefined,
         includeRelations: true,
-        perPage: 200
+        perPage: 100
       });
 
       const items = response.data?.items || [];
@@ -251,10 +252,10 @@ const PaymentsPage = () => {
             item.remainingBalance !== undefined
               ? Number(item.remainingBalance || 0)
               : calcRemaining(Number(item.tuitionAmount || item.amount || 0), Number(item.discount || 0), Number(item.amount || 0)),
-          paymentDate: item.paymentDate ? new Date(item.paymentDate).toISOString().slice(0, 10) : '',
+          paymentDate: item.paymentDate ? formatDateForInput(item.paymentDate) : '',
           semester: item.semester || 1,
           academicYear: item.academicYear || '',
-          dueDate: item.dueDate ? new Date(item.dueDate).toISOString().slice(0, 10) : undefined,
+          dueDate: item.dueDate ? formatDateForInput(item.dueDate) : undefined,
           monthlyDueDay: item.monthlyDueDay,
           quarterlyDueDates: item.quarterlyDueDates,
           yearlyDueDate: item.yearlyDueDate,
@@ -404,7 +405,7 @@ const PaymentsPage = () => {
     yearlyDueDate: yearlyDueDate.trim() || undefined,
     gracePeriodDays,
     cashier: formValues.cashier.trim() || undefined,
-    paymentDate: formValues.paymentDate,
+    paymentDate: formatDateForApi(formValues.paymentDate) || formatDateForInput(formValues.paymentDate),
     paymentMethod: formValues.paymentMethod,
     academicYear: formValues.academicYear.trim() || undefined,
     semester: formValues.semester,
@@ -1007,7 +1008,7 @@ const PaymentsPage = () => {
                         <div className="text-xs text-slate-500">{payment.studentId}</div>
                       </td>
                       <td className="px-3 py-2">{getClassLabel(payment)}</td>
-                      <td className="px-3 py-2">{payment.dueDate || payment.paymentDate}</td>
+                      <td className="px-3 py-2">{formatDateForDisplay(payment.dueDate || payment.paymentDate)}</td>
                       <td className="px-3 py-2 text-right font-semibold text-rose-700">{currencyFormatter.format(Number(payment.remainingBalance || 0))}</td>
                       <td className="px-3 py-2 text-center">
                         <div className="inline-flex items-center gap-2">
@@ -1050,7 +1051,7 @@ const PaymentsPage = () => {
                   <div key={`timeline-${payment._id}`} className="rounded-xl border border-slate-200 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="text-sm font-semibold text-slate-900">
-                        {payment.paymentDate} • {payment.receiptNumber}
+                        {formatDateForDisplay(payment.paymentDate)} • {payment.receiptNumber}
                       </div>
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-semibold ${
@@ -1193,7 +1194,7 @@ const PaymentsPage = () => {
                       <td className="px-3 py-2 text-right">{currencyFormatter.format(Number(payment.tuitionAmount || 0))}</td>
                       <td className="px-3 py-2 text-right font-semibold text-emerald-700">{currencyFormatter.format(Number(payment.amount || 0))}</td>
                       <td className="px-3 py-2 text-right font-semibold text-rose-700">{currencyFormatter.format(Number(payment.remainingBalance || 0))}</td>
-                      <td className="px-3 py-2">{payment.paymentDate}</td>
+                      <td className="px-3 py-2">{formatDateForDisplay(payment.paymentDate)}</td>
                       <td className="px-3 py-2">
                         <span
                           className={`rounded-full px-2 py-1 text-xs font-semibold ${
@@ -1265,7 +1266,7 @@ const PaymentsPage = () => {
                 <div className="text-sm"><span className="font-semibold">Paid:</span> {currencyFormatter.format(Number(selectedReceipt.amount))}</div>
                 <div className="text-sm"><span className="font-semibold">Remaining:</span> {currencyFormatter.format(Number(selectedReceipt.remainingBalance))}</div>
                 <div className="text-sm"><span className="font-semibold">Cashier:</span> {selectedReceipt.cashier || '-'}</div>
-                <div className="text-sm"><span className="font-semibold">Date:</span> {selectedReceipt.paymentDate}</div>
+                <div className="text-sm"><span className="font-semibold">Date:</span> {formatDateForDisplay(selectedReceipt.paymentDate)}</div>
                 <div className="text-sm"><span className="font-semibold">Remarks:</span> {selectedReceipt.remarks || '-'}</div>
                 <div className="text-sm"><span className="font-semibold">Footer:</span> {schoolSettings?.footerText || '-'}</div>
                 <div className="text-sm"><span className="font-semibold">Principal:</span> {schoolSettings?.principalName || '-'}</div>

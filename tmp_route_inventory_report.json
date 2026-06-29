@@ -1,0 +1,4145 @@
+{
+  "summary": {
+    "total": 207,
+    "public": 27,
+    "auth": 42,
+    "admin": 135,
+    "seller": 3,
+    "other": 0,
+    "byGroup": {
+      "Academic Records": 5,
+      "Academic Years": 5,
+      "Admin": 25,
+      "Attendance": 6,
+      "Auth / Users": 23,
+      "Legacy Marketplace": 64,
+      "Certificates": 5,
+      "Classes": 5,
+      "Employee Attendance": 5,
+      "Expenses": 5,
+      "Finance": 2,
+      "Fuel": 5,
+      "Grades": 5,
+      "Payments": 6,
+      "Routes": 5,
+      "Dashboard": 1,
+      "School Settings": 4,
+      "Other": 1,
+      "Students": 5,
+      "Subjects": 5,
+      "Teachers": 5,
+      "Transport": 5,
+      "Transport Assignments": 5,
+      "Vehicles": 5
+    },
+    "byFile": {
+      "academicRecord.routes.js": 5,
+      "academicYear.routes.js": 5,
+      "admin.routes.js": 25,
+      "attendance.routes.js": 6,
+      "auth.routes.js": 19,
+      "banner.routes.js": 6,
+      "category.routes.js": 5,
+      "certificate.routes.js": 5,
+      "chat.routes.js": 10,
+      "class.routes.js": 5,
+      "employeeAttendance.routes.js": 5,
+      "expense.routes.js": 5,
+      "favorite.routes.js": 5,
+      "finance.routes.js": 2,
+      "fuelRecord.routes.js": 5,
+      "grade.routes.js": 5,
+      "location.routes.js": 2,
+      "notification.routes.js": 4,
+      "payment.routes.js": 6,
+      "product.routes.js": 9,
+      "promotions.routes.js": 3,
+      "report.routes.js": 2,
+      "review.routes.js": 2,
+      "route.routes.js": 5,
+      "schoolDashboard.routes.js": 1,
+      "schoolSetting.routes.js": 4,
+      "seller-analytics.routes.js": 7,
+      "sitemap.routes.js": 1,
+      "student.routes.js": 5,
+      "subject.routes.js": 5,
+      "teacher.routes.js": 5,
+      "traffic-analytics.routes.js": 7,
+      "transport.routes.js": 5,
+      "transportAssignment.routes.js": 5,
+      "upload.routes.js": 2,
+      "user.routes.js": 2,
+      "vehicle.routes.js": 5,
+      "verification.routes.js": 2
+    },
+    "byPrefix": {
+      "/academic-records": 5,
+      "/academic-years": 5,
+      "/admin": 25,
+      "/attendances": 6,
+      "/auth": 19,
+      "/banners": 6,
+      "/categories": 5,
+      "/certificates": 5,
+      "/chats": 5,
+      "/conversations": 5,
+      "/classes": 5,
+      "/employee-attendances": 5,
+      "/expenses": 5,
+      "/favorites": 5,
+      "/finance": 2,
+      "/fuel-records": 5,
+      "/grades": 5,
+      "/locations": 2,
+      "/notifications": 4,
+      "/payments": 6,
+      "/products": 9,
+      "/promotions": 3,
+      "/reports": 2,
+      "/reviews": 2,
+      "/routes": 5,
+      "/school-dashboard": 1,
+      "/school-settings": 4,
+      "/seller-analytics": 7,
+      "/": 1,
+      "/students": 5,
+      "/subjects": 5,
+      "/teachers": 5,
+      "/traffic-analytics": 7,
+      "/transport": 5,
+      "/transport-assignments": 5,
+      "/upload": 2,
+      "/users": 2,
+      "/vehicles": 5,
+      "/verification": 2
+    }
+  },
+  "routes": [
+    {
+      "file": "academicRecord.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('className').optional().trim().isString()",
+        "query('subject').optional().trim().isString()",
+        "query('examType').optional().isIn(['midterm', 'final', 'quiz'])",
+        "query('academicYear').optional().trim().isString()",
+        "query('semester').optional().isInt({ min: 1, max: 2 })",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1 })",
+        "validate",
+        "academicRecordController.listAcademicRecords"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('className').optional().trim().isString(), query('subject').optional().trim().isString(), query('examType').optional().isIn(['midterm', 'final', 'quiz']), query('academicYear').optional().trim().isString(), query('semester').optional().isInt({ min: 1, max: 2 }), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1 }), validate, academicRecordController.listAcademicRecords );",
+      "prefix": "/academic-records",
+      "fullPath": "/academic-records",
+      "authType": "admin",
+      "group": "Academic Records"
+    },
+    {
+      "file": "academicRecord.routes.js",
+      "line": 26,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "academicRecordController.getAcademicRecord"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, academicRecordController.getAcademicRecord );",
+      "prefix": "/academic-records",
+      "fullPath": "/academic-records/:id",
+      "authType": "admin",
+      "group": "Academic Records"
+    },
+    {
+      "file": "academicRecord.routes.js",
+      "line": 34,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('studentId').notEmpty().trim().isString()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('subject').notEmpty().trim().isString()",
+        "body('score').notEmpty().isFloat({ min: 0, max: 100 })",
+        "body('academicYear').notEmpty().trim().isString()",
+        "body('semester').notEmpty().isInt({ min: 1, max: 2 })",
+        "body('examType').notEmpty().isIn(['midterm', 'final', 'quiz'])",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "academicRecordController.createAcademicRecord"
+      ],
+      "raw": "router.post( '/', adminOnly, body('studentId').notEmpty().trim().isString(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('subject').notEmpty().trim().isString(), body('score').notEmpty().isFloat({ min: 0, max: 100 }), body('academicYear').notEmpty().trim().isString(), body('semester').notEmpty().isInt({ min: 1, max: 2 }), body('examType').notEmpty().isIn(['midterm', 'final', 'quiz']), body('remarks').optional().trim().isString(), validate, academicRecordController.createAcademicRecord );",
+      "prefix": "/academic-records",
+      "fullPath": "/academic-records",
+      "authType": "admin",
+      "group": "Academic Records"
+    },
+    {
+      "file": "academicRecord.routes.js",
+      "line": 50,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('studentId').notEmpty().trim().isString()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('subject').notEmpty().trim().isString()",
+        "body('score').notEmpty().isFloat({ min: 0, max: 100 })",
+        "body('academicYear').notEmpty().trim().isString()",
+        "body('semester').notEmpty().isInt({ min: 1, max: 2 })",
+        "body('examType').notEmpty().isIn(['midterm', 'final', 'quiz'])",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "academicRecordController.updateAcademicRecord"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('studentId').notEmpty().trim().isString(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('subject').notEmpty().trim().isString(), body('score').notEmpty().isFloat({ min: 0, max: 100 }), body('academicYear').notEmpty().trim().isString(), body('semester').notEmpty().isInt({ min: 1, max: 2 }), body('examType').notEmpty().isIn(['midterm', 'final', 'quiz']), body('remarks').optional().trim().isString(), validate, academicRecordController.updateAcademicRecord );",
+      "prefix": "/academic-records",
+      "fullPath": "/academic-records/:id",
+      "authType": "admin",
+      "group": "Academic Records"
+    },
+    {
+      "file": "academicRecord.routes.js",
+      "line": 67,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "academicRecordController.deleteAcademicRecord"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, academicRecordController.deleteAcademicRecord );",
+      "prefix": "/academic-records",
+      "fullPath": "/academic-records/:id",
+      "authType": "admin",
+      "group": "Academic Records"
+    },
+    {
+      "file": "academicYear.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['planned', 'active', 'closed', 'archived'])",
+        "query('isCurrent').optional().isBoolean()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "academicYearController.listAcademicYears"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['planned', 'active', 'closed', 'archived']), query('isCurrent').optional().isBoolean(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, academicYearController.listAcademicYears );",
+      "prefix": "/academic-years",
+      "fullPath": "/academic-years",
+      "authType": "admin",
+      "group": "Academic Years"
+    },
+    {
+      "file": "academicYear.routes.js",
+      "line": 23,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "academicYearController.getAcademicYear"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, academicYearController.getAcademicYear );",
+      "prefix": "/academic-years",
+      "fullPath": "/academic-years/:id",
+      "authType": "admin",
+      "group": "Academic Years"
+    },
+    {
+      "file": "academicYear.routes.js",
+      "line": 31,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('code').notEmpty().trim().isString()",
+        "body('name').notEmpty().trim().isString()",
+        "body('startDate').notEmpty().isISO8601()",
+        "body('endDate').notEmpty().isISO8601()",
+        "body('status').optional().isIn(['planned', 'active', 'closed', 'archived'])",
+        "body('isCurrent').optional().isBoolean()",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "academicYearController.createAcademicYear"
+      ],
+      "raw": "router.post( '/', adminOnly, body('code').notEmpty().trim().isString(), body('name').notEmpty().trim().isString(), body('startDate').notEmpty().isISO8601(), body('endDate').notEmpty().isISO8601(), body('status').optional().isIn(['planned', 'active', 'closed', 'archived']), body('isCurrent').optional().isBoolean(), body('remarks').optional().trim().isString(), validate, academicYearController.createAcademicYear );",
+      "prefix": "/academic-years",
+      "fullPath": "/academic-years",
+      "authType": "admin",
+      "group": "Academic Years"
+    },
+    {
+      "file": "academicYear.routes.js",
+      "line": 45,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('code').notEmpty().trim().isString()",
+        "body('name').notEmpty().trim().isString()",
+        "body('startDate').notEmpty().isISO8601()",
+        "body('endDate').notEmpty().isISO8601()",
+        "body('status').optional().isIn(['planned', 'active', 'closed', 'archived'])",
+        "body('isCurrent').optional().isBoolean()",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "academicYearController.updateAcademicYear"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('code').notEmpty().trim().isString(), body('name').notEmpty().trim().isString(), body('startDate').notEmpty().isISO8601(), body('endDate').notEmpty().isISO8601(), body('status').optional().isIn(['planned', 'active', 'closed', 'archived']), body('isCurrent').optional().isBoolean(), body('remarks').optional().trim().isString(), validate, academicYearController.updateAcademicYear );",
+      "prefix": "/academic-years",
+      "fullPath": "/academic-years/:id",
+      "authType": "admin",
+      "group": "Academic Years"
+    },
+    {
+      "file": "academicYear.routes.js",
+      "line": 60,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "academicYearController.deleteAcademicYear"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, academicYearController.deleteAcademicYear );",
+      "prefix": "/academic-years",
+      "fullPath": "/academic-years/:id",
+      "authType": "admin",
+      "group": "Academic Years"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 13,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware",
+        "roleMiddleware(['admin', 'moderator'])"
+      ],
+      "raw": "router.use(authMiddleware, roleMiddleware(['admin', 'moderator']));",
+      "prefix": "/admin",
+      "fullPath": "/admin/authMiddleware",
+      "authType": "admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 25,
+      "method": "USE",
+      "routePath": "adminLimiter",
+      "middleware": [
+        "adminLimiter"
+      ],
+      "raw": "router.use(adminLimiter);",
+      "prefix": "/admin",
+      "fullPath": "/admin/adminLimiter",
+      "authType": "admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 27,
+      "method": "GET",
+      "routePath": "/overview",
+      "middleware": [
+        "adminController.getOverview"
+      ],
+      "raw": "router.get('/overview', adminController.getOverview);",
+      "prefix": "/admin",
+      "fullPath": "/admin/overview",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 28,
+      "method": "GET",
+      "routePath": "/analytics/products-by-province",
+      "middleware": [
+        "adminController.getProductsByProvince"
+      ],
+      "raw": "router.get('/analytics/products-by-province', adminController.getProductsByProvince);",
+      "prefix": "/admin",
+      "fullPath": "/admin/analytics/products-by-province",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 29,
+      "method": "GET",
+      "routePath": "/revenue/metrics",
+      "middleware": [
+        "adminController.getRevenueMetrics"
+      ],
+      "raw": "router.get('/revenue/metrics', adminController.getRevenueMetrics);",
+      "prefix": "/admin",
+      "fullPath": "/admin/revenue/metrics",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 30,
+      "method": "GET",
+      "routePath": "/revenue/daily",
+      "middleware": [
+        "adminController.getDailyRevenue"
+      ],
+      "raw": "router.get('/revenue/daily', adminController.getDailyRevenue);",
+      "prefix": "/admin",
+      "fullPath": "/admin/revenue/daily",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 31,
+      "method": "GET",
+      "routePath": "/revenue/weekly",
+      "middleware": [
+        "adminController.getWeeklyRevenue"
+      ],
+      "raw": "router.get('/revenue/weekly', adminController.getWeeklyRevenue);",
+      "prefix": "/admin",
+      "fullPath": "/admin/revenue/weekly",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 32,
+      "method": "GET",
+      "routePath": "/revenue/monthly",
+      "middleware": [
+        "adminController.getMonthlyRevenue"
+      ],
+      "raw": "router.get('/revenue/monthly', adminController.getMonthlyRevenue);",
+      "prefix": "/admin",
+      "fullPath": "/admin/revenue/monthly",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 33,
+      "method": "GET",
+      "routePath": "/revenue/by-seller",
+      "middleware": [
+        "adminController.getRevenueBySeller"
+      ],
+      "raw": "router.get('/revenue/by-seller', adminController.getRevenueBySeller);",
+      "prefix": "/admin",
+      "fullPath": "/admin/revenue/by-seller",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 34,
+      "method": "GET",
+      "routePath": "/users",
+      "middleware": [
+        "adminController.listUsers"
+      ],
+      "raw": "router.get('/users', adminController.listUsers);",
+      "prefix": "/admin",
+      "fullPath": "/admin/users",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 35,
+      "method": "PATCH",
+      "routePath": "/users/:id/status",
+      "middleware": [
+        "param('id').isMongoId()",
+        "body('isActive').optional().isBoolean()",
+        "body('role').optional().isIn(['user','seller','admin','moderator'])",
+        "body('sellerVerificationStatus').optional().isIn(['unverified','verified','rejected'])",
+        "body('verified').optional().isBoolean()",
+        "body('verificationStatus').optional().isIn(['none','pending','approved','rejected'])",
+        "validate",
+        "adminController.updateUserStatus"
+      ],
+      "raw": "router.patch('/users/:id/status', param('id').isMongoId(), body('isActive').optional().isBoolean(), body('role').optional().isIn(['user','seller','admin','moderator']), body('sellerVerificationStatus').optional().isIn(['unverified','verified','rejected']), body('verified').optional().isBoolean(), body('verificationStatus').optional().isIn(['none','pending','approved','rejected']), validate, adminController.updateUserStatus );",
+      "prefix": "/admin",
+      "fullPath": "/admin/users/:id/status",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 45,
+      "method": "GET",
+      "routePath": "/products",
+      "middleware": [
+        "adminController.listProducts"
+      ],
+      "raw": "router.get('/products', adminController.listProducts);",
+      "prefix": "/admin",
+      "fullPath": "/admin/products",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 46,
+      "method": "PATCH",
+      "routePath": "/products/:id/status",
+      "middleware": [
+        "param('id').isMongoId()",
+        "body('status').isIn(['published','sold','archived','flagged']).withMessage('Invalid status')",
+        "validate",
+        "adminController.updateProductStatus"
+      ],
+      "raw": "router.patch('/products/:id/status', param('id').isMongoId(), body('status').isIn(['published','sold','archived','flagged']).withMessage('Invalid status'), validate, adminController.updateProductStatus);",
+      "prefix": "/admin",
+      "fullPath": "/admin/products/:id/status",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 47,
+      "method": "PATCH",
+      "routePath": "/products/:id/featured",
+      "middleware": [
+        "param('id').isMongoId()",
+        "body('featured').isBoolean()",
+        "validate",
+        "adminController.updateProductFeatured"
+      ],
+      "raw": "router.patch('/products/:id/featured', param('id').isMongoId(), body('featured').isBoolean(), validate, adminController.updateProductFeatured);",
+      "prefix": "/admin",
+      "fullPath": "/admin/products/:id/featured",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 48,
+      "method": "GET",
+      "routePath": "/promotions",
+      "middleware": [
+        "adminController.listPromotions"
+      ],
+      "raw": "router.get('/promotions', adminController.listPromotions);",
+      "prefix": "/admin",
+      "fullPath": "/admin/promotions",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 49,
+      "method": "GET",
+      "routePath": "/promotions/metrics",
+      "middleware": [
+        "adminController.getPromotionMetrics"
+      ],
+      "raw": "router.get('/promotions/metrics', adminController.getPromotionMetrics);",
+      "prefix": "/admin",
+      "fullPath": "/admin/promotions/metrics",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 50,
+      "method": "PATCH",
+      "routePath": "/promotions/:id/approve",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "adminController.approvePromotion"
+      ],
+      "raw": "router.patch('/promotions/:id/approve', param('id').isMongoId(), validate, adminController.approvePromotion);",
+      "prefix": "/admin",
+      "fullPath": "/admin/promotions/:id/approve",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 51,
+      "method": "PATCH",
+      "routePath": "/promotions/:id/reject",
+      "middleware": [
+        "param('id').isMongoId()",
+        "body('reason').optional().trim()",
+        "validate",
+        "adminController.rejectPromotion"
+      ],
+      "raw": "router.patch('/promotions/:id/reject', param('id').isMongoId(), body('reason').optional().trim(), validate, adminController.rejectPromotion);",
+      "prefix": "/admin",
+      "fullPath": "/admin/promotions/:id/reject",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 52,
+      "method": "PATCH",
+      "routePath": "/promotions/:id/extend",
+      "middleware": [
+        "param('id').isMongoId()",
+        "body('extraDays').isInt({ min: 1 }).withMessage('extraDays must be at least 1')",
+        "validate",
+        "adminController.extendPromotion"
+      ],
+      "raw": "router.patch('/promotions/:id/extend', param('id').isMongoId(), body('extraDays').isInt({ min: 1 }).withMessage('extraDays must be at least 1'), validate, adminController.extendPromotion);",
+      "prefix": "/admin",
+      "fullPath": "/admin/promotions/:id/extend",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 53,
+      "method": "PATCH",
+      "routePath": "/promotions/:id/cancel",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "adminController.cancelPromotion"
+      ],
+      "raw": "router.patch('/promotions/:id/cancel', param('id').isMongoId(), validate, adminController.cancelPromotion);",
+      "prefix": "/admin",
+      "fullPath": "/admin/promotions/:id/cancel",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 54,
+      "method": "GET",
+      "routePath": "/reports",
+      "middleware": [
+        "adminController.listReports"
+      ],
+      "raw": "router.get('/reports', adminController.listReports);",
+      "prefix": "/admin",
+      "fullPath": "/admin/reports",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 55,
+      "method": "PATCH",
+      "routePath": "/reports/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "body('status').isIn(['pending','reviewed','resolved','rejected']).withMessage('Invalid report status')",
+        "validate",
+        "adminController.updateReportStatus"
+      ],
+      "raw": "router.patch('/reports/:id', param('id').isMongoId(), body('status').isIn(['pending','reviewed','resolved','rejected']).withMessage('Invalid report status'), validate, adminController.updateReportStatus);",
+      "prefix": "/admin",
+      "fullPath": "/admin/reports/:id",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 56,
+      "method": "PATCH",
+      "routePath": "/verification/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "body('status').isIn(['approved','rejected']).withMessage('Invalid verification status')",
+        "validate",
+        "verificationController.reviewVerification"
+      ],
+      "raw": "router.patch('/verification/:id', param('id').isMongoId(), body('status').isIn(['approved','rejected']).withMessage('Invalid verification status'), validate, verificationController.reviewVerification);",
+      "prefix": "/admin",
+      "fullPath": "/admin/verification/:id",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 57,
+      "method": "GET",
+      "routePath": "/audit-logs",
+      "middleware": [
+        "adminController.listAuditLogs"
+      ],
+      "raw": "router.get('/audit-logs', adminController.listAuditLogs);",
+      "prefix": "/admin",
+      "fullPath": "/admin/audit-logs",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 58,
+      "method": "DELETE",
+      "routePath": "/reviews/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "adminController.deleteReview"
+      ],
+      "raw": "router.delete('/reviews/:id', param('id').isMongoId(), validate, adminController.deleteReview);",
+      "prefix": "/admin",
+      "fullPath": "/admin/reviews/:id",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 59,
+      "method": "POST",
+      "routePath": "/email/test",
+      "middleware": [
+        "body('to').isEmail()",
+        "validate",
+        "adminController.sendTestEmail"
+      ],
+      "raw": "router.post('/email/test', body('to').isEmail(), validate, adminController.sendTestEmail);",
+      "prefix": "/admin",
+      "fullPath": "/admin/email/test",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "admin.routes.js",
+      "line": 60,
+      "method": "POST",
+      "routePath": "/backfill/product-sellers",
+      "middleware": [
+        "adminController.backfillProductSellers"
+      ],
+      "raw": "router.post('/backfill/product-sellers', adminController.backfillProductSellers);",
+      "prefix": "/admin",
+      "fullPath": "/admin/backfill/product-sellers",
+      "authType": "admin",
+      "group": "Admin"
+    },
+    {
+      "file": "attendance.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('date').optional().isISO8601()",
+        "query('className').optional().trim().isString()",
+        "query('academicYearId').optional().isMongoId()",
+        "query('gradeId').optional().isMongoId()",
+        "query('classId').optional().isMongoId()",
+        "query('academicYear').optional().trim().isString()",
+        "query('status').optional().isIn(['present', 'absent', 'late', 'excused'])",
+        "query('includeRelations').optional().isBoolean().toBoolean()",
+        "query('semester').optional().isInt({ min: 1, max: 2 })",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "attendanceController.listAttendance"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('date').optional().isISO8601(), query('className').optional().trim().isString(), query('academicYearId').optional().isMongoId(), query('gradeId').optional().isMongoId(), query('classId').optional().isMongoId(), query('academicYear').optional().trim().isString(), query('status').optional().isIn(['present', 'absent', 'late', 'excused']), query('includeRelations').optional().isBoolean().toBoolean(), query('semester').optional().isInt({ min: 1, max: 2 }), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, attendanceController.listAttendance );",
+      "prefix": "/attendances",
+      "fullPath": "/attendances",
+      "authType": "admin",
+      "group": "Attendance"
+    },
+    {
+      "file": "attendance.routes.js",
+      "line": 30,
+      "method": "GET",
+      "routePath": "/reports/monthly",
+      "middleware": [
+        "adminOnly",
+        "query('year').optional().isInt({ min: 2000, max: 2100 })",
+        "query('month').optional().isInt({ min: 1, max: 12 })",
+        "query('academicYearId').optional().isMongoId()",
+        "query('gradeId').optional().isMongoId()",
+        "query('classId').optional().isMongoId()",
+        "query('status').optional().isIn(['present', 'absent', 'late', 'excused'])",
+        "validate",
+        "attendanceController.getMonthlyReport"
+      ],
+      "raw": "router.get( '/reports/monthly', adminOnly, query('year').optional().isInt({ min: 2000, max: 2100 }), query('month').optional().isInt({ min: 1, max: 12 }), query('academicYearId').optional().isMongoId(), query('gradeId').optional().isMongoId(), query('classId').optional().isMongoId(), query('status').optional().isIn(['present', 'absent', 'late', 'excused']), validate, attendanceController.getMonthlyReport );",
+      "prefix": "/attendances",
+      "fullPath": "/attendances/reports/monthly",
+      "authType": "admin",
+      "group": "Attendance"
+    },
+    {
+      "file": "attendance.routes.js",
+      "line": 43,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "attendanceController.getAttendance"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, attendanceController.getAttendance );",
+      "prefix": "/attendances",
+      "fullPath": "/attendances/:id",
+      "authType": "admin",
+      "group": "Attendance"
+    },
+    {
+      "file": "attendance.routes.js",
+      "line": 51,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('studentId').notEmpty().trim().isString()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('academicYearId').optional().isMongoId()",
+        "body('gradeId').optional().isMongoId()",
+        "body('classId').optional().isMongoId()",
+        "body('date').notEmpty().isISO8601()",
+        "body('status').isIn(['present', 'absent', 'late', 'excused'])",
+        "body('remarks').optional().trim().isString()",
+        "body('academicYear').optional().trim().isString()",
+        "body('semester').optional().isInt({ min: 1, max: 2 })",
+        "validate",
+        "attendanceController.createAttendance"
+      ],
+      "raw": "router.post( '/', adminOnly, body('studentId').notEmpty().trim().isString(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('academicYearId').optional().isMongoId(), body('gradeId').optional().isMongoId(), body('classId').optional().isMongoId(), body('date').notEmpty().isISO8601(), body('status').isIn(['present', 'absent', 'late', 'excused']), body('remarks').optional().trim().isString(), body('academicYear').optional().trim().isString(), body('semester').optional().isInt({ min: 1, max: 2 }), validate, attendanceController.createAttendance );",
+      "prefix": "/attendances",
+      "fullPath": "/attendances",
+      "authType": "admin",
+      "group": "Attendance"
+    },
+    {
+      "file": "attendance.routes.js",
+      "line": 69,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('studentId').notEmpty().trim().isString()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('academicYearId').optional().isMongoId()",
+        "body('gradeId').optional().isMongoId()",
+        "body('classId').optional().isMongoId()",
+        "body('date').notEmpty().isISO8601()",
+        "body('status').isIn(['present', 'absent', 'late', 'excused'])",
+        "body('remarks').optional().trim().isString()",
+        "body('academicYear').optional().trim().isString()",
+        "body('semester').optional().isInt({ min: 1, max: 2 })",
+        "validate",
+        "attendanceController.updateAttendance"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('studentId').notEmpty().trim().isString(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('academicYearId').optional().isMongoId(), body('gradeId').optional().isMongoId(), body('classId').optional().isMongoId(), body('date').notEmpty().isISO8601(), body('status').isIn(['present', 'absent', 'late', 'excused']), body('remarks').optional().trim().isString(), body('academicYear').optional().trim().isString(), body('semester').optional().isInt({ min: 1, max: 2 }), validate, attendanceController.updateAttendance );",
+      "prefix": "/attendances",
+      "fullPath": "/attendances/:id",
+      "authType": "admin",
+      "group": "Attendance"
+    },
+    {
+      "file": "attendance.routes.js",
+      "line": 88,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "attendanceController.deleteAttendance"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, attendanceController.deleteAttendance );",
+      "prefix": "/attendances",
+      "fullPath": "/attendances/:id",
+      "authType": "admin",
+      "group": "Attendance"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 29,
+      "method": "POST",
+      "routePath": "/register",
+      "middleware": [
+        "body('email').optional({ checkFalsy: true }).isEmail().withMessage('Valid email is required')",
+        "body('phoneNumber').notEmpty().withMessage('Phone number is required')",
+        "body('password').isLength({ min: 8 }).withMessage('Password must have at least 8 characters')",
+        "body('displayName').notEmpty().withMessage('Display name is required')",
+        "validate",
+        "authController.register"
+      ],
+      "raw": "router.post( '/register', body('email').optional({ checkFalsy: true }).isEmail().withMessage('Valid email is required'), body('phoneNumber').notEmpty().withMessage('Phone number is required'), body('password').isLength({ min: 8 }).withMessage('Password must have at least 8 characters'), body('displayName').notEmpty().withMessage('Display name is required'), validate, authController.register );",
+      "prefix": "/auth",
+      "fullPath": "/auth/register",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 39,
+      "method": "POST",
+      "routePath": "/login",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "body('password').notEmpty().withMessage('Password is required')",
+        "validate",
+        "authController.login"
+      ],
+      "raw": "router.post( '/login', body('identifier').notEmpty().withMessage('Email or phone is required'), body('password').notEmpty().withMessage('Password is required'), validate, authController.login );",
+      "prefix": "/auth",
+      "fullPath": "/auth/login",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 47,
+      "method": "POST",
+      "routePath": "/login/verify",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "body('code').isLength({ min: 6, max: 6 }).withMessage('Verification code must be 6 digits')",
+        "validate",
+        "authController.verifyLoginOtp"
+      ],
+      "raw": "router.post( '/login/verify', body('identifier').notEmpty().withMessage('Email or phone is required'), body('code').isLength({ min: 6, max: 6 }).withMessage('Verification code must be 6 digits'), validate, authController.verifyLoginOtp );",
+      "prefix": "/auth",
+      "fullPath": "/auth/login/verify",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 55,
+      "method": "POST",
+      "routePath": "/login/resend",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "validate",
+        "authController.resendLoginOtp"
+      ],
+      "raw": "router.post( '/login/resend', body('identifier').notEmpty().withMessage('Email or phone is required'), validate, authController.resendLoginOtp );",
+      "prefix": "/auth",
+      "fullPath": "/auth/login/resend",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 62,
+      "method": "POST",
+      "routePath": "/phone/request-otp",
+      "middleware": [
+        "phoneOtpLimiter",
+        "ensurePhoneOtpEnabled",
+        "body('phoneNumber').notEmpty().withMessage('Phone number is required')",
+        "validate",
+        "authController.requestPhoneOtp"
+      ],
+      "raw": "router.post( '/phone/request-otp', phoneOtpLimiter, ensurePhoneOtpEnabled, body('phoneNumber').notEmpty().withMessage('Phone number is required'), validate, authController.requestPhoneOtp );",
+      "prefix": "/auth",
+      "fullPath": "/auth/phone/request-otp",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 71,
+      "method": "POST",
+      "routePath": "/phone/resend-otp",
+      "middleware": [
+        "phoneOtpLimiter",
+        "ensurePhoneOtpEnabled",
+        "body('phoneNumber').notEmpty().withMessage('Phone number is required')",
+        "validate",
+        "authController.resendPhoneOtp"
+      ],
+      "raw": "router.post( '/phone/resend-otp', phoneOtpLimiter, ensurePhoneOtpEnabled, body('phoneNumber').notEmpty().withMessage('Phone number is required'), validate, authController.resendPhoneOtp );",
+      "prefix": "/auth",
+      "fullPath": "/auth/phone/resend-otp",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 80,
+      "method": "POST",
+      "routePath": "/phone/verify-otp",
+      "middleware": [
+        "ensurePhoneOtpEnabled",
+        "body('phoneNumber').notEmpty().withMessage('Phone number is required')",
+        "body('code').isLength({ min: 6, max: 6 }).withMessage('Verification code must be 6 digits')",
+        "validate",
+        "authController.verifyPhoneOtp"
+      ],
+      "raw": "router.post( '/phone/verify-otp', ensurePhoneOtpEnabled, body('phoneNumber').notEmpty().withMessage('Phone number is required'), body('code').isLength({ min: 6, max: 6 }).withMessage('Verification code must be 6 digits'), validate, authController.verifyPhoneOtp );",
+      "prefix": "/auth",
+      "fullPath": "/auth/phone/verify-otp",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 89,
+      "method": "POST",
+      "routePath": "/register/verify",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "body('code').isLength({ min: 6, max: 6 }).withMessage('Verification code must be 6 digits')",
+        "validate",
+        "authController.verifyEmail"
+      ],
+      "raw": "router.post( '/register/verify', body('identifier').notEmpty().withMessage('Email or phone is required'), body('code').isLength({ min: 6, max: 6 }).withMessage('Verification code must be 6 digits'), validate, authController.verifyEmail );",
+      "prefix": "/auth",
+      "fullPath": "/auth/register/verify",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 97,
+      "method": "POST",
+      "routePath": "/register/verify/resend",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "validate",
+        "authController.resendEmailVerification"
+      ],
+      "raw": "router.post( '/register/verify/resend', body('identifier').notEmpty().withMessage('Email or phone is required'), validate, authController.resendEmailVerification );",
+      "prefix": "/auth",
+      "fullPath": "/auth/register/verify/resend",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 104,
+      "method": "POST",
+      "routePath": "/password-reset/request",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "validate",
+        "authController.requestPasswordReset"
+      ],
+      "raw": "router.post( '/password-reset/request', body('identifier').notEmpty().withMessage('Email or phone is required'), validate, authController.requestPasswordReset );",
+      "prefix": "/auth",
+      "fullPath": "/auth/password-reset/request",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 111,
+      "method": "POST",
+      "routePath": "/password-reset/verify",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "body('code').isLength({ min: 6, max: 6 }).withMessage('Reset code must be 6 digits')",
+        "validate",
+        "authController.verifyPasswordResetOtp"
+      ],
+      "raw": "router.post( '/password-reset/verify', body('identifier').notEmpty().withMessage('Email or phone is required'), body('code').isLength({ min: 6, max: 6 }).withMessage('Reset code must be 6 digits'), validate, authController.verifyPasswordResetOtp );",
+      "prefix": "/auth",
+      "fullPath": "/auth/password-reset/verify",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 119,
+      "method": "POST",
+      "routePath": "/password-reset/confirm",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "body('code').isLength({ min: 6, max: 6 }).withMessage('Reset code must be 6 digits')",
+        "body('password').isLength({ min: 8 }).withMessage('Password must have at least 8 characters')",
+        "validate",
+        "authController.resetPassword"
+      ],
+      "raw": "router.post( '/password-reset/confirm', body('identifier').notEmpty().withMessage('Email or phone is required'), body('code').isLength({ min: 6, max: 6 }).withMessage('Reset code must be 6 digits'), body('password').isLength({ min: 8 }).withMessage('Password must have at least 8 characters'), validate, authController.resetPassword );",
+      "prefix": "/auth",
+      "fullPath": "/auth/password-reset/confirm",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 128,
+      "method": "POST",
+      "routePath": "/password-reset/resend",
+      "middleware": [
+        "body('identifier').notEmpty().withMessage('Email or phone is required')",
+        "validate",
+        "authController.resendPasswordResetOtp"
+      ],
+      "raw": "router.post( '/password-reset/resend', body('identifier').notEmpty().withMessage('Email or phone is required'), validate, authController.resendPasswordResetOtp );",
+      "prefix": "/auth",
+      "fullPath": "/auth/password-reset/resend",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 135,
+      "method": "POST",
+      "routePath": "/refresh",
+      "middleware": [
+        "authController.refreshToken"
+      ],
+      "raw": "router.post('/refresh', authController.refreshToken);",
+      "prefix": "/auth",
+      "fullPath": "/auth/refresh",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 136,
+      "method": "POST",
+      "routePath": "/logout",
+      "middleware": [
+        "authMiddleware",
+        "authController.logout"
+      ],
+      "raw": "router.post('/logout', authMiddleware, authController.logout);",
+      "prefix": "/auth",
+      "fullPath": "/auth/logout",
+      "authType": "auth",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 137,
+      "method": "GET",
+      "routePath": "/me",
+      "middleware": [
+        "authMiddleware",
+        "authController.getProfile"
+      ],
+      "raw": "router.get('/me', authMiddleware, authController.getProfile);",
+      "prefix": "/auth",
+      "fullPath": "/auth/me",
+      "authType": "auth",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 138,
+      "method": "PUT",
+      "routePath": "/me",
+      "middleware": [
+        "authMiddleware",
+        "authController.updateProfile"
+      ],
+      "raw": "router.put('/me', authMiddleware, authController.updateProfile);",
+      "prefix": "/auth",
+      "fullPath": "/auth/me",
+      "authType": "auth",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 139,
+      "method": "POST",
+      "routePath": "/change-password",
+      "middleware": [
+        "authMiddleware",
+        "body('currentPassword').notEmpty().withMessage('Current password is required')",
+        "body('newPassword').isLength({ min: 8 }).withMessage('New password must have at least 8 characters')",
+        "validate",
+        "authController.changePassword"
+      ],
+      "raw": "router.post( '/change-password', authMiddleware, body('currentPassword').notEmpty().withMessage('Current password is required'), body('newPassword').isLength({ min: 8 }).withMessage('New password must have at least 8 characters'), validate, authController.changePassword );",
+      "prefix": "/auth",
+      "fullPath": "/auth/change-password",
+      "authType": "auth",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "auth.routes.js",
+      "line": 147,
+      "method": "POST",
+      "routePath": "/verification-request",
+      "middleware": [
+        "authMiddleware",
+        "body('details').optional().trim().isString()",
+        "validate",
+        "authController.requestVerification"
+      ],
+      "raw": "router.post('/verification-request', authMiddleware, body('details').optional().trim().isString(), validate, authController.requestVerification);",
+      "prefix": "/auth",
+      "fullPath": "/auth/verification-request",
+      "authType": "auth",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "banner.routes.js",
+      "line": 12,
+      "method": "GET",
+      "routePath": "/active",
+      "middleware": [
+        "query('position').optional().isIn(['top','inline','sidebar'])",
+        "validate",
+        "bannerController.getActiveBanners"
+      ],
+      "raw": "router.get('/active', query('position').optional().isIn(['top','inline','sidebar']), validate, bannerController.getActiveBanners );",
+      "prefix": "/banners",
+      "fullPath": "/banners/active",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "banner.routes.js",
+      "line": 19,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware",
+        "roleMiddleware(['admin'])"
+      ],
+      "raw": "router.use(authMiddleware, roleMiddleware(['admin']));",
+      "prefix": "/banners",
+      "fullPath": "/banners/authMiddleware",
+      "authType": "admin"
+    },
+    {
+      "file": "banner.routes.js",
+      "line": 21,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "bannerController.listBanners"
+      ],
+      "raw": "router.get('/', bannerController.listBanners);",
+      "prefix": "/banners",
+      "fullPath": "/banners",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "banner.routes.js",
+      "line": 23,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "body('title').isString().notEmpty()",
+        "body('position').optional().isIn(['top','inline','sidebar'])",
+        "body('enabled').optional().isBoolean()",
+        "validate",
+        "bannerController.createBanner"
+      ],
+      "raw": "router.post('/', body('title').isString().notEmpty(), body('position').optional().isIn(['top','inline','sidebar']), body('enabled').optional().isBoolean(), validate, bannerController.createBanner );",
+      "prefix": "/banners",
+      "fullPath": "/banners",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "banner.routes.js",
+      "line": 31,
+      "method": "POST",
+      "routePath": "/upload",
+      "middleware": [
+        "upload.single('image')",
+        "bannerController.uploadImage"
+      ],
+      "raw": "router.post('/upload', upload.single('image'), bannerController.uploadImage);",
+      "prefix": "/banners",
+      "fullPath": "/banners/upload",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "banner.routes.js",
+      "line": 33,
+      "method": "PATCH",
+      "routePath": "/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "bannerController.updateBanner"
+      ],
+      "raw": "router.patch('/:id', param('id').isMongoId(), validate, bannerController.updateBanner);",
+      "prefix": "/banners",
+      "fullPath": "/banners/:id",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "banner.routes.js",
+      "line": 35,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "bannerController.deleteBanner"
+      ],
+      "raw": "router.delete('/:id', param('id').isMongoId(), validate, bannerController.deleteBanner);",
+      "prefix": "/banners",
+      "fullPath": "/banners/:id",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "category.routes.js",
+      "line": 10,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "categoryController.listCategories"
+      ],
+      "raw": "router.get('/', categoryController.listCategories);",
+      "prefix": "/categories",
+      "fullPath": "/categories",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "category.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "categoryController.getCategory"
+      ],
+      "raw": "router.get('/:id', param('id').isMongoId(), validate, categoryController.getCategory);",
+      "prefix": "/categories",
+      "fullPath": "/categories/:id",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "category.routes.js",
+      "line": 13,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "authMiddleware",
+        "roleMiddleware(['admin', 'moderator'])",
+        "body('name').notEmpty().withMessage('Category name is required')",
+        "body('slug').notEmpty().withMessage('Slug is required')",
+        "validate",
+        "categoryController.createCategory"
+      ],
+      "raw": "router.post( '/', authMiddleware, roleMiddleware(['admin', 'moderator']), body('name').notEmpty().withMessage('Category name is required'), body('slug').notEmpty().withMessage('Slug is required'), validate, categoryController.createCategory );",
+      "prefix": "/categories",
+      "fullPath": "/categories",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "category.routes.js",
+      "line": 23,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "authMiddleware",
+        "roleMiddleware(['admin', 'moderator'])",
+        "param('id').isMongoId()",
+        "body('name').optional().notEmpty()",
+        "body('slug').optional().notEmpty()",
+        "validate",
+        "categoryController.updateCategory"
+      ],
+      "raw": "router.put( '/:id', authMiddleware, roleMiddleware(['admin', 'moderator']), param('id').isMongoId(), body('name').optional().notEmpty(), body('slug').optional().notEmpty(), validate, categoryController.updateCategory );",
+      "prefix": "/categories",
+      "fullPath": "/categories/:id",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "category.routes.js",
+      "line": 34,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "authMiddleware",
+        "roleMiddleware(['admin'])",
+        "param('id').isMongoId()",
+        "validate",
+        "categoryController.deleteCategory"
+      ],
+      "raw": "router.delete('/:id', authMiddleware, roleMiddleware(['admin']), param('id').isMongoId(), validate, categoryController.deleteCategory);",
+      "prefix": "/categories",
+      "fullPath": "/categories/:id",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "certificate.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['draft', 'issued', 'revoked'])",
+        "query('certificateType').optional().isIn(['graduation', 'achievement', 'attendance', 'honor'])",
+        "query('academicYear').optional().trim().isString()",
+        "query('studentId').optional().isMongoId()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1 })",
+        "validate",
+        "certificateController.listCertificates"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['draft', 'issued', 'revoked']), query('certificateType').optional().isIn(['graduation', 'achievement', 'attendance', 'honor']), query('academicYear').optional().trim().isString(), query('studentId').optional().isMongoId(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1 }), validate, certificateController.listCertificates );",
+      "prefix": "/certificates",
+      "fullPath": "/certificates",
+      "authType": "admin",
+      "group": "Certificates"
+    },
+    {
+      "file": "certificate.routes.js",
+      "line": 25,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "certificateController.getCertificate"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, certificateController.getCertificate );",
+      "prefix": "/certificates",
+      "fullPath": "/certificates/:id",
+      "authType": "admin",
+      "group": "Certificates"
+    },
+    {
+      "file": "certificate.routes.js",
+      "line": 33,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('certificateNumber').notEmpty().trim().isString()",
+        "body('studentId').notEmpty().isMongoId()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('certificateType').isIn(['graduation', 'achievement', 'attendance', 'honor'])",
+        "body('issueDate').isISO8601()",
+        "body('academicYear').notEmpty().trim().isString()",
+        "body('issuedBy').optional().trim().isString()",
+        "body('remarks').optional().trim().isString()",
+        "body('status').isIn(['draft', 'issued', 'revoked'])",
+        "validate",
+        "certificateController.createCertificate"
+      ],
+      "raw": "router.post( '/', adminOnly, body('certificateNumber').notEmpty().trim().isString(), body('studentId').notEmpty().isMongoId(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('certificateType').isIn(['graduation', 'achievement', 'attendance', 'honor']), body('issueDate').isISO8601(), body('academicYear').notEmpty().trim().isString(), body('issuedBy').optional().trim().isString(), body('remarks').optional().trim().isString(), body('status').isIn(['draft', 'issued', 'revoked']), validate, certificateController.createCertificate );",
+      "prefix": "/certificates",
+      "fullPath": "/certificates",
+      "authType": "admin",
+      "group": "Certificates"
+    },
+    {
+      "file": "certificate.routes.js",
+      "line": 50,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('certificateNumber').notEmpty().trim().isString()",
+        "body('studentId').notEmpty().isMongoId()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('certificateType').isIn(['graduation', 'achievement', 'attendance', 'honor'])",
+        "body('issueDate').isISO8601()",
+        "body('academicYear').notEmpty().trim().isString()",
+        "body('issuedBy').optional().trim().isString()",
+        "body('remarks').optional().trim().isString()",
+        "body('status').isIn(['draft', 'issued', 'revoked'])",
+        "validate",
+        "certificateController.updateCertificate"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('certificateNumber').notEmpty().trim().isString(), body('studentId').notEmpty().isMongoId(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('certificateType').isIn(['graduation', 'achievement', 'attendance', 'honor']), body('issueDate').isISO8601(), body('academicYear').notEmpty().trim().isString(), body('issuedBy').optional().trim().isString(), body('remarks').optional().trim().isString(), body('status').isIn(['draft', 'issued', 'revoked']), validate, certificateController.updateCertificate );",
+      "prefix": "/certificates",
+      "fullPath": "/certificates/:id",
+      "authType": "admin",
+      "group": "Certificates"
+    },
+    {
+      "file": "certificate.routes.js",
+      "line": 68,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "certificateController.deleteCertificate"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, certificateController.deleteCertificate );",
+      "prefix": "/certificates",
+      "fullPath": "/certificates/:id",
+      "authType": "admin",
+      "group": "Certificates"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 10,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware"
+      ],
+      "raw": "router.use(authMiddleware);",
+      "prefix": "/chats",
+      "fullPath": "/chats/authMiddleware",
+      "authType": "auth"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 10,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware"
+      ],
+      "raw": "router.use(authMiddleware);",
+      "prefix": "/conversations",
+      "fullPath": "/conversations/authMiddleware",
+      "authType": "auth"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 21,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "chatController.listChats"
+      ],
+      "raw": "router.get('/', chatController.listChats);",
+      "prefix": "/chats",
+      "fullPath": "/chats",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 21,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "chatController.listChats"
+      ],
+      "raw": "router.get('/', chatController.listChats);",
+      "prefix": "/conversations",
+      "fullPath": "/conversations",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 22,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "chatController.getChat"
+      ],
+      "raw": "router.get('/:id', param('id').isMongoId(), validate, chatController.getChat);",
+      "prefix": "/chats",
+      "fullPath": "/chats/:id",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 22,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "chatController.getChat"
+      ],
+      "raw": "router.get('/:id', param('id').isMongoId(), validate, chatController.getChat);",
+      "prefix": "/conversations",
+      "fullPath": "/conversations/:id",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 23,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "messagingLimiter",
+        "body('productId').isMongoId().withMessage('Valid product ID is required')",
+        "body('message').optional().isString().trim()",
+        "validate",
+        "chatController.createChat"
+      ],
+      "raw": "router.post( '/', messagingLimiter, body('productId').isMongoId().withMessage('Valid product ID is required'), body('message').optional().isString().trim(), validate, chatController.createChat );",
+      "prefix": "/chats",
+      "fullPath": "/chats",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 23,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "messagingLimiter",
+        "body('productId').isMongoId().withMessage('Valid product ID is required')",
+        "body('message').optional().isString().trim()",
+        "validate",
+        "chatController.createChat"
+      ],
+      "raw": "router.post( '/', messagingLimiter, body('productId').isMongoId().withMessage('Valid product ID is required'), body('message').optional().isString().trim(), validate, chatController.createChat );",
+      "prefix": "/conversations",
+      "fullPath": "/conversations",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 31,
+      "method": "POST",
+      "routePath": "/:id/messages",
+      "middleware": [
+        "messagingLimiter",
+        "param('id').isMongoId()",
+        "body('message').notEmpty().withMessage('Message text is required')",
+        "validate",
+        "chatController.sendMessage"
+      ],
+      "raw": "router.post('/:id/messages', messagingLimiter, param('id').isMongoId(), body('message').notEmpty().withMessage('Message text is required'), validate, chatController.sendMessage);",
+      "prefix": "/chats",
+      "fullPath": "/chats/:id/messages",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 31,
+      "method": "POST",
+      "routePath": "/:id/messages",
+      "middleware": [
+        "messagingLimiter",
+        "param('id').isMongoId()",
+        "body('message').notEmpty().withMessage('Message text is required')",
+        "validate",
+        "chatController.sendMessage"
+      ],
+      "raw": "router.post('/:id/messages', messagingLimiter, param('id').isMongoId(), body('message').notEmpty().withMessage('Message text is required'), validate, chatController.sendMessage);",
+      "prefix": "/conversations",
+      "fullPath": "/conversations/:id/messages",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 32,
+      "method": "PATCH",
+      "routePath": "/:id/read",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "chatController.markAsRead"
+      ],
+      "raw": "router.patch('/:id/read', param('id').isMongoId(), validate, chatController.markAsRead);",
+      "prefix": "/chats",
+      "fullPath": "/chats/:id/read",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "chat.routes.js",
+      "line": 32,
+      "method": "PATCH",
+      "routePath": "/:id/read",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "chatController.markAsRead"
+      ],
+      "raw": "router.patch('/:id/read', param('id').isMongoId(), validate, chatController.markAsRead);",
+      "prefix": "/conversations",
+      "fullPath": "/conversations/:id/read",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "class.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['active', 'inactive', 'archived'])",
+        "query('academicYearId').optional().isMongoId()",
+        "query('gradeId').optional().isMongoId()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "classController.listClasses"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['active', 'inactive', 'archived']), query('academicYearId').optional().isMongoId(), query('gradeId').optional().isMongoId(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, classController.listClasses );",
+      "prefix": "/classes",
+      "fullPath": "/classes",
+      "authType": "admin",
+      "group": "Classes"
+    },
+    {
+      "file": "class.routes.js",
+      "line": 24,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "classController.getClass"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, classController.getClass );",
+      "prefix": "/classes",
+      "fullPath": "/classes/:id",
+      "authType": "admin",
+      "group": "Classes"
+    },
+    {
+      "file": "class.routes.js",
+      "line": 32,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('className').notEmpty().trim().isString()",
+        "body('academicYearId').notEmpty().isMongoId()",
+        "body('gradeId').notEmpty().isMongoId()",
+        "body('capacity').notEmpty().isInt({ min: 1 })",
+        "body('status').optional().isIn(['active', 'inactive', 'archived'])",
+        "body('description').optional().trim().isString()",
+        "validate",
+        "classController.createClass"
+      ],
+      "raw": "router.post( '/', adminOnly, body('className').notEmpty().trim().isString(), body('academicYearId').notEmpty().isMongoId(), body('gradeId').notEmpty().isMongoId(), body('capacity').notEmpty().isInt({ min: 1 }), body('status').optional().isIn(['active', 'inactive', 'archived']), body('description').optional().trim().isString(), validate, classController.createClass );",
+      "prefix": "/classes",
+      "fullPath": "/classes",
+      "authType": "admin",
+      "group": "Classes"
+    },
+    {
+      "file": "class.routes.js",
+      "line": 45,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('className').notEmpty().trim().isString()",
+        "body('academicYearId').notEmpty().isMongoId()",
+        "body('gradeId').notEmpty().isMongoId()",
+        "body('capacity').notEmpty().isInt({ min: 1 })",
+        "body('status').optional().isIn(['active', 'inactive', 'archived'])",
+        "body('description').optional().trim().isString()",
+        "validate",
+        "classController.updateClass"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('className').notEmpty().trim().isString(), body('academicYearId').notEmpty().isMongoId(), body('gradeId').notEmpty().isMongoId(), body('capacity').notEmpty().isInt({ min: 1 }), body('status').optional().isIn(['active', 'inactive', 'archived']), body('description').optional().trim().isString(), validate, classController.updateClass );",
+      "prefix": "/classes",
+      "fullPath": "/classes/:id",
+      "authType": "admin",
+      "group": "Classes"
+    },
+    {
+      "file": "class.routes.js",
+      "line": 59,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "classController.deleteClass"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, classController.deleteClass );",
+      "prefix": "/classes",
+      "fullPath": "/classes/:id",
+      "authType": "admin",
+      "group": "Classes"
+    },
+    {
+      "file": "employeeAttendance.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('date').optional().isISO8601()",
+        "query('employeeType').optional().trim().isString()",
+        "query('status').optional().isIn(['present', 'late', 'leave', 'absent'])",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "employeeAttendanceController.listEmployeeAttendance"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('date').optional().isISO8601(), query('employeeType').optional().trim().isString(), query('status').optional().isIn(['present', 'late', 'leave', 'absent']), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, employeeAttendanceController.listEmployeeAttendance );",
+      "prefix": "/employee-attendances",
+      "fullPath": "/employee-attendances",
+      "authType": "admin",
+      "group": "Employee Attendance"
+    },
+    {
+      "file": "employeeAttendance.routes.js",
+      "line": 24,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "employeeAttendanceController.getEmployeeAttendance"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, employeeAttendanceController.getEmployeeAttendance );",
+      "prefix": "/employee-attendances",
+      "fullPath": "/employee-attendances/:id",
+      "authType": "admin",
+      "group": "Employee Attendance"
+    },
+    {
+      "file": "employeeAttendance.routes.js",
+      "line": 32,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('employeeCode').notEmpty().trim().isString()",
+        "body('employeeName').notEmpty().trim().isString()",
+        "body('employeeType').optional().trim().isString()",
+        "body('department').optional().trim().isString()",
+        "body('scheduleLabel').optional().trim().isString()",
+        "body('workStartTime').optional().trim().matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/)",
+        "body('workEndTime').optional().trim().matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/)",
+        "body('date').notEmpty().isISO8601()",
+        "body('status').isIn(['present', 'late', 'leave', 'absent'])",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "employeeAttendanceController.createEmployeeAttendance"
+      ],
+      "raw": "router.post( '/', adminOnly, body('employeeCode').notEmpty().trim().isString(), body('employeeName').notEmpty().trim().isString(), body('employeeType').optional().trim().isString(), body('department').optional().trim().isString(), body('scheduleLabel').optional().trim().isString(), body('workStartTime').optional().trim().matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/), body('workEndTime').optional().trim().matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/), body('date').notEmpty().isISO8601(), body('status').isIn(['present', 'late', 'leave', 'absent']), body('remarks').optional().trim().isString(), validate, employeeAttendanceController.createEmployeeAttendance );",
+      "prefix": "/employee-attendances",
+      "fullPath": "/employee-attendances",
+      "authType": "admin",
+      "group": "Employee Attendance"
+    },
+    {
+      "file": "employeeAttendance.routes.js",
+      "line": 49,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('employeeCode').notEmpty().trim().isString()",
+        "body('employeeName').notEmpty().trim().isString()",
+        "body('employeeType').optional().trim().isString()",
+        "body('department').optional().trim().isString()",
+        "body('scheduleLabel').optional().trim().isString()",
+        "body('workStartTime').optional().trim().matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/)",
+        "body('workEndTime').optional().trim().matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/)",
+        "body('date').notEmpty().isISO8601()",
+        "body('status').isIn(['present', 'late', 'leave', 'absent'])",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "employeeAttendanceController.updateEmployeeAttendance"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('employeeCode').notEmpty().trim().isString(), body('employeeName').notEmpty().trim().isString(), body('employeeType').optional().trim().isString(), body('department').optional().trim().isString(), body('scheduleLabel').optional().trim().isString(), body('workStartTime').optional().trim().matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/), body('workEndTime').optional().trim().matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/), body('date').notEmpty().isISO8601(), body('status').isIn(['present', 'late', 'leave', 'absent']), body('remarks').optional().trim().isString(), validate, employeeAttendanceController.updateEmployeeAttendance );",
+      "prefix": "/employee-attendances",
+      "fullPath": "/employee-attendances/:id",
+      "authType": "admin",
+      "group": "Employee Attendance"
+    },
+    {
+      "file": "employeeAttendance.routes.js",
+      "line": 67,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "employeeAttendanceController.deleteEmployeeAttendance"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, employeeAttendanceController.deleteEmployeeAttendance );",
+      "prefix": "/employee-attendances",
+      "fullPath": "/employee-attendances/:id",
+      "authType": "admin",
+      "group": "Employee Attendance"
+    },
+    {
+      "file": "expense.routes.js",
+      "line": 14,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('category').optional().isIn(CATEGORIES)",
+        "query('paymentMethod').optional().isIn(PAYMENT_METHODS)",
+        "query('currency').optional().trim().isString()",
+        "query('expenseDate').optional().isISO8601()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "expenseController.listExpenses"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('category').optional().isIn(CATEGORIES), query('paymentMethod').optional().isIn(PAYMENT_METHODS), query('currency').optional().trim().isString(), query('expenseDate').optional().isISO8601(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, expenseController.listExpenses );",
+      "prefix": "/expenses",
+      "fullPath": "/expenses",
+      "authType": "admin",
+      "group": "Expenses"
+    },
+    {
+      "file": "expense.routes.js",
+      "line": 28,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "expenseController.getExpense"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, expenseController.getExpense );",
+      "prefix": "/expenses",
+      "fullPath": "/expenses/:id",
+      "authType": "admin",
+      "group": "Expenses"
+    },
+    {
+      "file": "expense.routes.js",
+      "line": 36,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('expenseDate').notEmpty().isISO8601()",
+        "body('category').notEmpty().isIn(CATEGORIES)",
+        "body('description').notEmpty().trim().isString()",
+        "body('amount').notEmpty().isFloat({ gt: 0 })",
+        "body('currency').notEmpty().trim().isString()",
+        "body('paymentMethod').notEmpty().isIn(PAYMENT_METHODS)",
+        "body('receiptNumber').optional().trim().isString()",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "expenseController.createExpense"
+      ],
+      "raw": "router.post( '/', adminOnly, body('expenseDate').notEmpty().isISO8601(), body('category').notEmpty().isIn(CATEGORIES), body('description').notEmpty().trim().isString(), body('amount').notEmpty().isFloat({ gt: 0 }), body('currency').notEmpty().trim().isString(), body('paymentMethod').notEmpty().isIn(PAYMENT_METHODS), body('receiptNumber').optional().trim().isString(), body('notes').optional().trim().isString(), validate, expenseController.createExpense );",
+      "prefix": "/expenses",
+      "fullPath": "/expenses",
+      "authType": "admin",
+      "group": "Expenses"
+    },
+    {
+      "file": "expense.routes.js",
+      "line": 51,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('expenseDate').notEmpty().isISO8601()",
+        "body('category').notEmpty().isIn(CATEGORIES)",
+        "body('description').notEmpty().trim().isString()",
+        "body('amount').notEmpty().isFloat({ gt: 0 })",
+        "body('currency').notEmpty().trim().isString()",
+        "body('paymentMethod').notEmpty().isIn(PAYMENT_METHODS)",
+        "body('receiptNumber').optional().trim().isString()",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "expenseController.updateExpense"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('expenseDate').notEmpty().isISO8601(), body('category').notEmpty().isIn(CATEGORIES), body('description').notEmpty().trim().isString(), body('amount').notEmpty().isFloat({ gt: 0 }), body('currency').notEmpty().trim().isString(), body('paymentMethod').notEmpty().isIn(PAYMENT_METHODS), body('receiptNumber').optional().trim().isString(), body('notes').optional().trim().isString(), validate, expenseController.updateExpense );",
+      "prefix": "/expenses",
+      "fullPath": "/expenses/:id",
+      "authType": "admin",
+      "group": "Expenses"
+    },
+    {
+      "file": "expense.routes.js",
+      "line": 67,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "expenseController.deleteExpense"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, expenseController.deleteExpense );",
+      "prefix": "/expenses",
+      "fullPath": "/expenses/:id",
+      "authType": "admin",
+      "group": "Expenses"
+    },
+    {
+      "file": "favorite.routes.js",
+      "line": 9,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware"
+      ],
+      "raw": "router.use(authMiddleware);",
+      "prefix": "/favorites",
+      "fullPath": "/favorites/authMiddleware",
+      "authType": "auth"
+    },
+    {
+      "file": "favorite.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "favoriteController.listFavorites"
+      ],
+      "raw": "router.get('/', favoriteController.listFavorites);",
+      "prefix": "/favorites",
+      "fullPath": "/favorites",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "favorite.routes.js",
+      "line": 12,
+      "method": "GET",
+      "routePath": "/count",
+      "middleware": [
+        "favoriteController.getFavoritesCount"
+      ],
+      "raw": "router.get('/count', favoriteController.getFavoritesCount);",
+      "prefix": "/favorites",
+      "fullPath": "/favorites/count",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "favorite.routes.js",
+      "line": 13,
+      "method": "GET",
+      "routePath": "/check/:productId",
+      "middleware": [
+        "param('productId').isMongoId()",
+        "validate",
+        "favoriteController.checkFavorite"
+      ],
+      "raw": "router.get('/check/:productId', param('productId').isMongoId(), validate, favoriteController.checkFavorite);",
+      "prefix": "/favorites",
+      "fullPath": "/favorites/check/:productId",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "favorite.routes.js",
+      "line": 14,
+      "method": "POST",
+      "routePath": "/:productId",
+      "middleware": [
+        "param('productId').isMongoId()",
+        "validate",
+        "favoriteController.addFavorite"
+      ],
+      "raw": "router.post('/:productId', param('productId').isMongoId(), validate, favoriteController.addFavorite);",
+      "prefix": "/favorites",
+      "fullPath": "/favorites/:productId",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "favorite.routes.js",
+      "line": 15,
+      "method": "DELETE",
+      "routePath": "/:productId",
+      "middleware": [
+        "param('productId').isMongoId()",
+        "validate",
+        "favoriteController.removeFavorite"
+      ],
+      "raw": "router.delete('/:productId', param('productId').isMongoId(), validate, favoriteController.removeFavorite);",
+      "prefix": "/favorites",
+      "fullPath": "/favorites/:productId",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "finance.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/summary",
+      "middleware": [
+        "adminOnly",
+        "financeController.getSummary"
+      ],
+      "raw": "router.get('/summary', adminOnly, financeController.getSummary);",
+      "prefix": "/finance",
+      "fullPath": "/finance/summary",
+      "authType": "admin",
+      "group": "Finance"
+    },
+    {
+      "file": "finance.routes.js",
+      "line": 13,
+      "method": "GET",
+      "routePath": "/payments-report",
+      "middleware": [
+        "adminOnly",
+        "query('academicYear').optional().trim().isString()",
+        "query('semester').optional().isInt({ min: 1, max: 2 })",
+        "query('className').optional().trim().isString()",
+        "query('status').optional().isIn(['paid', 'pending', 'overdue'])",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1 })",
+        "validate",
+        "financeController.getPaymentsReport"
+      ],
+      "raw": "router.get( '/payments-report', adminOnly, query('academicYear').optional().trim().isString(), query('semester').optional().isInt({ min: 1, max: 2 }), query('className').optional().trim().isString(), query('status').optional().isIn(['paid', 'pending', 'overdue']), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1 }), validate, financeController.getPaymentsReport );",
+      "prefix": "/finance",
+      "fullPath": "/finance/payments-report",
+      "authType": "admin",
+      "group": "Finance"
+    },
+    {
+      "file": "fuelRecord.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('vehicleId').optional().isMongoId()",
+        "query('fuelType').optional().isIn(['gasoline', 'diesel'])",
+        "query('currency').optional().isString()",
+        "query('assignmentDate').optional().isISO8601()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "fuelRecordController.listFuelRecords"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('vehicleId').optional().isMongoId(), query('fuelType').optional().isIn(['gasoline', 'diesel']), query('currency').optional().isString(), query('assignmentDate').optional().isISO8601(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, fuelRecordController.listFuelRecords );",
+      "prefix": "/fuel-records",
+      "fullPath": "/fuel-records",
+      "authType": "admin",
+      "group": "Fuel"
+    },
+    {
+      "file": "fuelRecord.routes.js",
+      "line": 25,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "fuelRecordController.getFuelRecord"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, fuelRecordController.getFuelRecord );",
+      "prefix": "/fuel-records",
+      "fullPath": "/fuel-records/:id",
+      "authType": "admin",
+      "group": "Fuel"
+    },
+    {
+      "file": "fuelRecord.routes.js",
+      "line": 33,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('vehicleId').notEmpty().isMongoId()",
+        "body('transportAssignmentId').optional({ nullable: true, checkFalsy: true }).isMongoId()",
+        "body('assignmentDate').notEmpty().isISO8601()",
+        "body('odometer').notEmpty().isFloat({ min: 0 })",
+        "body('fuelType').notEmpty().isIn(['gasoline', 'diesel'])",
+        "body('liters').notEmpty().isFloat({ gt: 0 })",
+        "body('pricePerLiter').notEmpty().isFloat({ min: 0 })",
+        "body('currency').notEmpty().trim().isString()",
+        "body('totalCost').optional().isFloat({ min: 0 })",
+        "body('fuelStation').notEmpty().trim().isString()",
+        "body('receiptNumber').optional().trim().isString()",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "fuelRecordController.createFuelRecord"
+      ],
+      "raw": "router.post( '/', adminOnly, body('vehicleId').notEmpty().isMongoId(), body('transportAssignmentId').optional({ nullable: true, checkFalsy: true }).isMongoId(), body('assignmentDate').notEmpty().isISO8601(), body('odometer').notEmpty().isFloat({ min: 0 }), body('fuelType').notEmpty().isIn(['gasoline', 'diesel']), body('liters').notEmpty().isFloat({ gt: 0 }), body('pricePerLiter').notEmpty().isFloat({ min: 0 }), body('currency').notEmpty().trim().isString(), body('totalCost').optional().isFloat({ min: 0 }), body('fuelStation').notEmpty().trim().isString(), body('receiptNumber').optional().trim().isString(), body('notes').optional().trim().isString(), validate, fuelRecordController.createFuelRecord );",
+      "prefix": "/fuel-records",
+      "fullPath": "/fuel-records",
+      "authType": "admin",
+      "group": "Fuel"
+    },
+    {
+      "file": "fuelRecord.routes.js",
+      "line": 52,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('vehicleId').notEmpty().isMongoId()",
+        "body('transportAssignmentId').optional({ nullable: true, checkFalsy: true }).isMongoId()",
+        "body('assignmentDate').notEmpty().isISO8601()",
+        "body('odometer').notEmpty().isFloat({ min: 0 })",
+        "body('fuelType').notEmpty().isIn(['gasoline', 'diesel'])",
+        "body('liters').notEmpty().isFloat({ gt: 0 })",
+        "body('pricePerLiter').notEmpty().isFloat({ min: 0 })",
+        "body('currency').notEmpty().trim().isString()",
+        "body('totalCost').optional().isFloat({ min: 0 })",
+        "body('fuelStation').notEmpty().trim().isString()",
+        "body('receiptNumber').optional().trim().isString()",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "fuelRecordController.updateFuelRecord"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('vehicleId').notEmpty().isMongoId(), body('transportAssignmentId').optional({ nullable: true, checkFalsy: true }).isMongoId(), body('assignmentDate').notEmpty().isISO8601(), body('odometer').notEmpty().isFloat({ min: 0 }), body('fuelType').notEmpty().isIn(['gasoline', 'diesel']), body('liters').notEmpty().isFloat({ gt: 0 }), body('pricePerLiter').notEmpty().isFloat({ min: 0 }), body('currency').notEmpty().trim().isString(), body('totalCost').optional().isFloat({ min: 0 }), body('fuelStation').notEmpty().trim().isString(), body('receiptNumber').optional().trim().isString(), body('notes').optional().trim().isString(), validate, fuelRecordController.updateFuelRecord );",
+      "prefix": "/fuel-records",
+      "fullPath": "/fuel-records/:id",
+      "authType": "admin",
+      "group": "Fuel"
+    },
+    {
+      "file": "fuelRecord.routes.js",
+      "line": 72,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "fuelRecordController.deleteFuelRecord"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, fuelRecordController.deleteFuelRecord );",
+      "prefix": "/fuel-records",
+      "fullPath": "/fuel-records/:id",
+      "authType": "admin",
+      "group": "Fuel"
+    },
+    {
+      "file": "grade.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['active', 'inactive', 'archived'])",
+        "query('level').optional().isInt({ min: 1 })",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "gradeController.listGrades"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['active', 'inactive', 'archived']), query('level').optional().isInt({ min: 1 }), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, gradeController.listGrades );",
+      "prefix": "/grades",
+      "fullPath": "/grades",
+      "authType": "admin",
+      "group": "Grades"
+    },
+    {
+      "file": "grade.routes.js",
+      "line": 23,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "gradeController.getGrade"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, gradeController.getGrade );",
+      "prefix": "/grades",
+      "fullPath": "/grades/:id",
+      "authType": "admin",
+      "group": "Grades"
+    },
+    {
+      "file": "grade.routes.js",
+      "line": 31,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('code').notEmpty().trim().isString()",
+        "body('name').notEmpty().trim().isString()",
+        "body('level').notEmpty().isInt({ min: 1 })",
+        "body('status').optional().isIn(['active', 'inactive', 'archived'])",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "gradeController.createGrade"
+      ],
+      "raw": "router.post( '/', adminOnly, body('code').notEmpty().trim().isString(), body('name').notEmpty().trim().isString(), body('level').notEmpty().isInt({ min: 1 }), body('status').optional().isIn(['active', 'inactive', 'archived']), body('remarks').optional().trim().isString(), validate, gradeController.createGrade );",
+      "prefix": "/grades",
+      "fullPath": "/grades",
+      "authType": "admin",
+      "group": "Grades"
+    },
+    {
+      "file": "grade.routes.js",
+      "line": 43,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('code').notEmpty().trim().isString()",
+        "body('name').notEmpty().trim().isString()",
+        "body('level').notEmpty().isInt({ min: 1 })",
+        "body('status').optional().isIn(['active', 'inactive', 'archived'])",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "gradeController.updateGrade"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('code').notEmpty().trim().isString(), body('name').notEmpty().trim().isString(), body('level').notEmpty().isInt({ min: 1 }), body('status').optional().isIn(['active', 'inactive', 'archived']), body('remarks').optional().trim().isString(), validate, gradeController.updateGrade );",
+      "prefix": "/grades",
+      "fullPath": "/grades/:id",
+      "authType": "admin",
+      "group": "Grades"
+    },
+    {
+      "file": "grade.routes.js",
+      "line": 56,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "gradeController.deleteGrade"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, gradeController.deleteGrade );",
+      "prefix": "/grades",
+      "fullPath": "/grades/:id",
+      "authType": "admin",
+      "group": "Grades"
+    },
+    {
+      "file": "location.routes.js",
+      "line": 5,
+      "method": "GET",
+      "routePath": "/provinces",
+      "middleware": [
+        "locationController.getProvinces"
+      ],
+      "raw": "router.get('/provinces', locationController.getProvinces);",
+      "prefix": "/locations",
+      "fullPath": "/locations/provinces",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "location.routes.js",
+      "line": 6,
+      "method": "GET",
+      "routePath": "/provinces/:provinceId/districts",
+      "middleware": [
+        "locationController.getDistricts"
+      ],
+      "raw": "router.get('/provinces/:provinceId/districts', locationController.getDistricts);",
+      "prefix": "/locations",
+      "fullPath": "/locations/provinces/:provinceId/districts",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "notification.routes.js",
+      "line": 9,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware"
+      ],
+      "raw": "router.use(authMiddleware);",
+      "prefix": "/notifications",
+      "fullPath": "/notifications/authMiddleware",
+      "authType": "auth"
+    },
+    {
+      "file": "notification.routes.js",
+      "line": 10,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "[\n    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),\n    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')\n  ]",
+        "validate",
+        "notificationController.getNotifications"
+      ],
+      "raw": "router.get( '/', [ query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'), query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100') ], validate, notificationController.getNotifications );",
+      "prefix": "/notifications",
+      "fullPath": "/notifications",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "notification.routes.js",
+      "line": 19,
+      "method": "GET",
+      "routePath": "/count",
+      "middleware": [
+        "notificationController.getNotificationCount"
+      ],
+      "raw": "router.get('/count', notificationController.getNotificationCount);",
+      "prefix": "/notifications",
+      "fullPath": "/notifications/count",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "notification.routes.js",
+      "line": 20,
+      "method": "PATCH",
+      "routePath": "/read-all",
+      "middleware": [
+        "notificationController.markAllNotificationsRead"
+      ],
+      "raw": "router.patch('/read-all', notificationController.markAllNotificationsRead);",
+      "prefix": "/notifications",
+      "fullPath": "/notifications/read-all",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "notification.routes.js",
+      "line": 21,
+      "method": "PATCH",
+      "routePath": "/:id/read",
+      "middleware": [
+        "param('id').isMongoId().withMessage('Valid notification id is required')",
+        "validate",
+        "notificationController.markNotificationRead"
+      ],
+      "raw": "router.patch('/:id/read', param('id').isMongoId().withMessage('Valid notification id is required'), validate, notificationController.markNotificationRead);",
+      "prefix": "/notifications",
+      "fullPath": "/notifications/:id/read",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "payment.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['paid', 'pending', 'overdue', 'due_soon', 'grace_period'])",
+        "query('paymentMethod').optional().isIn(['cash', 'bank_transfer', 'check', 'mobile_money'])",
+        "query('paymentType').optional().isIn(['monthly', 'quarterly', 'yearly'])",
+        "query('paymentPlan').optional().isIn(['monthly', 'quarterly', 'yearly'])",
+        "query('studentId').optional().trim().isString()",
+        "query('academicYearId').optional().isMongoId()",
+        "query('gradeId').optional().isMongoId()",
+        "query('classId').optional().isMongoId()",
+        "query('includeRelations').optional().isBoolean().toBoolean()",
+        "query('academicYear').optional().trim().isString()",
+        "query('semester').optional().isInt({ min: 1, max: 2 })",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "paymentController.listPayments"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['paid', 'pending', 'overdue', 'due_soon', 'grace_period']), query('paymentMethod').optional().isIn(['cash', 'bank_transfer', 'check', 'mobile_money']), query('paymentType').optional().isIn(['monthly', 'quarterly', 'yearly']), query('paymentPlan').optional().isIn(['monthly', 'quarterly', 'yearly']), query('studentId').optional().trim().isString(), query('academicYearId').optional().isMongoId(), query('gradeId').optional().isMongoId(), query('classId').optional().isMongoId(), query('includeRelations').optional().isBoolean().toBoolean(), query('academicYear').optional().trim().isString(), query('semester').optional().isInt({ min: 1, max: 2 }), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, paymentController.listPayments );",
+      "prefix": "/payments",
+      "fullPath": "/payments",
+      "authType": "admin",
+      "group": "Payments"
+    },
+    {
+      "file": "payment.routes.js",
+      "line": 32,
+      "method": "GET",
+      "routePath": "/summary/monthly",
+      "middleware": [
+        "adminOnly",
+        "query('year').optional().isInt({ min: 2000, max: 2100 })",
+        "query('month').optional().isInt({ min: 1, max: 12 })",
+        "query('academicYearId').optional().isMongoId()",
+        "query('gradeId').optional().isMongoId()",
+        "query('classId').optional().isMongoId()",
+        "validate",
+        "paymentController.getMonthlySummary"
+      ],
+      "raw": "router.get( '/summary/monthly', adminOnly, query('year').optional().isInt({ min: 2000, max: 2100 }), query('month').optional().isInt({ min: 1, max: 12 }), query('academicYearId').optional().isMongoId(), query('gradeId').optional().isMongoId(), query('classId').optional().isMongoId(), validate, paymentController.getMonthlySummary );",
+      "prefix": "/payments",
+      "fullPath": "/payments/summary/monthly",
+      "authType": "admin",
+      "group": "Payments"
+    },
+    {
+      "file": "payment.routes.js",
+      "line": 44,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "query('includeRelations').optional().isBoolean().toBoolean()",
+        "validate",
+        "paymentController.getPayment"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), query('includeRelations').optional().isBoolean().toBoolean(), validate, paymentController.getPayment );",
+      "prefix": "/payments",
+      "fullPath": "/payments/:id",
+      "authType": "admin",
+      "group": "Payments"
+    },
+    {
+      "file": "payment.routes.js",
+      "line": 53,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('receiptNumber').optional().trim().isString()",
+        "body('studentId').notEmpty().trim().isString()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('academicYearId').optional().isMongoId()",
+        "body('gradeId').optional().isMongoId()",
+        "body('classId').optional().isMongoId()",
+        "body('paymentType').optional().isIn(['monthly', 'quarterly', 'yearly'])",
+        "body('paymentPlan').optional().isIn(['monthly', 'quarterly', 'yearly'])",
+        "body('tuitionAmount').optional().isFloat({ min: 0 })",
+        "body('amount').isFloat({ min: 0 })",
+        "body('discount').optional().isFloat({ min: 0 })",
+        "body('remainingBalance').optional().isFloat({ min: 0 })",
+        "body('dueDate').optional().isISO8601()",
+        "body('monthlyDueDay').optional().isInt({ min: 1, max: 31 })",
+        "body('quarterlyDueDates').optional().isArray()",
+        "body('yearlyDueDate').optional().trim().isString()",
+        "body('gracePeriodDays').optional().isInt({ min: 0, max: 365 })",
+        "body('cashier').optional().trim().isString()",
+        "body('paymentDate').isISO8601()",
+        "body('paymentMethod').isIn(['cash', 'bank_transfer', 'check', 'mobile_money'])",
+        "body('academicYear').optional().trim().isString()",
+        "body('semester').optional().isInt({ min: 1, max: 2 })",
+        "body('status').isIn(['paid', 'pending', 'overdue', 'due_soon', 'grace_period'])",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "paymentController.createPayment"
+      ],
+      "raw": "router.post( '/', adminOnly, body('receiptNumber').optional().trim().isString(), body('studentId').notEmpty().trim().isString(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('academicYearId').optional().isMongoId(), body('gradeId').optional().isMongoId(), body('classId').optional().isMongoId(), body('paymentType').optional().isIn(['monthly', 'quarterly', 'yearly']), body('paymentPlan').optional().isIn(['monthly', 'quarterly', 'yearly']), body('tuitionAmount').optional().isFloat({ min: 0 }), body('amount').isFloat({ min: 0 }), body('discount').optional().isFloat({ min: 0 }), body('remainingBalance').optional().isFloat({ min: 0 }), body('dueDate').optional().isISO8601(), body('monthlyDueDay').optional().isInt({ min: 1, max: 31 }), body('quarterlyDueDates').optional().isArray(), body('yearlyDueDate').optional().trim().isString(), body('gracePeriodDays').optional().isInt({ min: 0, max: 365 }), body('cashier').optional().trim().isString(), body('paymentDate').isISO8601(), body('paymentMethod').isIn(['cash', 'bank_transfer', 'check', 'mobile_money']), body('academicYear').optional().trim().isString(), body('semester').optional().isInt({ min: 1, max: 2 }), body('status').isIn(['paid', 'pending', 'overdue', 'due_soon', 'grace_period']), body('remarks').optional().trim().isString(), validate, paymentController.createPayment );",
+      "prefix": "/payments",
+      "fullPath": "/payments",
+      "authType": "admin",
+      "group": "Payments"
+    },
+    {
+      "file": "payment.routes.js",
+      "line": 85,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('receiptNumber').optional().trim().isString()",
+        "body('studentId').notEmpty().trim().isString()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('academicYearId').optional().isMongoId()",
+        "body('gradeId').optional().isMongoId()",
+        "body('classId').optional().isMongoId()",
+        "body('paymentType').optional().isIn(['monthly', 'quarterly', 'yearly'])",
+        "body('paymentPlan').optional().isIn(['monthly', 'quarterly', 'yearly'])",
+        "body('tuitionAmount').optional().isFloat({ min: 0 })",
+        "body('amount').isFloat({ min: 0 })",
+        "body('discount').optional().isFloat({ min: 0 })",
+        "body('remainingBalance').optional().isFloat({ min: 0 })",
+        "body('dueDate').optional().isISO8601()",
+        "body('monthlyDueDay').optional().isInt({ min: 1, max: 31 })",
+        "body('quarterlyDueDates').optional().isArray()",
+        "body('yearlyDueDate').optional().trim().isString()",
+        "body('gracePeriodDays').optional().isInt({ min: 0, max: 365 })",
+        "body('cashier').optional().trim().isString()",
+        "body('paymentDate').isISO8601()",
+        "body('paymentMethod').isIn(['cash', 'bank_transfer', 'check', 'mobile_money'])",
+        "body('academicYear').optional().trim().isString()",
+        "body('semester').optional().isInt({ min: 1, max: 2 })",
+        "body('status').isIn(['paid', 'pending', 'overdue', 'due_soon', 'grace_period'])",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "paymentController.updatePayment"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('receiptNumber').optional().trim().isString(), body('studentId').notEmpty().trim().isString(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('academicYearId').optional().isMongoId(), body('gradeId').optional().isMongoId(), body('classId').optional().isMongoId(), body('paymentType').optional().isIn(['monthly', 'quarterly', 'yearly']), body('paymentPlan').optional().isIn(['monthly', 'quarterly', 'yearly']), body('tuitionAmount').optional().isFloat({ min: 0 }), body('amount').isFloat({ min: 0 }), body('discount').optional().isFloat({ min: 0 }), body('remainingBalance').optional().isFloat({ min: 0 }), body('dueDate').optional().isISO8601(), body('monthlyDueDay').optional().isInt({ min: 1, max: 31 }), body('quarterlyDueDates').optional().isArray(), body('yearlyDueDate').optional().trim().isString(), body('gracePeriodDays').optional().isInt({ min: 0, max: 365 }), body('cashier').optional().trim().isString(), body('paymentDate').isISO8601(), body('paymentMethod').isIn(['cash', 'bank_transfer', 'check', 'mobile_money']), body('academicYear').optional().trim().isString(), body('semester').optional().isInt({ min: 1, max: 2 }), body('status').isIn(['paid', 'pending', 'overdue', 'due_soon', 'grace_period']), body('remarks').optional().trim().isString(), validate, paymentController.updatePayment );",
+      "prefix": "/payments",
+      "fullPath": "/payments/:id",
+      "authType": "admin",
+      "group": "Payments"
+    },
+    {
+      "file": "payment.routes.js",
+      "line": 118,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "paymentController.deletePayment"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, paymentController.deletePayment );",
+      "prefix": "/payments",
+      "fullPath": "/payments/:id",
+      "authType": "admin",
+      "group": "Payments"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 10,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "query('search').optional().trim().isString()",
+        "query('category').optional().trim().isString()",
+        "query('seller').optional().isMongoId()",
+        "query('minPrice').optional().isFloat({ min: 0 })",
+        "query('maxPrice').optional().isFloat({ min: 0 })",
+        "query('province').optional().trim().isString()",
+        "query('condition').optional().isIn(['new', 'used', 'refurbished'])",
+        "query('datePosted').optional().isIn(['24h', '7d', '30d', '90d'])",
+        "query('sort').optional().isIn(['newest', 'priceAsc', 'priceDesc'])",
+        "validate",
+        "productController.listProducts"
+      ],
+      "raw": "router.get('/', query('search').optional().trim().isString(), query('category').optional().trim().isString(), query('seller').optional().isMongoId(), query('minPrice').optional().isFloat({ min: 0 }), query('maxPrice').optional().isFloat({ min: 0 }), query('province').optional().trim().isString(), query('condition').optional().isIn(['new', 'used', 'refurbished']), query('datePosted').optional().isIn(['24h', '7d', '30d', '90d']), query('sort').optional().isIn(['newest', 'priceAsc', 'priceDesc']), validate, productController.listProducts );",
+      "prefix": "/products",
+      "fullPath": "/products",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 24,
+      "method": "GET",
+      "routePath": "/featured",
+      "middleware": [
+        "validate",
+        "productController.listFeaturedProducts"
+      ],
+      "raw": "router.get('/featured', validate, productController.listFeaturedProducts);",
+      "prefix": "/products",
+      "fullPath": "/products/featured",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 25,
+      "method": "GET",
+      "routePath": "/slug/:slug",
+      "middleware": [
+        "validate",
+        "productController.getProductBySlug"
+      ],
+      "raw": "router.get('/slug/:slug', validate, productController.getProductBySlug);",
+      "prefix": "/products",
+      "fullPath": "/products/slug/:slug",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 28,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "async (req, res, next) => {\n  try {\n    const product = await require('../models/product.model').findById(req.params.id).select('slug');\n    if (product && product.slug) {\n      // Redirect old /products/:id URLs to new /products/slug/:slug URLs\n      return res.redirect(301, `/products/slug/${product.slug}`);\n    }\n    // If product not found or no slug, pass to original controller\n    next();\n  } catch (error) {\n    // On error, pass to original controller\n    next();\n  }\n}"
+      ],
+      "raw": "router.get('/:id', param('id').isMongoId(), async (req, res, next) => { try { const product = await require('../models/product.model').findById(req.params.id).select('slug'); if (product && product.slug) { // Redirect old /products/:id URLs to new /products/slug/:slug URLs return res.redirect(301, `/products/slug/${product.slug}`); } // If product not found or no slug, pass to original controller next(); } catch (error) { // On error, pass to original controller next(); } });",
+      "prefix": "/products",
+      "fullPath": "/products/:id",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 43,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "productController.getProduct"
+      ],
+      "raw": "router.get('/:id', param('id').isMongoId(), validate, productController.getProduct);",
+      "prefix": "/products",
+      "fullPath": "/products/:id",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 44,
+      "method": "POST",
+      "routePath": "/:id/views",
+      "middleware": [
+        "param('id').isMongoId()",
+        "validate",
+        "productController.addProductView"
+      ],
+      "raw": "router.post('/:id/views', param('id').isMongoId(), validate, productController.addProductView);",
+      "prefix": "/products",
+      "fullPath": "/products/:id/views",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 46,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "authMiddleware",
+        "body('title').optional().trim().isString()",
+        "body('titleKh').optional().trim().isString()",
+        "body('titleEn').optional().trim().isString()",
+        "body('description').notEmpty().withMessage('Description is required')",
+        "body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number')",
+        "body('category').isMongoId().withMessage('Valid category is required')",
+        "body('coverImage').optional().isMongoId().withMessage('Cover image must be a valid image id')",
+        "validate",
+        "productController.createProduct"
+      ],
+      "raw": "router.post( '/', authMiddleware, body('title').optional().trim().isString(), body('titleKh').optional().trim().isString(), body('titleEn').optional().trim().isString(), body('description').notEmpty().withMessage('Description is required'), body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'), body('category').isMongoId().withMessage('Valid category is required'), body('coverImage').optional().isMongoId().withMessage('Cover image must be a valid image id'), validate, productController.createProduct );",
+      "prefix": "/products",
+      "fullPath": "/products",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 60,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "authMiddleware",
+        "param('id').isMongoId()",
+        "body('coverImage').optional().isMongoId().withMessage('Cover image must be a valid image id')",
+        "validate",
+        "productController.updateProduct"
+      ],
+      "raw": "router.put('/:id', authMiddleware, param('id').isMongoId(), body('coverImage').optional().isMongoId().withMessage('Cover image must be a valid image id'), validate, productController.updateProduct);",
+      "prefix": "/products",
+      "fullPath": "/products/:id",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "product.routes.js",
+      "line": 61,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "authMiddleware",
+        "param('id').isMongoId()",
+        "validate",
+        "productController.deleteProduct"
+      ],
+      "raw": "router.delete('/:id', authMiddleware, param('id').isMongoId(), validate, productController.deleteProduct);",
+      "prefix": "/products",
+      "fullPath": "/products/:id",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "promotions.routes.js",
+      "line": 9,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware",
+        "roleMiddleware(['seller'])"
+      ],
+      "raw": "router.use(authMiddleware, roleMiddleware(['seller']));",
+      "prefix": "/promotions",
+      "fullPath": "/promotions/authMiddleware",
+      "authType": "seller"
+    },
+    {
+      "file": "promotions.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/plans",
+      "middleware": [
+        "promotionController.getPromotionPlans"
+      ],
+      "raw": "router.get('/plans', promotionController.getPromotionPlans);",
+      "prefix": "/promotions",
+      "fullPath": "/promotions/plans",
+      "authType": "seller",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "promotions.routes.js",
+      "line": 12,
+      "method": "POST",
+      "routePath": "/purchase",
+      "middleware": [
+        "body('productId').isMongoId().withMessage('Valid product id is required')",
+        "body('planId').isIn(['3_days', '7_days', '30_days']).withMessage('Invalid promotion plan')",
+        "validate",
+        "promotionController.purchasePromotion"
+      ],
+      "raw": "router.post( '/purchase', body('productId').isMongoId().withMessage('Valid product id is required'), body('planId').isIn(['3_days', '7_days', '30_days']).withMessage('Invalid promotion plan'), validate, promotionController.purchasePromotion );",
+      "prefix": "/promotions",
+      "fullPath": "/promotions/purchase",
+      "authType": "seller",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "promotions.routes.js",
+      "line": 19,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "promotionController.getSellerPromotions"
+      ],
+      "raw": "router.get('/', promotionController.getSellerPromotions);",
+      "prefix": "/promotions",
+      "fullPath": "/promotions",
+      "authType": "seller",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "report.routes.js",
+      "line": 11,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "authMiddleware",
+        "body('targetType').isIn(['product', 'user']).withMessage('Invalid target type')",
+        "body('targetId').isMongoId().withMessage('Valid targetId is required')",
+        "body('reason').isIn(reasonOptions).withMessage('Valid reason is required')",
+        "body('details').optional().trim().isString()",
+        "validate",
+        "reportController.createReport"
+      ],
+      "raw": "router.post( '/', authMiddleware, body('targetType').isIn(['product', 'user']).withMessage('Invalid target type'), body('targetId').isMongoId().withMessage('Valid targetId is required'), body('reason').isIn(reasonOptions).withMessage('Valid reason is required'), body('details').optional().trim().isString(), validate, reportController.createReport );",
+      "prefix": "/reports",
+      "fullPath": "/reports",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "report.routes.js",
+      "line": 22,
+      "method": "GET",
+      "routePath": "/me",
+      "middleware": [
+        "authMiddleware",
+        "reportController.getMyReports"
+      ],
+      "raw": "router.get('/me', authMiddleware, reportController.getMyReports);",
+      "prefix": "/reports",
+      "fullPath": "/reports/me",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "review.routes.js",
+      "line": 9,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "authMiddleware",
+        "body('seller').notEmpty().isMongoId().withMessage('Seller is required')",
+        "body('product').optional().isMongoId().withMessage('Invalid product identifier')",
+        "body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5')",
+        "body('comment').optional().trim().isString()",
+        "validate",
+        "reviewController.createReview"
+      ],
+      "raw": "router.post( '/', authMiddleware, body('seller').notEmpty().isMongoId().withMessage('Seller is required'), body('product').optional().isMongoId().withMessage('Invalid product identifier'), body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'), body('comment').optional().trim().isString(), validate, reviewController.createReview );",
+      "prefix": "/reviews",
+      "fullPath": "/reviews",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "review.routes.js",
+      "line": 20,
+      "method": "GET",
+      "routePath": "/seller/:sellerId",
+      "middleware": [
+        "param('sellerId').isMongoId().withMessage('Invalid seller identifier')",
+        "query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer')",
+        "query('perPage').optional().isInt({ min: 1 }).withMessage('perPage must be a positive integer')",
+        "validate",
+        "reviewController.getSellerReviews"
+      ],
+      "raw": "router.get( '/seller/:sellerId', param('sellerId').isMongoId().withMessage('Invalid seller identifier'), query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'), query('perPage').optional().isInt({ min: 1 }).withMessage('perPage must be a positive integer'), validate, reviewController.getSellerReviews );",
+      "prefix": "/reviews",
+      "fullPath": "/reviews/seller/:sellerId",
+      "authType": "public",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "route.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['active', 'inactive'])",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "routeController.listRoutes"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['active', 'inactive']), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, routeController.listRoutes );",
+      "prefix": "/routes",
+      "fullPath": "/routes",
+      "authType": "admin",
+      "group": "Routes"
+    },
+    {
+      "file": "route.routes.js",
+      "line": 22,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "routeController.getRoute"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, routeController.getRoute );",
+      "prefix": "/routes",
+      "fullPath": "/routes/:id",
+      "authType": "admin",
+      "group": "Routes"
+    },
+    {
+      "file": "route.routes.js",
+      "line": 30,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('routeCode').notEmpty().trim().isString()",
+        "body('routeName').notEmpty().trim().isString()",
+        "body('pickupAreas').isArray({ min: 1 })",
+        "body('pickupAreas.*').notEmpty().trim().isString()",
+        "body('estimatedDistanceKm').isFloat({ min: 0 })",
+        "body('estimatedDurationMinutes').isInt({ min: 0 })",
+        "body('status').isIn(['active', 'inactive'])",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "routeController.createRoute"
+      ],
+      "raw": "router.post( '/', adminOnly, body('routeCode').notEmpty().trim().isString(), body('routeName').notEmpty().trim().isString(), body('pickupAreas').isArray({ min: 1 }), body('pickupAreas.*').notEmpty().trim().isString(), body('estimatedDistanceKm').isFloat({ min: 0 }), body('estimatedDurationMinutes').isInt({ min: 0 }), body('status').isIn(['active', 'inactive']), body('notes').optional().trim().isString(), validate, routeController.createRoute );",
+      "prefix": "/routes",
+      "fullPath": "/routes",
+      "authType": "admin",
+      "group": "Routes"
+    },
+    {
+      "file": "route.routes.js",
+      "line": 45,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('routeCode').notEmpty().trim().isString()",
+        "body('routeName').notEmpty().trim().isString()",
+        "body('pickupAreas').isArray({ min: 1 })",
+        "body('pickupAreas.*').notEmpty().trim().isString()",
+        "body('estimatedDistanceKm').isFloat({ min: 0 })",
+        "body('estimatedDurationMinutes').isInt({ min: 0 })",
+        "body('status').isIn(['active', 'inactive'])",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "routeController.updateRoute"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('routeCode').notEmpty().trim().isString(), body('routeName').notEmpty().trim().isString(), body('pickupAreas').isArray({ min: 1 }), body('pickupAreas.*').notEmpty().trim().isString(), body('estimatedDistanceKm').isFloat({ min: 0 }), body('estimatedDurationMinutes').isInt({ min: 0 }), body('status').isIn(['active', 'inactive']), body('notes').optional().trim().isString(), validate, routeController.updateRoute );",
+      "prefix": "/routes",
+      "fullPath": "/routes/:id",
+      "authType": "admin",
+      "group": "Routes"
+    },
+    {
+      "file": "route.routes.js",
+      "line": 61,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "routeController.deleteRoute"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, routeController.deleteRoute );",
+      "prefix": "/routes",
+      "fullPath": "/routes/:id",
+      "authType": "admin",
+      "group": "Routes"
+    },
+    {
+      "file": "schoolDashboard.routes.js",
+      "line": 9,
+      "method": "GET",
+      "routePath": "/stats",
+      "middleware": [
+        "adminOnly",
+        "schoolDashboardController.getSchoolStats"
+      ],
+      "raw": "router.get('/stats', adminOnly, schoolDashboardController.getSchoolStats);",
+      "prefix": "/school-dashboard",
+      "fullPath": "/school-dashboard/stats",
+      "authType": "admin",
+      "group": "Dashboard"
+    },
+    {
+      "file": "schoolSetting.routes.js",
+      "line": 43,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "validate",
+        "schoolSettingController.getSchoolSettings"
+      ],
+      "raw": "router.get('/', adminOnly, validate, schoolSettingController.getSchoolSettings);",
+      "prefix": "/school-settings",
+      "fullPath": "/school-settings",
+      "authType": "admin",
+      "group": "School Settings"
+    },
+    {
+      "file": "schoolSetting.routes.js",
+      "line": 45,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "...baseValidators",
+        "validate",
+        "schoolSettingController.createSchoolSettings"
+      ],
+      "raw": "router.post('/', adminOnly, ...baseValidators, validate, schoolSettingController.createSchoolSettings);",
+      "prefix": "/school-settings",
+      "fullPath": "/school-settings",
+      "authType": "admin",
+      "group": "School Settings"
+    },
+    {
+      "file": "schoolSetting.routes.js",
+      "line": 47,
+      "method": "PUT",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "...baseValidators",
+        "validate",
+        "schoolSettingController.updateSchoolSettings"
+      ],
+      "raw": "router.put('/', adminOnly, ...baseValidators, validate, schoolSettingController.updateSchoolSettings);",
+      "prefix": "/school-settings",
+      "fullPath": "/school-settings",
+      "authType": "admin",
+      "group": "School Settings"
+    },
+    {
+      "file": "schoolSetting.routes.js",
+      "line": 49,
+      "method": "DELETE",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "validate",
+        "schoolSettingController.deleteSchoolSettings"
+      ],
+      "raw": "router.delete('/', adminOnly, validate, schoolSettingController.deleteSchoolSettings);",
+      "prefix": "/school-settings",
+      "fullPath": "/school-settings",
+      "authType": "admin",
+      "group": "School Settings"
+    },
+    {
+      "file": "seller-analytics.routes.js",
+      "line": 9,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware"
+      ],
+      "raw": "router.use(authMiddleware);",
+      "prefix": "/seller-analytics",
+      "fullPath": "/seller-analytics/authMiddleware",
+      "authType": "auth"
+    },
+    {
+      "file": "seller-analytics.routes.js",
+      "line": 15,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "analyticsController.getSellerAnalytics"
+      ],
+      "raw": "router.get('/', analyticsController.getSellerAnalytics);",
+      "prefix": "/seller-analytics",
+      "fullPath": "/seller-analytics",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "seller-analytics.routes.js",
+      "line": 22,
+      "method": "GET",
+      "routePath": "/top-products",
+      "middleware": [
+        "query('sortBy').optional().isIn(['views', 'favorites', 'messages'])",
+        "query('limit').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "analyticsController.getTopProducts"
+      ],
+      "raw": "router.get( '/top-products', query('sortBy').optional().isIn(['views', 'favorites', 'messages']), query('limit').optional().isInt({ min: 1, max: 100 }), validate, analyticsController.getTopProducts );",
+      "prefix": "/seller-analytics",
+      "fullPath": "/seller-analytics/top-products",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "seller-analytics.routes.js",
+      "line": 34,
+      "method": "GET",
+      "routePath": "/daily-views",
+      "middleware": [
+        "query('limit').optional().isInt({ min: 1, max: 365 })",
+        "validate",
+        "analyticsController.getDailyViewData"
+      ],
+      "raw": "router.get( '/daily-views', query('limit').optional().isInt({ min: 1, max: 365 }), validate, analyticsController.getDailyViewData );",
+      "prefix": "/seller-analytics",
+      "fullPath": "/seller-analytics/daily-views",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "seller-analytics.routes.js",
+      "line": 45,
+      "method": "GET",
+      "routePath": "/weekly-views",
+      "middleware": [
+        "query('limit').optional().isInt({ min: 1, max: 52 })",
+        "validate",
+        "analyticsController.getWeeklyViewData"
+      ],
+      "raw": "router.get( '/weekly-views', query('limit').optional().isInt({ min: 1, max: 52 }), validate, analyticsController.getWeeklyViewData );",
+      "prefix": "/seller-analytics",
+      "fullPath": "/seller-analytics/weekly-views",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "seller-analytics.routes.js",
+      "line": 56,
+      "method": "GET",
+      "routePath": "/monthly-views",
+      "middleware": [
+        "query('limit').optional().isInt({ min: 1, max: 60 })",
+        "validate",
+        "analyticsController.getMonthlyViewData"
+      ],
+      "raw": "router.get( '/monthly-views', query('limit').optional().isInt({ min: 1, max: 60 }), validate, analyticsController.getMonthlyViewData );",
+      "prefix": "/seller-analytics",
+      "fullPath": "/seller-analytics/monthly-views",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "seller-analytics.routes.js",
+      "line": 67,
+      "method": "GET",
+      "routePath": "/growth",
+      "middleware": [
+        "query('limit').optional().isInt({ min: 1, max: 365 })",
+        "validate",
+        "analyticsController.getListingGrowthData"
+      ],
+      "raw": "router.get( '/growth', query('limit').optional().isInt({ min: 1, max: 365 }), validate, analyticsController.getListingGrowthData );",
+      "prefix": "/seller-analytics",
+      "fullPath": "/seller-analytics/growth",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "seller-analytics.routes.js",
+      "line": 78,
+      "method": "GET",
+      "routePath": "/insights",
+      "middleware": [
+        "analyticsController.getSellerInsights"
+      ],
+      "raw": "router.get('/insights', analyticsController.getSellerInsights);",
+      "prefix": "/seller-analytics",
+      "fullPath": "/seller-analytics/insights",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "sitemap.routes.js",
+      "line": 18,
+      "method": "GET",
+      "routePath": "/sitemap.xml",
+      "middleware": [
+        "async (req, res) => {\n  try {\n    const now = Date.now();\n    if (sitemapCache && (now - sitemapCacheTime) < SITEMAP_TTL_MS) {\n      res.set('Cache-Control', 'public, max-age=3600, s-maxage=3600');\n      res.type('application/xml');\n      return res.send(sitemapCache);\n    }\n\n    const products = await Product.find({ status: 'published' }).select('updatedAt createdAt slug').lean().limit(50000);\n    const categories = await Category.find({}).select('slug updatedAt createdAt').lean();\n\n    const urls = [];\n\n    // Homepage\n    urls.push({ loc: `${SITE_URL}/`, priority: '1.0', lastmod: new Date().toISOString() });\n\n    // Categories\n    for (const cat of categories) {\n      urls.push({ loc: `${SITE_URL}/categories/${encodeURIComponent(cat.slug)}`, priority: '0.8', lastmod: (cat.updatedAt || cat.createdAt || new Date()).toISOString() });\n    }\n\n    // Products (use slug)\n    for (const p of products) {\n      if (p.slug) {\n        urls.push({ loc: `${SITE_URL}/products/${encodeURIComponent(p.slug)}`, priority: '0.6', lastmod: (p.updatedAt || p.createdAt || new Date()).toISOString() });\n      }\n    }\n\n    const xmlParts = [\n      '<?xml version=\"1.0\" encoding=\"UTF-8\"?>',\n      '<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">'\n    ];\n\n    for (const u of urls) {\n      xmlParts.push('<url>');\n      xmlParts.push(`<loc>${escapeXml(u.loc)}</loc>`);\n      if (u.lastmod) xmlParts.push(`<lastmod>${u.lastmod}</lastmod>`);\n      if (u.priority) xmlParts.push(`<priority>${u.priority}</priority>`);\n      xmlParts.push('</url>');\n    }\n\n    xmlParts.push('</urlset>');\n\n    const xml = xmlParts.join('\\n');\n    sitemapCache = xml;\n    sitemapCacheTime = now;\n\n    res.set('Cache-Control', 'public, max-age=3600, s-maxage=3600');\n    res.type('application/xml');\n    res.send(xml);\n  } catch (err) {\n    console.error('Sitemap generation error', err);\n    res.status(500).send('Error generating sitemap');\n  }\n}"
+      ],
+      "raw": "router.get('/sitemap.xml', async (req, res) => { try { const now = Date.now(); if (sitemapCache && (now - sitemapCacheTime) < SITEMAP_TTL_MS) { res.set('Cache-Control', 'public, max-age=3600, s-maxage=3600'); res.type('application/xml'); return res.send(sitemapCache); } const products = await Product.find({ status: 'published' }).select('updatedAt createdAt slug').lean().limit(50000); const categories = await Category.find({}).select('slug updatedAt createdAt').lean(); const urls = []; // Homepage urls.push({ loc: `${SITE_URL}/`, priority: '1.0', lastmod: new Date().toISOString() }); // Categories for (const cat of categories) { urls.push({ loc: `${SITE_URL}/categories/${encodeURIComponent(cat.slug)}`, priority: '0.8', lastmod: (cat.updatedAt || cat.createdAt || new Date()).toISOString() }); } // Products (use slug) for (const p of products) { if (p.slug) { urls.push({ loc: `${SITE_URL}/products/${encodeURIComponent(p.slug)}`, priority: '0.6', lastmod: (p.updatedAt || p.createdAt || new Date()).toISOString() }); } } const xmlParts = [ '<?xml version=\"1.0\" encoding=\"UTF-8\"?>', '<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">' ]; for (const u of urls) { xmlParts.push('<url>'); xmlParts.push(`<loc>${escapeXml(u.loc)}</loc>`); if (u.lastmod) xmlParts.push(`<lastmod>${u.lastmod}</lastmod>`); if (u.priority) xmlParts.push(`<priority>${u.priority}</priority>`); xmlParts.push('</url>'); } xmlParts.push('</urlset>'); const xml = xmlParts.join('\\n'); sitemapCache = xml; sitemapCacheTime = now; res.set('Cache-Control', 'public, max-age=3600, s-maxage=3600'); res.type('application/xml'); res.send(xml); } catch (err) { console.error('Sitemap generation error', err); res.status(500).send('Error generating sitemap'); } });",
+      "prefix": "",
+      "fullPath": "/sitemap.xml",
+      "authType": "public",
+      "group": "Other"
+    },
+    {
+      "file": "student.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['active', 'inactive', 'graduated'])",
+        "query('className').optional().trim().isString()",
+        "query('academicYearId').optional().isMongoId()",
+        "query('gradeId').optional().isMongoId()",
+        "query('classId').optional().isMongoId()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1 })",
+        "validate",
+        "studentController.listStudents"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['active', 'inactive', 'graduated']), query('className').optional().trim().isString(), query('academicYearId').optional().isMongoId(), query('gradeId').optional().isMongoId(), query('classId').optional().isMongoId(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1 }), validate, studentController.listStudents );",
+      "prefix": "/students",
+      "fullPath": "/students",
+      "authType": "admin",
+      "group": "Students"
+    },
+    {
+      "file": "student.routes.js",
+      "line": 26,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "studentController.getStudent"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, studentController.getStudent );",
+      "prefix": "/students",
+      "fullPath": "/students/:id",
+      "authType": "admin",
+      "group": "Students"
+    },
+    {
+      "file": "student.routes.js",
+      "line": 34,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('studentId').notEmpty().trim().isString()",
+        "body('fullName').notEmpty().trim().isString()",
+        "body('gender').optional().isIn(['male', 'female', 'other'])",
+        "body('dateOfBirth').optional().isISO8601()",
+        "body('phone').optional().trim().isString()",
+        "body('address').optional().trim().isString()",
+        "body('guardianName').optional().trim().isString()",
+        "body('guardianPhone').optional().trim().isString()",
+        "body('className').optional().trim().isString()",
+        "body('academicYearId').optional().isMongoId()",
+        "body('gradeId').optional().isMongoId()",
+        "body('classId').optional().isMongoId()",
+        "body('status').optional().isIn(['active', 'inactive', 'graduated'])",
+        "validate",
+        "studentController.createStudent"
+      ],
+      "raw": "router.post( '/', adminOnly, body('studentId').notEmpty().trim().isString(), body('fullName').notEmpty().trim().isString(), body('gender').optional().isIn(['male', 'female', 'other']), body('dateOfBirth').optional().isISO8601(), body('phone').optional().trim().isString(), body('address').optional().trim().isString(), body('guardianName').optional().trim().isString(), body('guardianPhone').optional().trim().isString(), body('className').optional().trim().isString(), body('academicYearId').optional().isMongoId(), body('gradeId').optional().isMongoId(), body('classId').optional().isMongoId(), body('status').optional().isIn(['active', 'inactive', 'graduated']), validate, studentController.createStudent );",
+      "prefix": "/students",
+      "fullPath": "/students",
+      "authType": "admin",
+      "group": "Students"
+    },
+    {
+      "file": "student.routes.js",
+      "line": 54,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('studentId').notEmpty().trim().isString()",
+        "body('fullName').notEmpty().trim().isString()",
+        "body('gender').optional().isIn(['male', 'female', 'other'])",
+        "body('dateOfBirth').optional().isISO8601()",
+        "body('phone').optional().trim().isString()",
+        "body('address').optional().trim().isString()",
+        "body('guardianName').optional().trim().isString()",
+        "body('guardianPhone').optional().trim().isString()",
+        "body('className').optional().trim().isString()",
+        "body('academicYearId').optional().isMongoId()",
+        "body('gradeId').optional().isMongoId()",
+        "body('classId').optional().isMongoId()",
+        "body('status').optional().isIn(['active', 'inactive', 'graduated'])",
+        "validate",
+        "studentController.updateStudent"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('studentId').notEmpty().trim().isString(), body('fullName').notEmpty().trim().isString(), body('gender').optional().isIn(['male', 'female', 'other']), body('dateOfBirth').optional().isISO8601(), body('phone').optional().trim().isString(), body('address').optional().trim().isString(), body('guardianName').optional().trim().isString(), body('guardianPhone').optional().trim().isString(), body('className').optional().trim().isString(), body('academicYearId').optional().isMongoId(), body('gradeId').optional().isMongoId(), body('classId').optional().isMongoId(), body('status').optional().isIn(['active', 'inactive', 'graduated']), validate, studentController.updateStudent );",
+      "prefix": "/students",
+      "fullPath": "/students/:id",
+      "authType": "admin",
+      "group": "Students"
+    },
+    {
+      "file": "student.routes.js",
+      "line": 75,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "studentController.deleteStudent"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, studentController.deleteStudent );",
+      "prefix": "/students",
+      "fullPath": "/students/:id",
+      "authType": "admin",
+      "group": "Students"
+    },
+    {
+      "file": "subject.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['active', 'inactive'])",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "subjectController.listSubjects"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['active', 'inactive']), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, subjectController.listSubjects );",
+      "prefix": "/subjects",
+      "fullPath": "/subjects",
+      "authType": "admin",
+      "group": "Subjects"
+    },
+    {
+      "file": "subject.routes.js",
+      "line": 22,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "subjectController.getSubject"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, subjectController.getSubject );",
+      "prefix": "/subjects",
+      "fullPath": "/subjects/:id",
+      "authType": "admin",
+      "group": "Subjects"
+    },
+    {
+      "file": "subject.routes.js",
+      "line": 30,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('code').notEmpty().trim().isString()",
+        "body('name').notEmpty().trim().isString()",
+        "body('description').optional().trim().isString()",
+        "body('credit').optional().isInt({ min: 1 })",
+        "body('status').optional().isIn(['active', 'inactive'])",
+        "validate",
+        "subjectController.createSubject"
+      ],
+      "raw": "router.post( '/', adminOnly, body('code').notEmpty().trim().isString(), body('name').notEmpty().trim().isString(), body('description').optional().trim().isString(), body('credit').optional().isInt({ min: 1 }), body('status').optional().isIn(['active', 'inactive']), validate, subjectController.createSubject );",
+      "prefix": "/subjects",
+      "fullPath": "/subjects",
+      "authType": "admin",
+      "group": "Subjects"
+    },
+    {
+      "file": "subject.routes.js",
+      "line": 42,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('code').notEmpty().trim().isString()",
+        "body('name').notEmpty().trim().isString()",
+        "body('description').optional().trim().isString()",
+        "body('credit').optional().isInt({ min: 1 })",
+        "body('status').optional().isIn(['active', 'inactive'])",
+        "validate",
+        "subjectController.updateSubject"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('code').notEmpty().trim().isString(), body('name').notEmpty().trim().isString(), body('description').optional().trim().isString(), body('credit').optional().isInt({ min: 1 }), body('status').optional().isIn(['active', 'inactive']), validate, subjectController.updateSubject );",
+      "prefix": "/subjects",
+      "fullPath": "/subjects/:id",
+      "authType": "admin",
+      "group": "Subjects"
+    },
+    {
+      "file": "subject.routes.js",
+      "line": 55,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "subjectController.deleteSubject"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, subjectController.deleteSubject );",
+      "prefix": "/subjects",
+      "fullPath": "/subjects/:id",
+      "authType": "admin",
+      "group": "Subjects"
+    },
+    {
+      "file": "teacher.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['active', 'inactive'])",
+        "query('className').optional().trim().isString()",
+        "query('subjectId').optional().isMongoId()",
+        "query('homeroomClassId').optional().isMongoId()",
+        "query('includeRelations').optional().isBoolean().toBoolean()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "teacherController.listTeachers"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['active', 'inactive']), query('className').optional().trim().isString(), query('subjectId').optional().isMongoId(), query('homeroomClassId').optional().isMongoId(), query('includeRelations').optional().isBoolean().toBoolean(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, teacherController.listTeachers );",
+      "prefix": "/teachers",
+      "fullPath": "/teachers",
+      "authType": "admin",
+      "group": "Teachers"
+    },
+    {
+      "file": "teacher.routes.js",
+      "line": 26,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "query('includeRelations').optional().isBoolean().toBoolean()",
+        "validate",
+        "teacherController.getTeacher"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), query('includeRelations').optional().isBoolean().toBoolean(), validate, teacherController.getTeacher );",
+      "prefix": "/teachers",
+      "fullPath": "/teachers/:id",
+      "authType": "admin",
+      "group": "Teachers"
+    },
+    {
+      "file": "teacher.routes.js",
+      "line": 35,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('teacherId').notEmpty().trim().isString()",
+        "body('fullName').notEmpty().trim().isString()",
+        "body('gender').optional().isIn(['male', 'female', 'other'])",
+        "body('dateOfBirth').optional().isISO8601()",
+        "body('phone').optional().trim().isString()",
+        "body('email').optional().trim().isEmail()",
+        "body('address').optional().trim().isString()",
+        "body('qualification').optional().isIn(['Bachelor', 'Master', 'PhD', 'Other'])",
+        "body('specialization').optional().trim().isString()",
+        "body('experienceYears').optional().isInt({ min: 0 })",
+        "body('className').optional().trim().isString()",
+        "body('subjects').optional().isArray()",
+        "body('subjectIds').optional().isArray()",
+        "body('subjectIds.*').optional().isMongoId()",
+        "body('homeroomClassId').optional().isMongoId()",
+        "body('status').optional().isIn(['active', 'inactive'])",
+        "body('joinDate').optional().isISO8601()",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "teacherController.createTeacher"
+      ],
+      "raw": "router.post( '/', adminOnly, body('teacherId').notEmpty().trim().isString(), body('fullName').notEmpty().trim().isString(), body('gender').optional().isIn(['male', 'female', 'other']), body('dateOfBirth').optional().isISO8601(), body('phone').optional().trim().isString(), body('email').optional().trim().isEmail(), body('address').optional().trim().isString(), body('qualification').optional().isIn(['Bachelor', 'Master', 'PhD', 'Other']), body('specialization').optional().trim().isString(), body('experienceYears').optional().isInt({ min: 0 }), body('className').optional().trim().isString(), body('subjects').optional().isArray(), body('subjectIds').optional().isArray(), body('subjectIds.*').optional().isMongoId(), body('homeroomClassId').optional().isMongoId(), body('status').optional().isIn(['active', 'inactive']), body('joinDate').optional().isISO8601(), body('remarks').optional().trim().isString(), validate, teacherController.createTeacher );",
+      "prefix": "/teachers",
+      "fullPath": "/teachers",
+      "authType": "admin",
+      "group": "Teachers"
+    },
+    {
+      "file": "teacher.routes.js",
+      "line": 60,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('teacherId').notEmpty().trim().isString()",
+        "body('fullName').notEmpty().trim().isString()",
+        "body('gender').optional().isIn(['male', 'female', 'other'])",
+        "body('dateOfBirth').optional().isISO8601()",
+        "body('phone').optional().trim().isString()",
+        "body('email').optional().trim().isEmail()",
+        "body('address').optional().trim().isString()",
+        "body('qualification').optional().isIn(['Bachelor', 'Master', 'PhD', 'Other'])",
+        "body('specialization').optional().trim().isString()",
+        "body('experienceYears').optional().isInt({ min: 0 })",
+        "body('className').optional().trim().isString()",
+        "body('subjects').optional().isArray()",
+        "body('subjectIds').optional().isArray()",
+        "body('subjectIds.*').optional().isMongoId()",
+        "body('homeroomClassId').optional().isMongoId()",
+        "body('status').optional().isIn(['active', 'inactive'])",
+        "body('joinDate').optional().isISO8601()",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "teacherController.updateTeacher"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('teacherId').notEmpty().trim().isString(), body('fullName').notEmpty().trim().isString(), body('gender').optional().isIn(['male', 'female', 'other']), body('dateOfBirth').optional().isISO8601(), body('phone').optional().trim().isString(), body('email').optional().trim().isEmail(), body('address').optional().trim().isString(), body('qualification').optional().isIn(['Bachelor', 'Master', 'PhD', 'Other']), body('specialization').optional().trim().isString(), body('experienceYears').optional().isInt({ min: 0 }), body('className').optional().trim().isString(), body('subjects').optional().isArray(), body('subjectIds').optional().isArray(), body('subjectIds.*').optional().isMongoId(), body('homeroomClassId').optional().isMongoId(), body('status').optional().isIn(['active', 'inactive']), body('joinDate').optional().isISO8601(), body('remarks').optional().trim().isString(), validate, teacherController.updateTeacher );",
+      "prefix": "/teachers",
+      "fullPath": "/teachers/:id",
+      "authType": "admin",
+      "group": "Teachers"
+    },
+    {
+      "file": "teacher.routes.js",
+      "line": 86,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "teacherController.deleteTeacher"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, teacherController.deleteTeacher );",
+      "prefix": "/teachers",
+      "fullPath": "/teachers/:id",
+      "authType": "admin",
+      "group": "Teachers"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 10,
+      "method": "USE",
+      "routePath": "authMiddleware",
+      "middleware": [
+        "authMiddleware"
+      ],
+      "raw": "router.use(authMiddleware);",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/authMiddleware",
+      "authType": "auth"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 11,
+      "method": "USE",
+      "routePath": "roleMiddleware(['admin'])",
+      "middleware": [
+        "roleMiddleware(['admin'])"
+      ],
+      "raw": "router.use(roleMiddleware(['admin']));",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/roleMiddleware(['admin'])",
+      "authType": "admin"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 17,
+      "method": "GET",
+      "routePath": "/metrics",
+      "middleware": [
+        "query('startDate').optional().isISO8601()",
+        "query('endDate').optional().isISO8601()",
+        "validate",
+        "trafficController.getTrafficMetrics"
+      ],
+      "raw": "router.get( '/metrics', query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601(), validate, trafficController.getTrafficMetrics );",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/metrics",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 29,
+      "method": "GET",
+      "routePath": "/search",
+      "middleware": [
+        "query('limit').optional().isInt({ min: 1, max: 100 })",
+        "query('startDate').optional().isISO8601()",
+        "query('endDate').optional().isISO8601()",
+        "validate",
+        "trafficController.getSearchAnalytics"
+      ],
+      "raw": "router.get( '/search', query('limit').optional().isInt({ min: 1, max: 100 }), query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601(), validate, trafficController.getSearchAnalytics );",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/search",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 42,
+      "method": "GET",
+      "routePath": "/top-content",
+      "middleware": [
+        "query('limit').optional().isInt({ min: 1, max: 100 })",
+        "query('startDate').optional().isISO8601()",
+        "query('endDate').optional().isISO8601()",
+        "validate",
+        "trafficController.getTopContent"
+      ],
+      "raw": "router.get( '/top-content', query('limit').optional().isInt({ min: 1, max: 100 }), query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601(), validate, trafficController.getTopContent );",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/top-content",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 55,
+      "method": "GET",
+      "routePath": "/trends",
+      "middleware": [
+        "query('period').optional().isIn(['daily', 'weekly', 'monthly'])",
+        "query('limit').optional().isInt({ min: 1, max: 365 })",
+        "query('startDate').optional().isISO8601()",
+        "query('endDate').optional().isISO8601()",
+        "validate",
+        "trafficController.getTrafficTrends"
+      ],
+      "raw": "router.get( '/trends', query('period').optional().isIn(['daily', 'weekly', 'monthly']), query('limit').optional().isInt({ min: 1, max: 365 }), query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601(), validate, trafficController.getTrafficTrends );",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/trends",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 69,
+      "method": "GET",
+      "routePath": "/search-growth",
+      "middleware": [
+        "query('period').optional().isIn(['daily', 'weekly', 'monthly'])",
+        "query('limit').optional().isInt({ min: 1, max: 365 })",
+        "query('startDate').optional().isISO8601()",
+        "query('endDate').optional().isISO8601()",
+        "validate",
+        "trafficController.getSearchGrowth"
+      ],
+      "raw": "router.get( '/search-growth', query('period').optional().isIn(['daily', 'weekly', 'monthly']), query('limit').optional().isInt({ min: 1, max: 365 }), query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601(), validate, trafficController.getSearchGrowth );",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/search-growth",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 83,
+      "method": "GET",
+      "routePath": "/visitor-growth",
+      "middleware": [
+        "query('period').optional().isIn(['daily', 'weekly', 'monthly'])",
+        "query('limit').optional().isInt({ min: 1, max: 365 })",
+        "query('startDate').optional().isISO8601()",
+        "query('endDate').optional().isISO8601()",
+        "validate",
+        "trafficController.getVisitorGrowth"
+      ],
+      "raw": "router.get( '/visitor-growth', query('period').optional().isIn(['daily', 'weekly', 'monthly']), query('limit').optional().isInt({ min: 1, max: 365 }), query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601(), validate, trafficController.getVisitorGrowth );",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/visitor-growth",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "traffic-analytics.routes.js",
+      "line": 97,
+      "method": "GET",
+      "routePath": "/insights",
+      "middleware": [
+        "query('startDate').optional().isISO8601()",
+        "query('endDate').optional().isISO8601()",
+        "validate",
+        "trafficController.getTrafficInsights"
+      ],
+      "raw": "router.get( '/insights', query('startDate').optional().isISO8601(), query('endDate').optional().isISO8601(), validate, trafficController.getTrafficInsights );",
+      "prefix": "/traffic-analytics",
+      "fullPath": "/traffic-analytics/insights",
+      "authType": "admin",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "transport.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['active', 'inactive'])",
+        "query('routeName').optional().trim().isString()",
+        "query('academicYear').optional().trim().isString()",
+        "query('studentId').optional().isMongoId()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1 })",
+        "validate",
+        "transportController.listTransport"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['active', 'inactive']), query('routeName').optional().trim().isString(), query('academicYear').optional().trim().isString(), query('studentId').optional().isMongoId(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1 }), validate, transportController.listTransport );",
+      "prefix": "/transport",
+      "fullPath": "/transport",
+      "authType": "admin",
+      "group": "Transport"
+    },
+    {
+      "file": "transport.routes.js",
+      "line": 25,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "transportController.getTransport"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, transportController.getTransport );",
+      "prefix": "/transport",
+      "fullPath": "/transport/:id",
+      "authType": "admin",
+      "group": "Transport"
+    },
+    {
+      "file": "transport.routes.js",
+      "line": 33,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('studentId').notEmpty().isMongoId()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('routeName').notEmpty().trim().isString()",
+        "body('pickupPoint').notEmpty().trim().isString()",
+        "body('dropoffPoint').optional().trim().isString()",
+        "body('driverName').optional().trim().isString()",
+        "body('vehicleNumber').optional().trim().isString()",
+        "body('monthlyFee').optional().isFloat({ min: 0 })",
+        "body('status').isIn(['active', 'inactive'])",
+        "body('academicYear').optional().trim().isString()",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "transportController.createTransport"
+      ],
+      "raw": "router.post( '/', adminOnly, body('studentId').notEmpty().isMongoId(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('routeName').notEmpty().trim().isString(), body('pickupPoint').notEmpty().trim().isString(), body('dropoffPoint').optional().trim().isString(), body('driverName').optional().trim().isString(), body('vehicleNumber').optional().trim().isString(), body('monthlyFee').optional().isFloat({ min: 0 }), body('status').isIn(['active', 'inactive']), body('academicYear').optional().trim().isString(), body('remarks').optional().trim().isString(), validate, transportController.createTransport );",
+      "prefix": "/transport",
+      "fullPath": "/transport",
+      "authType": "admin",
+      "group": "Transport"
+    },
+    {
+      "file": "transport.routes.js",
+      "line": 52,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('studentId').notEmpty().isMongoId()",
+        "body('studentName').notEmpty().trim().isString()",
+        "body('className').notEmpty().trim().isString()",
+        "body('routeName').notEmpty().trim().isString()",
+        "body('pickupPoint').notEmpty().trim().isString()",
+        "body('dropoffPoint').optional().trim().isString()",
+        "body('driverName').optional().trim().isString()",
+        "body('vehicleNumber').optional().trim().isString()",
+        "body('monthlyFee').optional().isFloat({ min: 0 })",
+        "body('status').isIn(['active', 'inactive'])",
+        "body('academicYear').optional().trim().isString()",
+        "body('remarks').optional().trim().isString()",
+        "validate",
+        "transportController.updateTransport"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('studentId').notEmpty().isMongoId(), body('studentName').notEmpty().trim().isString(), body('className').notEmpty().trim().isString(), body('routeName').notEmpty().trim().isString(), body('pickupPoint').notEmpty().trim().isString(), body('dropoffPoint').optional().trim().isString(), body('driverName').optional().trim().isString(), body('vehicleNumber').optional().trim().isString(), body('monthlyFee').optional().isFloat({ min: 0 }), body('status').isIn(['active', 'inactive']), body('academicYear').optional().trim().isString(), body('remarks').optional().trim().isString(), validate, transportController.updateTransport );",
+      "prefix": "/transport",
+      "fullPath": "/transport/:id",
+      "authType": "admin",
+      "group": "Transport"
+    },
+    {
+      "file": "transport.routes.js",
+      "line": 72,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "transportController.deleteTransport"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, transportController.deleteTransport );",
+      "prefix": "/transport",
+      "fullPath": "/transport/:id",
+      "authType": "admin",
+      "group": "Transport"
+    },
+    {
+      "file": "transportAssignment.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('status').optional().isIn(['scheduled', 'running', 'completed', 'cancelled'])",
+        "query('assignmentDate').optional().isISO8601()",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "transportAssignmentController.listTransportAssignments"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('status').optional().isIn(['scheduled', 'running', 'completed', 'cancelled']), query('assignmentDate').optional().isISO8601(), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, transportAssignmentController.listTransportAssignments );",
+      "prefix": "/transport-assignments",
+      "fullPath": "/transport-assignments",
+      "authType": "admin",
+      "group": "Transport Assignments"
+    },
+    {
+      "file": "transportAssignment.routes.js",
+      "line": 23,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "transportAssignmentController.getTransportAssignment"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, transportAssignmentController.getTransportAssignment );",
+      "prefix": "/transport-assignments",
+      "fullPath": "/transport-assignments/:id",
+      "authType": "admin",
+      "group": "Transport Assignments"
+    },
+    {
+      "file": "transportAssignment.routes.js",
+      "line": 31,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('assignmentDate').notEmpty().isISO8601()",
+        "body('vehicleId').notEmpty().isMongoId()",
+        "body('routeId').notEmpty().isMongoId()",
+        "body('driverEmployeeCode').notEmpty().trim().isString()",
+        "body('driverName').optional().trim().isString()",
+        "body('status').isIn(['scheduled', 'running', 'completed', 'cancelled'])",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "transportAssignmentController.createTransportAssignment"
+      ],
+      "raw": "router.post( '/', adminOnly, body('assignmentDate').notEmpty().isISO8601(), body('vehicleId').notEmpty().isMongoId(), body('routeId').notEmpty().isMongoId(), body('driverEmployeeCode').notEmpty().trim().isString(), body('driverName').optional().trim().isString(), body('status').isIn(['scheduled', 'running', 'completed', 'cancelled']), body('notes').optional().trim().isString(), validate, transportAssignmentController.createTransportAssignment );",
+      "prefix": "/transport-assignments",
+      "fullPath": "/transport-assignments",
+      "authType": "admin",
+      "group": "Transport Assignments"
+    },
+    {
+      "file": "transportAssignment.routes.js",
+      "line": 45,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('assignmentDate').notEmpty().isISO8601()",
+        "body('vehicleId').notEmpty().isMongoId()",
+        "body('routeId').notEmpty().isMongoId()",
+        "body('driverEmployeeCode').notEmpty().trim().isString()",
+        "body('driverName').optional().trim().isString()",
+        "body('status').isIn(['scheduled', 'running', 'completed', 'cancelled'])",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "transportAssignmentController.updateTransportAssignment"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('assignmentDate').notEmpty().isISO8601(), body('vehicleId').notEmpty().isMongoId(), body('routeId').notEmpty().isMongoId(), body('driverEmployeeCode').notEmpty().trim().isString(), body('driverName').optional().trim().isString(), body('status').isIn(['scheduled', 'running', 'completed', 'cancelled']), body('notes').optional().trim().isString(), validate, transportAssignmentController.updateTransportAssignment );",
+      "prefix": "/transport-assignments",
+      "fullPath": "/transport-assignments/:id",
+      "authType": "admin",
+      "group": "Transport Assignments"
+    },
+    {
+      "file": "transportAssignment.routes.js",
+      "line": 60,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "transportAssignmentController.deleteTransportAssignment"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, transportAssignmentController.deleteTransportAssignment );",
+      "prefix": "/transport-assignments",
+      "fullPath": "/transport-assignments/:id",
+      "authType": "admin",
+      "group": "Transport Assignments"
+    },
+    {
+      "file": "upload.routes.js",
+      "line": 10,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "authMiddleware",
+        "upload.array('images', 6)",
+        "body('productId').optional().isMongoId().withMessage('Product ID must be a valid id')",
+        "validate",
+        "uploadController.uploadImages"
+      ],
+      "raw": "router.post( '/', authMiddleware, upload.array('images', 6), body('productId').optional().isMongoId().withMessage('Product ID must be a valid id'), validate, uploadController.uploadImages );",
+      "prefix": "/upload",
+      "fullPath": "/upload",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "upload.routes.js",
+      "line": 19,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "authMiddleware",
+        "param('id').isMongoId().withMessage('Image ID is required')",
+        "validate",
+        "uploadController.deleteImage"
+      ],
+      "raw": "router.delete( '/:id', authMiddleware, param('id').isMongoId().withMessage('Image ID is required'), validate, uploadController.deleteImage );",
+      "prefix": "/upload",
+      "fullPath": "/upload/:id",
+      "authType": "auth",
+      "group": "Legacy Marketplace"
+    },
+    {
+      "file": "user.routes.js",
+      "line": 16,
+      "method": "GET",
+      "routePath": "/profile/:id",
+      "middleware": [
+        "userController.getProfileById"
+      ],
+      "raw": "router.get('/profile/:id', userController.getProfileById);",
+      "prefix": "/users",
+      "fullPath": "/users/profile/:id",
+      "authType": "public",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "user.routes.js",
+      "line": 40,
+      "method": "PUT",
+      "routePath": "/profile",
+      "middleware": [
+        "authMiddleware",
+        "userController.updateProfile"
+      ],
+      "raw": "router.put('/profile', authMiddleware, userController.updateProfile);",
+      "prefix": "/users",
+      "fullPath": "/users/profile",
+      "authType": "auth",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "vehicle.routes.js",
+      "line": 11,
+      "method": "GET",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "query('search').optional().trim().isString()",
+        "query('fuelType').optional().isIn(['gasoline', 'diesel'])",
+        "query('status').optional().isIn(['active', 'maintenance', 'out_of_service'])",
+        "query('page').optional().isInt({ min: 1 })",
+        "query('perPage').optional().isInt({ min: 1, max: 100 })",
+        "validate",
+        "vehicleController.listVehicles"
+      ],
+      "raw": "router.get( '/', adminOnly, query('search').optional().trim().isString(), query('fuelType').optional().isIn(['gasoline', 'diesel']), query('status').optional().isIn(['active', 'maintenance', 'out_of_service']), query('page').optional().isInt({ min: 1 }), query('perPage').optional().isInt({ min: 1, max: 100 }), validate, vehicleController.listVehicles );",
+      "prefix": "/vehicles",
+      "fullPath": "/vehicles",
+      "authType": "admin",
+      "group": "Vehicles"
+    },
+    {
+      "file": "vehicle.routes.js",
+      "line": 23,
+      "method": "GET",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "vehicleController.getVehicle"
+      ],
+      "raw": "router.get( '/:id', adminOnly, param('id').isMongoId(), validate, vehicleController.getVehicle );",
+      "prefix": "/vehicles",
+      "fullPath": "/vehicles/:id",
+      "authType": "admin",
+      "group": "Vehicles"
+    },
+    {
+      "file": "vehicle.routes.js",
+      "line": 31,
+      "method": "POST",
+      "routePath": "/",
+      "middleware": [
+        "adminOnly",
+        "body('vehicleCode').notEmpty().trim().isString()",
+        "body('plateNumber').notEmpty().trim().isString()",
+        "body('brand').notEmpty().trim().isString()",
+        "body('model').notEmpty().trim().isString()",
+        "body('year').isInt({ min: 1900, max: 2100 })",
+        "body('color').optional().trim().isString()",
+        "body('seatCapacity').isInt({ min: 1, max: 200 })",
+        "body('fuelType').isIn(['gasoline', 'diesel'])",
+        "body('status').isIn(['active', 'maintenance', 'out_of_service'])",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "vehicleController.createVehicle"
+      ],
+      "raw": "router.post( '/', adminOnly, body('vehicleCode').notEmpty().trim().isString(), body('plateNumber').notEmpty().trim().isString(), body('brand').notEmpty().trim().isString(), body('model').notEmpty().trim().isString(), body('year').isInt({ min: 1900, max: 2100 }), body('color').optional().trim().isString(), body('seatCapacity').isInt({ min: 1, max: 200 }), body('fuelType').isIn(['gasoline', 'diesel']), body('status').isIn(['active', 'maintenance', 'out_of_service']), body('notes').optional().trim().isString(), validate, vehicleController.createVehicle );",
+      "prefix": "/vehicles",
+      "fullPath": "/vehicles",
+      "authType": "admin",
+      "group": "Vehicles"
+    },
+    {
+      "file": "vehicle.routes.js",
+      "line": 48,
+      "method": "PUT",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "body('vehicleCode').notEmpty().trim().isString()",
+        "body('plateNumber').notEmpty().trim().isString()",
+        "body('brand').notEmpty().trim().isString()",
+        "body('model').notEmpty().trim().isString()",
+        "body('year').isInt({ min: 1900, max: 2100 })",
+        "body('color').optional().trim().isString()",
+        "body('seatCapacity').isInt({ min: 1, max: 200 })",
+        "body('fuelType').isIn(['gasoline', 'diesel'])",
+        "body('status').isIn(['active', 'maintenance', 'out_of_service'])",
+        "body('notes').optional().trim().isString()",
+        "validate",
+        "vehicleController.updateVehicle"
+      ],
+      "raw": "router.put( '/:id', adminOnly, param('id').isMongoId(), body('vehicleCode').notEmpty().trim().isString(), body('plateNumber').notEmpty().trim().isString(), body('brand').notEmpty().trim().isString(), body('model').notEmpty().trim().isString(), body('year').isInt({ min: 1900, max: 2100 }), body('color').optional().trim().isString(), body('seatCapacity').isInt({ min: 1, max: 200 }), body('fuelType').isIn(['gasoline', 'diesel']), body('status').isIn(['active', 'maintenance', 'out_of_service']), body('notes').optional().trim().isString(), validate, vehicleController.updateVehicle );",
+      "prefix": "/vehicles",
+      "fullPath": "/vehicles/:id",
+      "authType": "admin",
+      "group": "Vehicles"
+    },
+    {
+      "file": "vehicle.routes.js",
+      "line": 66,
+      "method": "DELETE",
+      "routePath": "/:id",
+      "middleware": [
+        "adminOnly",
+        "param('id').isMongoId()",
+        "validate",
+        "vehicleController.deleteVehicle"
+      ],
+      "raw": "router.delete( '/:id', adminOnly, param('id').isMongoId(), validate, vehicleController.deleteVehicle );",
+      "prefix": "/vehicles",
+      "fullPath": "/vehicles/:id",
+      "authType": "admin",
+      "group": "Vehicles"
+    },
+    {
+      "file": "verification.routes.js",
+      "line": 9,
+      "method": "POST",
+      "routePath": "/request",
+      "middleware": [
+        "authMiddleware",
+        "body('idCardImage').notEmpty().withMessage('ID card image is required')",
+        "body('selfieImage').notEmpty().withMessage('Selfie image is required')",
+        "body('businessDocument').optional().isString()",
+        "body('details').optional().trim().isString()",
+        "validate",
+        "verificationController.requestVerification"
+      ],
+      "raw": "router.post( '/request', authMiddleware, body('idCardImage').notEmpty().withMessage('ID card image is required'), body('selfieImage').notEmpty().withMessage('Selfie image is required'), body('businessDocument').optional().isString(), body('details').optional().trim().isString(), validate, verificationController.requestVerification );",
+      "prefix": "/verification",
+      "fullPath": "/verification/request",
+      "authType": "auth",
+      "group": "Auth / Users"
+    },
+    {
+      "file": "verification.routes.js",
+      "line": 20,
+      "method": "GET",
+      "routePath": "/status",
+      "middleware": [
+        "authMiddleware",
+        "verificationController.getVerificationStatus"
+      ],
+      "raw": "router.get('/status', authMiddleware, verificationController.getVerificationStatus);",
+      "prefix": "/verification",
+      "fullPath": "/verification/status",
+      "authType": "auth",
+      "group": "Auth / Users"
+    }
+  ]
+}
