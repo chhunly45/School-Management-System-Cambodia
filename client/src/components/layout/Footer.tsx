@@ -12,10 +12,10 @@ const Footer = () => {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="mb-4">
-              <img src="/logo.png" alt="Konpuk" className="h-12 w-auto" />
+              <img src="/logo.png" alt="SMS-CAM" className="h-12 w-auto" />
             </div>
             <p className="text-sm text-white/80 mb-4">
-              ទីផ្សារលើអ៊ីនធឺណេតលំដាប់ទីមួយនៅកម្ពុជា សម្រាប់ទិញនិងលក់ផលិតផលក្នុងស្រុក។
+              សេវាកម្មគ្រប់គ្រងសាលារៀនដ៏មានប្រសិទ្ធភាពសម្រាប់គ្រូ អ្នកគ្រប់គ្រង និងឪពុកម្តាយនៅកម្ពុជា។
             </p>
             <div className="flex gap-3">
               <a href="#" className="w-10 h-10 rounded-lg bg-primary/80 hover:bg-primary-hover flex items-center justify-center transition">
@@ -36,7 +36,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li><Link to="/" className="text-sm text-white/80 hover:text-white transition">ទំព័រដើម</Link></li>
               <li><Link to="/help" className="text-sm text-white/80 hover:text-white transition">Help Center</Link></li>
-              <li><Link to="/about" className="text-sm text-white/80 hover:text-white transition">អំពី Konpuk</Link></li>
+              <li><Link to="/about" className="text-sm text-white/80 hover:text-white transition">អំពី SMS-CAM</Link></li>
               <li><Link to="/guide" className="text-sm text-white/80 hover:text-white transition">មេរៀន</Link></li>
             </ul>
           </div>
@@ -88,7 +88,7 @@ const Footer = () => {
 
         {/* Bottom Footer */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm text-white/80">
-          <p>© {currentYear} Konpuk. រក្សាសិទ្ធិគ្រប់យ៉ាង។ សម្រាប់ប្រើនៅកម្ពុជា។ 🇰🇭</p>
+          <p>© {currentYear} SMS-CAM. រក្សាសិទ្ធិគ្រប់យ៉ាង។ សម្រាប់ប្រើនៅកម្ពុជា។ 🇰🇭</p>
           <div className="flex flex-wrap gap-4 sm:justify-end">
             <a href="#" className="hover:text-white transition">ភាពឯកជន</a>
             <a href="#" className="hover:text-white transition">ល័ក្ខខណ្ឌ</a>

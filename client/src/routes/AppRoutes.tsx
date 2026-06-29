@@ -50,8 +50,7 @@ import SchoolSettingsPage from '../pages/SchoolSettingsPage';
 
 const AppRoutes = () => (
   <Routes>
-    {/* Root route renders the new Konpuk homepage component */}
-    <Route path="/" element={<HomePage />} />
+    <Route path="/" element={<Navigate replace to="/login" />} />
     <Route path="/login" element={<LoginPage />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/register" element={<RegisterPage />} />

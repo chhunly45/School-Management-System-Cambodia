@@ -75,6 +75,14 @@ const LoginPage = () => {
     return digits;
   };
 
+  const getPostLoginPath = (authUser?: any) => {
+    const role = authUser?.role || authUser?.userRole || authUser?.roleName;
+    if (role === 'admin' || role === 'super_admin' || role === 'school_admin' || authUser?.isAdmin || authUser?.is_super_admin) {
+      return '/admin/school-dashboard';
+    }
+    return '/dashboard';
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
@@ -107,7 +115,7 @@ const LoginPage = () => {
           return;
         }
 
-        navigate('/dashboard');
+        navigate(getPostLoginPath((result as any)?.user));
       } else if (mode === 'loginOtp') {
         if (!formData.emailOrPhone.trim()) {
           setError('Email or phone is required');
@@ -133,7 +141,7 @@ const LoginPage = () => {
           return;
         }
 
-        navigate('/dashboard');
+        navigate(getPostLoginPath((result as any)?.user));
       } else {
         // phone OTP request
         if (!phoneInput.trim()) {
@@ -167,12 +175,14 @@ const LoginPage = () => {
         setError('Please enter the 6-digit verification code.');
         return;
       }
+      let verifiedUser: any = null;
       if (mode === 'phoneOtp') {
         await verifyPhoneOtp({ phoneNumber: identifier, code: otpCode.trim() });
       } else {
-        await verifyLoginOtp({ identifier, code: otpCode.trim() });
+        const response = await verifyLoginOtp({ identifier, code: otpCode.trim() });
+        verifiedUser = (response as any)?.user;
       }
-      navigate('/dashboard');
+      navigate(getPostLoginPath(verifiedUser));
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || 'Verification failed. Please try again.';
       setError(errorMessage);
@@ -209,12 +219,12 @@ const LoginPage = () => {
   return (
     <div className="mx-auto max-w-2xl rounded-[2rem] bg-white p-10 shadow-xl ring-1 ring-border">
       <div className="flex justify-center mb-8">
-        <img src="/logo.png" alt="Konpuk" className="h-16 w-auto" />
+        <img src="/logo.png" alt="SMS-CAM" className="h-16 w-auto" />
       </div>
       <div className="space-y-3 text-center">
         <p className="text-sm uppercase tracking-[0.35em] text-primary">Welcome back</p>
         <h1 className="text-3xl font-semibold text-text-primary">Log in to your account</h1>
-        <p className="text-sm text-muted">Enter your email and password to manage listings, chat, and favorites.</p>
+        <p className="text-sm text-muted">Enter your email and password to manage students, attendance, payments, and school operations.</p>
       </div>
 
       {status && (
@@ -337,7 +347,7 @@ const LoginPage = () => {
           Forgot password?
         </Link>
         <p>
-          New to Konpuk? <Link to="/register" className="font-semibold text-primary hover:text-primary">Create account</Link>
+          New to SMS-CAM? <Link to="/register" className="font-semibold text-primary hover:text-primary">Create account</Link>
         </p>
       </div>
     </div>

@@ -57,6 +57,30 @@ export interface SellerVerificationRequestPayload {
   details?: string;
 }
 
+const persistAuthSession = (authData: any) => {
+  const token = authData?.accessToken || authData?.authToken || authData?.token;
+  const refreshToken = authData?.refreshToken;
+  const user = authData?.user;
+
+  if (token) {
+    localStorage.setItem('authToken', token);
+  } else {
+    localStorage.removeItem('authToken');
+  }
+
+  if (refreshToken) {
+    localStorage.setItem('refreshToken', refreshToken);
+  } else {
+    localStorage.removeItem('refreshToken');
+  }
+
+  if (user) {
+    localStorage.setItem('user', JSON.stringify(user));
+  } else {
+    localStorage.removeItem('user');
+  }
+};
+
 export const register = async (payload: RegisterPayload): Promise<AuthResponse | EmailVerificationResponse> => {
   const response = await api.post('/auth/register', payload);
   if (response.data.success && response.data.data && 'requiresEmailVerification' in response.data.data) {
@@ -216,8 +240,7 @@ export const refreshAuthToken = async (): Promise<AuthResponse> => {
     const data = response.data.data || response.data;
     const token = data?.accessToken || data?.authToken || response.data?.accessToken || response.data?.authToken || response.data?.token || data?.token;
     const newRefreshToken = data?.refreshToken || response.data?.refreshToken;
-    if (token) localStorage.setItem('authToken', token);
-    if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+    persistAuthSession({ ...data, accessToken: token, refreshToken: newRefreshToken });
   }
   return response.data.data;
 };

@@ -169,7 +169,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b border-surface-muted bg-white/95 backdrop-blur shadow-sm">
       <div className="bg-primary text-white hidden sm:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 flex items-center justify-between text-xs sm:text-sm">
-          <p className="font-medium">Fast, trusted local shopping across Cambodia.</p>
+          <p className="font-medium">Trusted school management for Cambodian institutions.</p>
           <div className="flex flex-wrap items-center gap-3 text-white/90">
             <Link to="/help" className="hover:text-white">Help</Link>
             <span className="hidden sm:inline">·</span>
@@ -195,7 +195,7 @@ const Header = () => {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <img src="/logo.png" alt="Konpuk" className="h-10 md:h-12 w-auto" />
+              <img src="/logo.png" alt="SMS-CAM" className="h-10 md:h-12 w-auto" />
             </Link>
           </div>
 
@@ -339,31 +339,24 @@ const Header = () => {
                   {notificationCount > 0 && <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-rose-600 px-2 text-[0.65rem] font-semibold text-white">{notificationCount > 9 ? '9+' : notificationCount}</span>}
                 </Link>
                 <hr className="border-surface-muted" />
-                <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">About</Link>
-                <Link to="/guide" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Guide</Link>
-                <Link to="/help" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Help</Link>
+                <Link to="/admin/school-dashboard" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">School Dashboard</Link>
+                <Link to="/admin/students" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Students</Link>
+                <Link to="/admin/teachers" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Teachers</Link>
+                <Link to="/admin/attendance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Attendance</Link>
+                <Link to="/admin/payments" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Payments</Link>
+                <Link to="/admin/finance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Finance</Link>
                 <hr className="border-surface-muted" />
                 {user ? (
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Profile</Link>
+                  <>
+                    <Link to="/admin/school-dashboard" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">School Dashboard</Link>
+                    <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Profile</Link>
+                  </>
                 ) : (
                   <>
                     <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Login</Link>
                     <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl bg-primary px-4 py-3 text-sm font-semibold text-white hover:bg-primary-hover">Register</Link>
                   </>
                 )}
-                <details className="rounded-3xl border border-muted bg-white p-2 mt-4">
-                  <summary className="px-3 py-2 text-sm font-semibold">Product categories</summary>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <Link onClick={() => setMobileMenuOpen(false)} to="/products?category=food" className="px-3 py-2 text-sm rounded hover:bg-background">ម្ហូប</Link>
-                    <Link onClick={() => setMobileMenuOpen(false)} to="/products?category=phones" className="px-3 py-2 text-sm rounded hover:bg-background">ទូរស័ព្ទ</Link>
-                    <Link onClick={() => setMobileMenuOpen(false)} to="/products?category=electronics" className="px-3 py-2 text-sm rounded hover:bg-background">អេឡិចត្រូនិក</Link>
-                    <Link onClick={() => setMobileMenuOpen(false)} to="/products?category=auto" className="px-3 py-2 text-sm rounded hover:bg-background">យានយន្ត</Link>
-                    <Link onClick={() => setMobileMenuOpen(false)} to="/products?category=real-estate" className="px-3 py-2 text-sm rounded hover:bg-background">អចលនទ្រព្យ</Link>
-                    <Link onClick={() => setMobileMenuOpen(false)} to="/products?category=clothing" className="px-3 py-2 text-sm rounded hover:bg-background">សម្លៀកបំពាក់</Link>
-                    <Link onClick={() => setMobileMenuOpen(false)} to="/products?category=furniture" className="px-3 py-2 text-sm rounded hover:bg-background">គ្រឿងសង្ហារឹម</Link>
-                    <Link onClick={() => setMobileMenuOpen(false)} to="/products?category=services" className="px-3 py-2 text-sm rounded hover:bg-background">សេវាកម្ម</Link>
-                  </div>
-                </details>
               </nav>
             </div>
           </div>

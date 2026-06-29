@@ -2,7 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { getViteEnv } from '../utils/viteEnv';
 
-const defaultSiteUrl = getViteEnv('VITE_SITE_URL', 'https://konpuk.com');
+const defaultSiteUrl = getViteEnv('VITE_SITE_URL', 'https://sms-cam.com');
 const defaultImage = `${defaultSiteUrl}/logo.png`;
 
 interface SEOProps {
@@ -16,18 +16,18 @@ interface SEOProps {
 }
 
 const SEO: React.FC<SEOProps> = ({ title, description, url, image, type = 'website', structuredData, robots = 'index, follow' }) => {
-  const pageTitle = title ? `${title} | Konpuk` : 'Konpuk';
-  const metaDescription = description || 'Cambodian marketplace for buyers and sellers.';
+  const pageTitle = title ? `${title} | SMS-CAM` : 'SMS-CAM';
+  const metaDescription = description || 'School management platform for Cambodian schools and educators.';
   const metaImage = image || defaultImage;
   const metaUrl = url || (typeof window !== 'undefined' ? window.location.href : defaultSiteUrl);
   const structuredJson = structuredData || {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'Konpuk',
+    name: 'SMS-CAM',
     url: defaultSiteUrl,
     publisher: {
       '@type': 'Organization',
-      name: 'Konpuk'
+      name: 'SMS-CAM'
     }
   };
 
@@ -35,7 +35,7 @@ const SEO: React.FC<SEOProps> = ({ title, description, url, image, type = 'websi
     <Helmet>
       <title>{pageTitle}</title>
       <meta name="description" content={metaDescription} />
-      <meta name="keywords" content="Cambodia marketplace, buy sell, local classifieds, Khmer products" />
+      <meta name="keywords" content="school management, Cambodia schools, student records, attendance, payments" />
       <meta name="robots" content={robots} />
 
       {/* Open Graph */}
@@ -44,7 +44,7 @@ const SEO: React.FC<SEOProps> = ({ title, description, url, image, type = 'websi
       <meta property="og:type" content={type} />
       <meta property="og:url" content={metaUrl} />
       <meta property="og:image" content={metaImage} />
-      <meta property="og:site_name" content="Konpuk" />
+      <meta property="og:site_name" content="SMS-CAM" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
