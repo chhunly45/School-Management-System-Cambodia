@@ -102,7 +102,7 @@ const TeachersPage = () => {
   const loadTeachers = async () => {
     setLoading(true);
     try {
-      const response = await listTeachers({ search: searchTerm, perPage: 200, includeRelations: true });
+      const response = await listTeachers({ search: searchTerm, perPage: 100, includeRelations: true });
       const items = response.data?.items || [];
       setTeachers(
         items.map((item: any) => ({
