@@ -69,6 +69,18 @@ io.use(async (socket, next) => {
 
 notificationService.setIo(io);
 
+// Global error handlers to prevent silent process exits
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Promise Rejection:', reason);
+  console.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL] Uncaught Exception:', error);
+  process.exit(1);
+});
+
 io.on('connection', (socket) => {
   const userId = socket.user.id.toString();
   const socketIds = onlineUsers.get(userId) || new Set();
@@ -165,11 +177,19 @@ const startServer = async () => {
     console.warn('Product text index repair failed:', error.message);
   }
 
-  await seedCategories();
+  try {
+    await seedCategories();
+  } catch (error) {
+    console.error('Category seeding failed:', error.message);
+    throw error;
+  }
 
   server.listen(PORT, HOST, () => {
     console.log(`Server running on http://${HOST}:${PORT}`);
   });
 };
 
-startServer();
+startServer().catch((err) => {
+  console.error('[FATAL] Server startup failed:', err.message);
+  process.exit(1);
+});
