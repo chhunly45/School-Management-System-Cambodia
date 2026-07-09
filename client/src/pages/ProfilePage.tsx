@@ -210,7 +210,7 @@ const ProfilePage = () => {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                {isOwner && (
+                {isOwner && !isEditing && (
                   <button
                     type="button"
                     onClick={startEdit}
@@ -232,7 +232,7 @@ const ProfilePage = () => {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-16">
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
           <aside className="space-y-6">
             <div className="rounded-3xl border border-muted bg-white p-6 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">Account information</p>
@@ -292,23 +292,14 @@ const ProfilePage = () => {
             )}
 
             <div className="rounded-3xl border border-muted bg-white p-6 shadow-sm">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-text-primary">Profile details</h2>
-                  <p className="mt-2 text-sm text-text-secondary">Update your school management account information.</p>
+                  <p className="mt-1 text-sm text-text-secondary">Update your school management account information.</p>
                 </div>
-                {isOwner && !isEditing && (
-                  <button
-                    type="button"
-                    onClick={startEdit}
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary-hover transition"
-                  >
-                    <Edit3 className="h-4 w-4" /> Edit profile
-                  </button>
-                )}
               </div>
 
-              <div className="mt-8 grid gap-6 sm:grid-cols-2">
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-semibold text-text-secondary">Full name</label>
                   <input
@@ -364,29 +355,29 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-6 sm:grid-cols-[200px_1fr]">
+              <div className="mt-6 grid gap-6 sm:grid-cols-[240px_1fr]">
                 <div className="rounded-3xl border border-muted bg-background p-4 text-sm text-text-secondary">
-                  <div className="flex items-center gap-2">
-                    <Camera className="h-5 w-5 text-muted" />
-                    <span className="font-semibold text-text-secondary">Avatar</span>
-                  </div>
-                  <div className="mt-4 flex items-center gap-4">
-                    <div className="h-20 w-20 overflow-hidden rounded-3xl bg-white">
+                  <div className="flex items-center gap-3">
+                    <div className="h-24 w-24 overflow-hidden rounded-[1.5rem] bg-white shadow-sm">
                       {avatarImage ? (
                         <img src={avatarImage} alt="Avatar preview" className="h-full w-full object-cover" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-slate-200 text-lg text-slate-700">{profile?.displayName?.charAt(0).toUpperCase() || 'U'}</div>
+                        <div className="flex h-full w-full items-center justify-center bg-slate-200 text-2xl font-semibold text-slate-700">{profile?.displayName?.charAt(0).toUpperCase() || 'U'}</div>
                       )}
                     </div>
-                    <label className="cursor-pointer rounded-3xl bg-white px-4 py-3 text-sm font-semibold text-text-secondary shadow-sm ring-1 ring-border hover:bg-background transition">
-                      Upload avatar
-                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                    </label>
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.22em] text-muted">Profile photo</p>
+                      <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-text-secondary shadow-sm ring-1 ring-border hover:bg-background transition">
+                        <Camera className="h-4 w-4" />
+                        {avatarPreview || profile?.avatar || profile?.profileImageUrl ? 'Change photo' : 'Upload photo'}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                      </label>
+                    </div>
                   </div>
                 </div>
 
                 {isEditing ? (
-                  <div className="flex flex-wrap gap-3 sm:justify-end sm:items-end">
+                  <div className="flex flex-wrap gap-3 justify-end items-end">
                     <button
                       type="button"
                       onClick={cancelEdit}
