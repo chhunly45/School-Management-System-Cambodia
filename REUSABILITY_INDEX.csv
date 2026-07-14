@@ -39,7 +39,7 @@ server/app.js,🟡 PARTIALLY REUSABLE,JavaScript,server/,Express setup,Keep patt
 server/server.js,🟡 PARTIALLY REUSABLE,JavaScript,server/,Server entry,Keep pattern; adapt config
 server/.env.example,🟡 PARTIALLY REUSABLE,ENV,server/,Environment template,Add SMS-specific variables
 server/config/database.js,🟢 REUSABLE,JavaScript,server/config/,MongoDB connection,Use as-is
-server/config/index.js,🟡 PARTIALLY REUSABLE,JavaScript,server/config/,Config aggregator,Keep pattern; add SMS configs
+server/,🟡 PARTIALLY REUSABLE,JavaScript,server/config/,Config aggregator,Keep pattern; add SMS configs
 server/config/provinces.js,🟡 PARTIALLY REUSABLE,JavaScript,server/config/,Cambodia locations,Reuse for SMS (schools/districts)
 server/models/User.js,🟡 PARTIALLY REUSABLE,JavaScript,server/models/,User schema,Adapt for student/teacher roles
 server/models/Chat.js,🟡 PARTIALLY REUSABLE,JavaScript,server/models/,Chat schema,Adapt for SMS messaging

@@ -2,7 +2,11 @@ import axios from 'axios';
 
 import { getViteEnv } from '../utils/viteEnv';
 
-const resolvedApiBaseUrl = getViteEnv('VITE_API_BASE_URL', 'http://localhost:5000/api');
+const resolvedApiBaseUrl =
+  getViteEnv('VITE_API_BASE_URL', '') ||
+  getViteEnv('VITE_API_URL', '') ||
+  getViteEnv('VITE_PUBLIC_API_URL', '') ||
+  'http://localhost:5000/api';
 
 const created = axios.create({
   baseURL: resolvedApiBaseUrl,

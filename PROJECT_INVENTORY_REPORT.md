@@ -439,11 +439,11 @@ This report is based on the current repository structure and direct route wiring
 | [server/config/categories.js](server/config/categories.js) | Configuration for categories | YES | server/server.js | — | Infrastructure | KEEP | LOW |
 | [server/config/cloudinary.js](server/config/cloudinary.js) | Configuration for cloudinary | YES | server/controllers/banner.controller.js, server/server.js, server/services/auth.service.js, server/services/upload.service.js | server/config/index.js | Infrastructure | KEEP | LOW |
 | [server/config/database.js](server/config/database.js) | Configuration for database | YES | server/server.js | server/config/index.js | Infrastructure | KEEP | LOW |
-| [server/config/index.js](server/config/index.js) | Configuration for index | YES | server/app.js, server/config/cloudinary.js, server/config/database.js, server/controllers/admin.controller.js, server/middleware/auth.middleware.js, server/middleware/upload.middleware.js, server/server.js, server/services/auth.service.js | — | Infrastructure | KEEP | LOW |
+| []() | Configuration for index | YES | server/app.js, server/config/cloudinary.js, server/config/database.js, server/controllers/admin.controller.js, server/middleware/auth.middleware.js, server/middleware/upload.middleware.js, server/server.js, server/services/auth.service.js | — | Infrastructure | KEEP | LOW |
 | [server/config/provinces.js](server/config/provinces.js) | Configuration for provinces | YES | server/controllers/location.controller.js, server/services/admin.service.js | — | Infrastructure | KEEP | LOW |
 | [server/controllers/academicRecord.controller.js](server/controllers/academicRecord.controller.js) | Controller handling academicRecord | NO | — | — | Academics | REMOVE | LOW |
 | [server/controllers/academicYear.controller.js](server/controllers/academicYear.controller.js) | Controller handling academicYear | NO | — | — | Academics | REMOVE | LOW |
-| [server/controllers/admin.controller.js](server/controllers/admin.controller.js) | Controller handling admin | NO | — | server/config/index.js | Admin/Operations | REMOVE | LOW |
+| [server/controllers/admin.controller.js](server/controllers/admin.controller.js) | Controller handling admin | NO | — |  | Admin/Operations | REMOVE | LOW |
 | [server/controllers/attendance.controller.js](server/controllers/attendance.controller.js) | Controller handling attendance | NO | — | — | Attendance | REMOVE | LOW |
 | [server/controllers/auth.controller.js](server/controllers/auth.controller.js) | Controller handling auth | NO | — | — | Auth | REMOVE | LOW |
 | [server/controllers/banner.controller.js](server/controllers/banner.controller.js) | Controller handling banner | NO | — | server/config/cloudinary.js, server/models/Banner.js | Legacy Marketplace | REMOVE | LOW |
@@ -478,7 +478,7 @@ This report is based on the current repository structure and direct route wiring
 | [server/controllers/user.controller.js](server/controllers/user.controller.js) | Controller handling user | NO | — | server/models/Favorite.js, server/models/Product.js, server/models/User.js | Shared | REMOVE | LOW |
 | [server/controllers/vehicle.controller.js](server/controllers/vehicle.controller.js) | Controller handling vehicle | NO | — | — | Transport | REMOVE | LOW |
 | [server/controllers/verification.controller.js](server/controllers/verification.controller.js) | Controller handling verification | NO | — | — | Shared | REMOVE | LOW |
-| [server/middleware/auth.middleware.js](server/middleware/auth.middleware.js) | Middleware for auth.middleware | NO | — | server/config/index.js, server/models/index.js | Auth | REMOVE | LOW |
+| [server/middleware/auth.middleware.js](server/middleware/auth.middleware.js) | Middleware for auth.middleware | NO | — | , server/models/index.js | Auth | REMOVE | LOW |
 | [server/middleware/error.middleware.js](server/middleware/error.middleware.js) | Middleware for error.middleware | NO | — | — | Security/Validation | REMOVE | LOW |
 | [server/middleware/role.middleware.js](server/middleware/role.middleware.js) | Middleware for role.middleware | NO | — | — | Security/Validation | REMOVE | LOW |
 | [server/middleware/security/password.validator.js](server/middleware/security/password.validator.js) | Middleware for password.validator | NO | — | — | Security/Validation | REMOVE | LOW |

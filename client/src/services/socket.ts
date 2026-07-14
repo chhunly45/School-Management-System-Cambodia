@@ -12,9 +12,10 @@ const getSocketBaseUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return `${window.location.protocol}//${window.location.hostname}:5000`;
     }
+    return window.location.origin;
   }
 
-  return 'https://api.konpuk.com';
+  return 'http://localhost:5000';
 };
 
 const baseURL = getSocketBaseUrl();

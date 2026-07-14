@@ -27,7 +27,8 @@ interface Student {
 
 interface StudentFormValues {
   studentId: string;
-  fullName: string;
+  englishName: string;
+  khmerName: string;
   gender: 'male' | 'female' | 'other';
   dateOfBirth: string;
   phone: string;
@@ -45,7 +46,8 @@ type StudentField = keyof StudentFormValues;
 
 const emptyStudentForm: StudentFormValues = {
   studentId: '',
-  fullName: '',
+  englishName: '',
+  khmerName: '',
   gender: 'other',
   dateOfBirth: '',
   phone: '',
@@ -63,6 +65,26 @@ const getAcademicYearId = (value: Student['academicYearId']) => (typeof value ==
 const getGradeId = (value: Student['gradeId']) => (typeof value === 'string' ? value : value?._id || '');
 const getClassId = (value: Student['classId']) => (typeof value === 'string' ? value : value?._id || '');
 
+const splitStudentName = (fullName: string) => {
+  const trimmed = fullName?.trim() || '';
+  if (!trimmed) return { englishName: '', khmerName: '' };
+
+  const parts = trimmed.split(/\s*\/\s*/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return { englishName: parts[0], khmerName: parts.slice(1).join(' / ') };
+  }
+
+  return { englishName: trimmed, khmerName: '' };
+};
+
+const buildStudentFullName = (englishName: string, khmerName: string) => {
+  const english = englishName.trim();
+  const khmer = khmerName.trim();
+  if (!english) return khmer;
+  if (!khmer) return english;
+  return `${english} / ${khmer}`;
+};
+
 const StudentsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -78,6 +100,17 @@ const StudentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [formErrors, setFormErrors] = useState<Partial<Record<StudentField, string>>>({});
   const [pendingDeleteStudent, setPendingDeleteStudent] = useState<Student | null>(null);
+  const [responseDebug, setResponseDebug] = useState<{
+    keys: string[];
+    meta: any;
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  } | null>(null);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, limit: 10, total: 0 });
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     if (!user) return navigate('/login');
@@ -85,7 +118,7 @@ const StudentsPage = () => {
       setAccessDenied(true);
       return;
     }
-    void Promise.all([loadLookups(), loadStudents()]);
+    void Promise.all([loadLookups(), loadStudents('', 1)]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -130,26 +163,44 @@ const StudentsPage = () => {
     }
   };
 
-  const loadStudents = async (search = '', options: { preserveMessage?: boolean } = {}) => {
+  const loadStudents = async (search = '', pageNumber = 1, options: { preserveMessage?: boolean } = {}) => {
     const { preserveMessage = false } = options;
     setLoading(true);
     if (!preserveMessage) {
       setMessage('');
     }
     try {
-      const response = await listStudents({ search, perPage: 200 }).catch((err: any) => {
+      const response = await listStudents({ search, page: pageNumber, perPage: PAGE_SIZE }).catch((err: any) => {
         if (err?.response?.status === 304 && err.response.data) {
           return err.response.data;
         }
         throw err;
       });
-      const items = getResponseItems<Student>(response);
+      const payload = response?.data ?? response;
+      const items = Array.isArray(payload?.items) ? payload.items : getResponseItems<Student>(response);
+      const nextMeta = payload?.meta || response?.meta || { page: pageNumber, limit: PAGE_SIZE, total: items.length };
+
+      setResponseDebug({
+        keys: response ? Object.keys(response) : [],
+        meta: nextMeta,
+        page: Number(nextMeta.page) || pageNumber,
+        limit: Number(nextMeta.limit) || PAGE_SIZE,
+        total: Number(nextMeta.total) || 0,
+        totalPages: Math.max(1, Math.ceil((Number(nextMeta.total) || 0) / (Number(nextMeta.limit) || PAGE_SIZE)))
+      });
+
       setStudents(
         items.map((item: any) => ({
           ...item,
           dateOfBirth: item.dateOfBirth ? formatDateForInput(item.dateOfBirth) : ''
         }))
       );
+      setMeta({
+        page: Number(nextMeta.page) || pageNumber,
+        limit: Number(nextMeta.limit) || PAGE_SIZE,
+        total: Number(nextMeta.total) || 0
+      });
+      setPage(Number(nextMeta.page) || pageNumber);
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Unable to load students.');
       console.error('Unable to load students.', err);
@@ -160,7 +211,12 @@ const StudentsPage = () => {
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await loadStudents(searchTerm);
+    await loadStudents(searchTerm, 1);
+  };
+
+  const handlePageChange = async (nextPage: number) => {
+    if (nextPage < 1 || nextPage > totalPages || loading) return;
+    await loadStudents(searchTerm, nextPage);
   };
 
   const handleChange = (key: StudentField, value: string) => {
@@ -181,10 +237,10 @@ const StudentsPage = () => {
       nextErrors.studentId = 'Use 2-30 letters, numbers, or - _ / characters.';
     }
 
-    if (!formValues.fullName.trim()) {
-      nextErrors.fullName = 'Full name is required.';
-    } else if (formValues.fullName.trim().length < 2) {
-      nextErrors.fullName = 'Full name must be at least 2 characters.';
+    if (!formValues.englishName.trim() && !formValues.khmerName.trim()) {
+      nextErrors.englishName = 'English name or Khmer name is required.';
+    } else if (formValues.englishName.trim().length < 2 && formValues.khmerName.trim().length < 2) {
+      nextErrors.englishName = 'Enter at least 2 characters for one of the names.';
     }
 
     if (formValues.phone.trim() && !/^\+?[0-9\s-]{7,20}$/.test(formValues.phone.trim())) {
@@ -220,10 +276,12 @@ const StudentsPage = () => {
   };
 
   const handleEdit = (student: Student) => {
+    const { englishName, khmerName } = splitStudentName(student.fullName || '');
     setEditingId(student._id);
     setFormValues({
       studentId: student.studentId,
-      fullName: student.fullName,
+      englishName,
+      khmerName,
       gender: student.gender,
       dateOfBirth: formatDateForInput(student.dateOfBirth),
       phone: student.phone,
@@ -253,7 +311,7 @@ const StudentsPage = () => {
 
     const payload = {
       studentId: formValues.studentId,
-      fullName: formValues.fullName,
+      fullName: buildStudentFullName(formValues.englishName, formValues.khmerName),
       gender: formValues.gender,
       dateOfBirth: formatDateForApi(formValues.dateOfBirth) || undefined,
       phone: formValues.phone,
@@ -278,7 +336,7 @@ const StudentsPage = () => {
       setEditingId(null);
       setFormValues(emptyStudentForm);
       setFormErrors({});
-      await loadStudents(searchTerm, { preserveMessage: true });
+      await loadStudents(searchTerm, page, { preserveMessage: true });
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Failed to save student.');
       console.error(err);
@@ -296,7 +354,8 @@ const StudentsPage = () => {
       await deleteStudent(pendingDeleteStudent._id);
       setMessage('Student deleted successfully.');
       setPendingDeleteStudent(null);
-      await loadStudents(searchTerm, { preserveMessage: true });
+      const nextPage = page > 1 && students.length === 1 ? page - 1 : page;
+      await loadStudents(searchTerm, nextPage, { preserveMessage: true });
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Failed to delete student.');
       console.error(err);
@@ -305,21 +364,14 @@ const StudentsPage = () => {
     }
   };
 
-  const filteredStudents = students.filter((student) =>
-    [
-      student.studentId,
-      student.fullName,
-      student.className,
-      student.guardianName,
-      student.phone,
-      typeof student.academicYearId === 'string' ? student.academicYearId : `${student.academicYearId?.code || ''} ${student.academicYearId?.name || ''}`,
-      typeof student.gradeId === 'string' ? student.gradeId : `${student.gradeId?.code || ''} ${student.gradeId?.name || ''}`,
-      typeof student.classId === 'string' ? student.classId : student.classId?.className || ''
-    ]
-      .join(' ')
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+  const totalPages = Math.max(1, Math.ceil(meta.total / meta.limit));
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const startIndex = meta.total === 0 ? 0 : (meta.page - 1) * meta.limit + 1;
+  const endIndex = meta.total === 0 ? 0 : Math.min(meta.page * meta.limit, meta.total);
+
+  // TEMP: visual debug panel will be rendered in the JSX below (admin-only).
+
+  const getStudentNameParts = (student: Student) => splitStudentName(student.fullName || '');
 
   const getAcademicYearLabel = (student: Student) => {
     if (typeof student.academicYearId !== 'string' && student.academicYearId) {
@@ -410,17 +462,26 @@ const StudentsPage = () => {
             {formErrors.studentId && <p className="text-sm text-rose-600">{formErrors.studentId}</p>}
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-medium">Full Name</span>
+            <span className="text-sm font-medium">English Name</span>
             <input
-              value={formValues.fullName}
-              onChange={(e) => handleChange('fullName', e.target.value)}
-              className={getFieldClassName('fullName')}
-              placeholder="Full Name"
-              required
+              value={formValues.englishName}
+              onChange={(e) => handleChange('englishName', e.target.value)}
+              className={getFieldClassName('englishName')}
+              placeholder="English Name"
               disabled={loading}
             />
-            {formErrors.fullName && <p className="text-sm text-rose-600">{formErrors.fullName}</p>}
           </label>
+          <label className="space-y-2">
+            <span className="text-sm font-medium">Khmer Name</span>
+            <input
+              value={formValues.khmerName}
+              onChange={(e) => handleChange('khmerName', e.target.value)}
+              className={getFieldClassName('khmerName')}
+              placeholder="Khmer Name"
+              disabled={loading}
+            />
+          </label>
+          {formErrors.englishName && <p className="text-sm text-rose-600 md:col-span-2">{formErrors.englishName}</p>}
           <label className="space-y-2">
             <span className="text-sm font-medium">Academic Year</span>
             <select
@@ -589,8 +650,12 @@ const StudentsPage = () => {
         <table className="w-full">
           <thead className="bg-background">
             <tr>
+              <th className="px-4 py-3 text-left text-sm font-semibold">No.</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Student ID</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Full Name</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">English Name</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Khmer Name</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Gender</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Date of Birth</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Academic Year</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Grade</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Class</th>
@@ -603,27 +668,34 @@ const StudentsPage = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-text-secondary">
+                <td colSpan={13} className="px-4 py-8 text-center text-text-secondary">
                   Loading...
                 </td>
               </tr>
-            ) : filteredStudents.length === 0 ? (
+            ) : students.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-text-secondary">
+                <td colSpan={13} className="px-4 py-8 text-center text-text-secondary">
                   No students found.
                 </td>
               </tr>
             ) : (
-              filteredStudents.map((student) => (
-                <tr key={student._id} className="border-t border-muted hover:bg-background transition">
-                  <td className="px-4 py-3 font-medium">{student.studentId}</td>
-                  <td className="px-4 py-3">{student.fullName}</td>
-                  <td className="px-4 py-3">{getAcademicYearLabel(student)}</td>
-                  <td className="px-4 py-3">{getGradeLabel(student)}</td>
-                  <td className="px-4 py-3">{getClassLabel(student)}</td>
-                  <td className="px-4 py-3">{student.phone}</td>
-                  <td className="px-4 py-3">{student.guardianName}</td>
-                  <td className="px-4 py-3">
+              students.map((student, index) => {
+                const { englishName, khmerName } = getStudentNameParts(student);
+                const rowNumber = (meta.page - 1) * meta.limit + index + 1;
+                return (
+                  <tr key={student._id} className="border-t border-muted hover:bg-background transition">
+                    <td className="px-4 py-3 font-medium">{rowNumber}</td>
+                    <td className="px-4 py-3 font-medium">{student.studentId}</td>
+                    <td className="px-4 py-3">{englishName || '-'}</td>
+                    <td className="px-4 py-3">{khmerName || '-'}</td>
+                    <td className="px-4 py-3">{student.gender}</td>
+                    <td className="px-4 py-3">{student.dateOfBirth || '-'}</td>
+                    <td className="px-4 py-3">{getAcademicYearLabel(student)}</td>
+                    <td className="px-4 py-3">{getGradeLabel(student)}</td>
+                    <td className="px-4 py-3">{getClassLabel(student)}</td>
+                    <td className="px-4 py-3">{student.phone}</td>
+                    <td className="px-4 py-3">{student.guardianName}</td>
+                    <td className="px-4 py-3">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         student.status === 'active'
@@ -636,28 +708,91 @@ const StudentsPage = () => {
                       {student.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 space-x-2">
-                    <button
-                      onClick={() => handleEdit(student)}
-                      className="text-primary hover:underline text-sm font-medium"
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setPendingDeleteStudent(student)}
-                      className="text-red-600 hover:underline text-sm font-medium"
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
+                    <td className="px-4 py-3 space-x-2">
+                      <button
+                        onClick={() => handleEdit(student)}
+                        className="text-primary hover:underline text-sm font-medium"
+                        disabled={loading}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setPendingDeleteStudent(student)}
+                        className="text-red-600 hover:underline text-sm font-medium"
+                        disabled={loading}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+        {/* Admin-only visual debug panel (temporary) */}
+        {user && user.role === 'admin' && (
+          <div className="mt-4 rounded-lg border border-muted bg-gray-50 p-3 text-sm text-text-secondary">
+            <div className="font-semibold mb-2">[TEMP DEBUG] API Response</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>Response keys:</div>
+              <div className="font-medium">{responseDebug ? responseDebug.keys.join(', ') : 'n/a'}</div>
+              <div>Meta:</div>
+              <div className="font-medium">{responseDebug ? JSON.stringify(responseDebug.meta) : 'n/a'}</div>
+              <div>Page:</div>
+              <div className="font-medium">{responseDebug?.page ?? 'n/a'}</div>
+              <div>Limit:</div>
+              <div className="font-medium">{responseDebug?.limit ?? 'n/a'}</div>
+              <div>Total:</div>
+              <div className="font-medium">{responseDebug?.total ?? 'n/a'}</div>
+              <div>Total Pages:</div>
+              <div className="font-medium">{responseDebug?.totalPages ?? 'n/a'}</div>
+              <div>Students Loaded:</div>
+              <div className="font-medium">{students.length}</div>
+              <div>Pagination Visible:</div>
+              <div className="font-medium">{totalPages > 1 ? 'Yes' : 'No'}</div>
+            </div>
+          </div>
+        )}
+
+      {totalPages > 1 && (
+        <div className="flex flex-col gap-3 rounded-lg border border-muted bg-white p-4 md:flex-row md:items-center md:justify-between">
+          <div className="text-sm text-text-secondary">
+            {meta.total === 0 ? 'Showing 0 of 0 students' : `Showing ${startIndex}–${endIndex} of ${meta.total} students`}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page <= 1 || loading}
+              className="rounded-lg border border-muted px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            {pageNumbers.map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => handlePageChange(pageNumber)}
+                disabled={loading}
+                className={`rounded-lg px-3 py-2 text-sm font-medium ${pageNumber === page ? 'bg-primary text-white' : 'border border-muted text-text-secondary'}`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPages || loading}
+              className="rounded-lg border border-muted px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       <DeleteConfirmationModal
         isOpen={Boolean(pendingDeleteStudent)}

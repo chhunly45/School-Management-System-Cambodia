@@ -88,4 +88,17 @@ config.validateEnvironment = () => {
   return [...missingRequired, ...missingOptional];
 };
 
+const logStartupConfig = () => {
+  const envFrontendUrl = getEnvValue('CLIENT_URL', 'CLIENT_ORIGIN', 'FRONTEND_URL', 'FRONTEND');
+  console.log('[CONFIG] NODE_ENV =', config.nodeEnv);
+  console.log('[CONFIG] resolved allowedOrigins =', JSON.stringify(config.allowedOrigins));
+  if (envFrontendUrl) {
+    console.log('[CONFIG] CLIENT_URL / FRONTEND_URL =', envFrontendUrl);
+  } else {
+    console.log('[CONFIG] CLIENT_URL / FRONTEND_URL not set');
+  }
+};
+
+logStartupConfig();
+
 module.exports = config;
