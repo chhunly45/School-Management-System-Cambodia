@@ -85,6 +85,26 @@ const buildStudentFullName = (englishName: string, khmerName: string) => {
   return `${english} / ${khmer}`;
 };
 
+const getCompactPaginationItems = (currentPage: number, totalPages: number): Array<number | 'ellipsis'> => {
+  if (totalPages <= 1) {
+    return [1];
+  }
+
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 5) {
+    return [1, 2, 3, 4, 5, 'ellipsis', totalPages];
+  }
+
+  if (currentPage >= totalPages - 4) {
+    return [1, 'ellipsis', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, 'ellipsis', currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2, 'ellipsis', totalPages];
+};
+
 const StudentsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -365,7 +385,7 @@ const StudentsPage = () => {
   };
 
   const totalPages = Math.max(1, Math.ceil(meta.total / meta.limit));
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const paginationItems = getCompactPaginationItems(page, totalPages);
   const startIndex = meta.total === 0 ? 0 : (meta.page - 1) * meta.limit + 1;
   const endIndex = meta.total === 0 ? 0 : Math.min(meta.page * meta.limit, meta.total);
 
@@ -771,17 +791,29 @@ const StudentsPage = () => {
             >
               Previous
             </button>
-            {pageNumbers.map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                onClick={() => handlePageChange(pageNumber)}
-                disabled={loading}
-                className={`rounded-lg px-3 py-2 text-sm font-medium ${pageNumber === page ? 'bg-primary text-white' : 'border border-muted text-text-secondary'}`}
-              >
-                {pageNumber}
-              </button>
-            ))}
+            {paginationItems.map((paginationItem, index) => {
+              if (paginationItem === 'ellipsis') {
+                return (
+                  <span key={`ellipsis-${index}`} className="px-2 py-2 text-sm text-text-secondary">
+                    ...
+                  </span>
+                );
+              }
+
+              const pageNumber = paginationItem;
+              const isCurrentPage = pageNumber === page;
+              return (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() => handlePageChange(pageNumber)}
+                  disabled={loading}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium ${isCurrentPage ? 'bg-primary text-white' : 'border border-muted text-text-secondary'}`}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
             <button
               type="button"
               onClick={() => handlePageChange(page + 1)}
