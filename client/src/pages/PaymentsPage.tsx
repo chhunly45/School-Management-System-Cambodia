@@ -20,6 +20,8 @@ import { listClasses, type ClassItem } from '../services/class.api';
 import { getSchoolSettings, type SchoolSettings } from '../services/schoolSettings.api';
 import { getCurrencyFormatter } from '../utils/price';
 import { formatDateForApi, formatDateForDisplay, formatDateForInput } from '../utils/date';
+import { getLivePaymentSummary } from '../utils/paymentForm';
+import PaymentReceipt, { type PrintableReceiptData } from '../components/receipts/PaymentReceipt';
 
 type AcademicYearRef = string | { _id: string; code: string; name: string };
 type GradeRef = string | { _id: string; code: string; name: string; level: number };
@@ -72,6 +74,8 @@ interface PaymentFormValues {
   receiptNumber: string;
   studentId: string;
   studentName: string;
+  englishName: string;
+  khmerName: string;
   className: string;
   academicYearId: string;
   gradeId: string;
@@ -98,6 +102,8 @@ const emptyPaymentForm: PaymentFormValues = {
   receiptNumber: '',
   studentId: '',
   studentName: '',
+  englishName: '',
+  khmerName: '',
   className: '',
   academicYearId: '',
   gradeId: '',
@@ -126,6 +132,18 @@ const money = (value: number) => Number(value.toFixed(2));
 const calcRemaining = (tuitionAmount: number, discount: number, amount: number) => {
   const totalDue = Math.max(money(tuitionAmount) - money(discount), 0);
   return Math.max(money(totalDue - money(amount)), 0);
+};
+
+const splitFullName = (fullName: string) => {
+  const trimmed = fullName?.trim() || '';
+  if (!trimmed) return { englishName: '', khmerName: '' };
+
+  const parts = trimmed.split(/\s*\/\s*/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return { englishName: parts[0], khmerName: parts.slice(1).join(' / ') };
+  }
+
+  return { englishName: trimmed, khmerName: '' };
 };
 
 const planMultiplier = (plan: PaymentPlan) => {
@@ -164,6 +182,8 @@ const PaymentsPage = () => {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [students, setStudents] = useState<StudentLookupItem[]>([]);
   const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null);
+  const [studentLookupSearch, setStudentLookupSearch] = useState('');
+  const [studentLookupOpen, setStudentLookupOpen] = useState(false);
 
   const currencyFormatter = useMemo(
     () => getCurrencyFormatter(schoolSettings?.defaultCurrency || 'USD'),
@@ -175,6 +195,9 @@ const PaymentsPage = () => {
   const [selectedReceipt, setSelectedReceipt] = useState<PaymentRecord | null>(null);
   const [timelineStudentId, setTimelineStudentId] = useState('');
   const [monthlyDueDay, setMonthlyDueDay] = useState('1');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successPayment, setSuccessPayment] = useState<{ receiptNumber: string; paidAmount: number; remainingBalance: number } | null>(null);
+  const [printableReceipt, setPrintableReceipt] = useState<PrintableReceiptData | null>(null);
   const [quarterlyDueDates, setQuarterlyDueDates] = useState('01-15,04-15,07-15,10-15');
   const [yearlyDueDate, setYearlyDueDate] = useState('08-31');
   const [gracePeriodDays, setGracePeriodDays] = useState(7);
@@ -335,11 +358,15 @@ const PaymentsPage = () => {
     const linkedClass = classes.find((item) => item._id === selected.classId);
     const linkedAcademicYear = academicYears.find((item) => item._id === selected.academicYearId);
 
+    const { englishName, khmerName } = splitFullName(selected.fullName || '');
+
     setFormValues((prev) => {
       const next = {
         ...prev,
         studentId: selected.studentId,
         studentName: selected.fullName || prev.studentName,
+        englishName,
+        khmerName,
         className: linkedClass?.className || selected.className || prev.className,
         academicYearId: selected.academicYearId || prev.academicYearId,
         gradeId: selected.gradeId || prev.gradeId,
@@ -348,23 +375,41 @@ const PaymentsPage = () => {
       };
       return recalculateRemainingBalance(next);
     });
+    setStudentLookupSearch(`${selected.studentId} - ${selected.fullName}`);
+    setStudentLookupOpen(false);
   };
+
+  const filteredStudents = useMemo(() => {
+    const query = studentLookupSearch.trim().toLowerCase();
+    if (!query) return students;
+
+    return students.filter((student) => {
+      const label = `${student.studentId} - ${student.fullName}`.toLowerCase();
+      return label.includes(query);
+    });
+  }, [students, studentLookupSearch]);
 
   const handleAdd = () => {
     setEditingId(null);
     setSelectedReceipt(null);
     setFormValues(emptyPaymentForm);
     setMessage('');
+    setShowSuccessDialog(false);
+    setSuccessPayment(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEdit = (payment: PaymentRecord) => {
     setEditingId(payment._id);
     setSelectedReceipt(null);
+    const { englishName, khmerName } = splitFullName(payment.studentName || '');
+
     setFormValues({
       receiptNumber: payment.receiptNumber || '',
       studentId: payment.studentId,
       studentName: payment.studentName,
+      englishName,
+      khmerName,
       className: payment.className,
       academicYearId: getAcademicYearId(payment.academicYearId),
       gradeId: getGradeId(payment.gradeId),
@@ -389,7 +434,7 @@ const PaymentsPage = () => {
   const toPayload = (): PaymentPayload => ({
     receiptNumber: formValues.receiptNumber || undefined,
     studentId: formValues.studentId.trim(),
-    studentName: formValues.studentName.trim(),
+    studentName: formValues.studentName.trim() || formValues.studentId.trim(),
     className: formValues.className.trim(),
     academicYearId: formValues.academicYearId || undefined,
     gradeId: formValues.gradeId || undefined,
@@ -415,12 +460,15 @@ const PaymentsPage = () => {
 
   const validateForm = () => {
     if (!formValues.studentId.trim()) return 'Student ID is required.';
-    if (!formValues.studentName.trim()) return 'Student name is required.';
-    if (!formValues.className.trim() && !formValues.classId) return 'Class is required.';
+    if (!formValues.studentName.trim() && !formValues.studentId.trim()) return 'Student name is required.';
     if (!formValues.paymentDate) return 'Payment date is required.';
     if (formValues.tuitionAmount < 0 || formValues.amount < 0 || formValues.discount < 0) return 'Amounts cannot be negative.';
     return '';
   };
+
+  const livePaymentSummary = useMemo(() => {
+    return getLivePaymentSummary(formValues.tuitionAmount, formValues.discount, formValues.amount, formValues.paymentPlan, formValues.paymentDate);
+  }, [formValues.amount, formValues.discount, formValues.paymentDate, formValues.paymentPlan, formValues.tuitionAmount]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -440,7 +488,14 @@ const PaymentsPage = () => {
         await updatePayment(editingId, payload);
         setMessage('Payment updated successfully.');
       } else {
-        await createPayment(payload);
+        const response = await createPayment(payload);
+        const receiptNumber = response?.receiptNumber || payload.receiptNumber || 'N/A';
+        setSuccessPayment({
+          receiptNumber,
+          paidAmount: Number(payload.amount || 0),
+          remainingBalance: Number(payload.remainingBalance || 0)
+        });
+        setShowSuccessDialog(true);
         setMessage('Payment created successfully.');
       }
 
@@ -505,8 +560,48 @@ const PaymentsPage = () => {
   }, [formValues.paymentPlan, formValues.tuitionAmount]);
 
   const handlePrintReceipt = () => {
-    if (!selectedReceipt) return;
-    window.print();
+    const source = selectedReceipt || (successPayment ? ({
+      receiptNumber: successPayment.receiptNumber,
+      paymentDate: formValues.paymentDate,
+      studentId: formValues.studentId,
+      studentName: formValues.studentName,
+      khmerName: formValues.khmerName,
+      englishName: formValues.englishName,
+      gradeName: grades.find((item) => item._id === formValues.gradeId)?.code || '-',
+      className: formValues.className || '-',
+      paymentPlan: formValues.paymentPlan,
+      tuitionAmount: formValues.tuitionAmount,
+      discount: formValues.discount,
+      amount: formValues.amount,
+      remainingBalance: formValues.remainingBalance,
+      paymentMethod: formValues.paymentMethod,
+      cashier: formValues.cashier || user?.name || 'Cashier',
+      academicYear: formValues.academicYear || '-'
+    } as PrintableReceiptData) : null);
+
+    if (!source) return;
+
+    setPrintableReceipt(source);
+    window.setTimeout(() => window.print(), 100);
+  };
+
+  const handleDownloadPdf = () => {
+    if (!successPayment) return;
+
+    const receiptText = [
+      `Receipt ${successPayment.receiptNumber}`,
+      `Paid Amount: ${currencyFormatter.format(successPayment.paidAmount)}`,
+      `Remaining Balance: ${currencyFormatter.format(successPayment.remainingBalance)}`
+    ].join('\n');
+
+    const blob = new Blob([receiptText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `receipt-${successPayment.receiptNumber}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage('Receipt summary downloaded for handoff.');
   };
 
   const handleReprintReceipt = (payment: PaymentRecord) => {
@@ -575,7 +670,80 @@ const PaymentsPage = () => {
           <p className="mt-1 text-sm text-cyan-50">Manage tuition plans, payment records, outstanding balances, and receipts in one place.</p>
         </div>
 
-        {message && (
+        {printableReceipt && (
+          <div className="hidden print:block">
+            <PaymentReceipt
+              payment={printableReceipt}
+              schoolSettings={schoolSettings}
+              currencyFormatter={currencyFormatter}
+            />
+          </div>
+        )}
+
+        {showSuccessDialog && successPayment && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="payment-success-title">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
+                    Payment completed
+                  </div>
+                  <h3 id="payment-success-title" className="mt-3 text-2xl font-semibold text-slate-900">
+                    Payment created successfully
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Receipt <span className="font-semibold text-slate-900">{successPayment.receiptNumber}</span> was saved for the student.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSuccessDialog(false);
+                    setSuccessPayment(null);
+                  }}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="text-sm font-semibold text-emerald-800">Receipt Summary</div>
+                <div className="mt-2 grid gap-2 text-sm text-emerald-900">
+                  <div>Receipt Number: {successPayment.receiptNumber}</div>
+                  <div>Paid Amount: {currencyFormatter.format(successPayment.paidAmount)}</div>
+                  <div>Remaining Balance: {currencyFormatter.format(successPayment.remainingBalance)}</div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handlePrintReceipt}
+                  className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
+                >
+                  Print Receipt
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  Download PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+                >
+                  New Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!showSuccessDialog && message && (
           <div className={`rounded-xl p-4 ${message.toLowerCase().includes('error') || message.toLowerCase().includes('unable') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
             {message}
           </div>
@@ -587,312 +755,284 @@ const PaymentsPage = () => {
             <button
               type="button"
               onClick={handleAdd}
+              aria-label="Start new payment form"
               className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
             >
               New Payment
             </button>
           </div>
 
-          <form onSubmit={handleSave} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Student Lookup</span>
-              <select
-                value={formValues.studentId}
-                onChange={(e) => {
-                  handleFormChange('studentId', e.target.value);
-                  applyStudentLookup(e.target.value);
-                }}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="">Select student by ID</option>
-                {students.map((student) => (
-                  <option key={student._id} value={student.studentId}>
-                    {student.studentId} - {student.fullName}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-slate-900">Student Information</h3>
+                  <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700">
+                    Read only
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <label className="space-y-1 text-sm md:col-span-2">
+                    <span className="font-medium text-slate-700">Student Lookup</span>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={studentLookupSearch}
+                        onFocus={() => setStudentLookupOpen(true)}
+                        onChange={(e) => {
+                          const nextValue = e.target.value;
+                          setStudentLookupSearch(nextValue);
+                          setStudentLookupOpen(true);
+                          if (!nextValue) {
+                            handleFormChange('studentId', '');
+                          }
+                        }}
+                        placeholder="Search student by ID or name"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      />
+                      {studentLookupOpen && filteredStudents.length > 0 && (
+                        <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                          {filteredStudents.map((student) => (
+                            <button
+                              key={student._id}
+                              type="button"
+                              onClick={() => {
+                                handleFormChange('studentId', student.studentId);
+                                applyStudentLookup(student.studentId);
+                              }}
+                              className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
+                            >
+                              {student.studentId} - {student.fullName}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Receipt Number</span>
-              <input
-                type="text"
-                value={formValues.receiptNumber}
-                onChange={(e) => handleFormChange('receiptNumber', e.target.value)}
-                placeholder="Leave blank for auto generation"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Student ID</span>
+                    <input
+                      type="text"
+                      value={formValues.studentId}
+                      onChange={(e) => handleFormChange('studentId', e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      required
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Student Name</span>
-              <input
-                type="text"
-                value={formValues.studentName}
-                onChange={(e) => handleFormChange('studentName', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                required
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Student Name</span>
+                    <input
+                      type="text"
+                      value={formValues.studentName || formValues.studentId || '-'}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Class Name</span>
-              <input
-                type="text"
-                value={formValues.className}
-                onChange={(e) => handleFormChange('className', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                required
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Khmer Name</span>
+                    <input
+                      type="text"
+                      value={formValues.khmerName}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Academic Year</span>
-              <select
-                value={formValues.academicYearId}
-                onChange={(e) => handleFormChange('academicYearId', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="">Select academic year</option>
-                {academicYears.map((item) => (
-                  <option key={item._id} value={item._id}>
-                    {item.code} - {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">English Name</span>
+                    <input
+                      type="text"
+                      value={formValues.englishName}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Grade</span>
-              <select
-                value={formValues.gradeId}
-                onChange={(e) => handleFormChange('gradeId', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="">Select grade</option>
-                {grades.map((item) => (
-                  <option key={item._id} value={item._id}>
-                    {item.code} - {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Grade</span>
+                    <input
+                      type="text"
+                      value={grades.find((item) => item._id === formValues.gradeId) ? `${grades.find((item) => item._id === formValues.gradeId)?.code} - ${grades.find((item) => item._id === formValues.gradeId)?.name}` : '-'}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Class</span>
-              <select
-                value={formValues.classId}
-                onChange={(e) => handleFormChange('classId', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="">Select class</option>
-                {classes.map((item) => (
-                  <option key={item._id} value={item._id}>
-                    {item.className}
-                  </option>
-                ))}
-              </select>
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Class</span>
+                    <input
+                      type="text"
+                      value={formValues.className || '-'}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Academic Year (Legacy)</span>
-              <input
-                type="text"
-                value={formValues.academicYear}
-                onChange={(e) => handleFormChange('academicYear', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                placeholder="e.g., 2025-2026"
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Academic Year</span>
+                    <input
+                      type="text"
+                      value={formValues.academicYear || '-'}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Payment Plan</span>
-              <select
-                value={formValues.paymentPlan}
-                onChange={(e) => handleFormChange('paymentPlan', e.target.value as PaymentPlan)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="yearly">Yearly</option>
-              </select>
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Payment Plan</span>
+                    <input
+                      type="text"
+                      value={formValues.paymentPlan.charAt(0).toUpperCase() + formValues.paymentPlan.slice(1)}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Monthly Due Day</span>
-              <input
-                type="number"
-                min="1"
-                max="31"
-                value={monthlyDueDay}
-                onChange={(e) => setMonthlyDueDay(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Monthly Tuition</span>
+                    <input
+                      type="text"
+                      value={currencyFormatter.format(formValues.tuitionAmount)}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Quarterly Due Dates</span>
-              <input
-                type="text"
-                value={quarterlyDueDates}
-                onChange={(e) => setQuarterlyDueDates(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                placeholder="MM-DD,MM-DD,MM-DD"
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Outstanding Balance</span>
+                    <input
+                      type="text"
+                      value={currencyFormatter.format(formValues.remainingBalance)}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Yearly Due Date</span>
-              <input
-                type="text"
-                value={yearlyDueDate}
-                onChange={(e) => setYearlyDueDate(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                placeholder="MM-DD"
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Next Due Date</span>
+                    <input
+                      type="text"
+                      value={livePaymentSummary.nextDueDate || '-'}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
+                </div>
+              </div>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Grace Period Days</span>
-              <input
-                type="number"
-                min="0"
-                max="365"
-                value={gracePeriodDays}
-                onChange={(e) => setGracePeriodDays(Number(e.target.value || 0))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-slate-900">Receive Payment</h3>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                    Fast entry
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Paid Amount</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formValues.amount}
+                      onChange={(e) => handleFormChange('amount', Number(e.target.value || 0))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      required
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Tuition Amount</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formValues.tuitionAmount}
-                onChange={(e) => handleFormChange('tuitionAmount', Number(e.target.value || 0))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                required
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Discount</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formValues.discount}
+                      onChange={(e) => handleFormChange('discount', Number(e.target.value || 0))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Discount</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formValues.discount}
-                onChange={(e) => handleFormChange('discount', Number(e.target.value || 0))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Payment Method</span>
+                    <select
+                      value={formValues.paymentMethod}
+                      onChange={(e) => handleFormChange('paymentMethod', e.target.value as PaymentMethod)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="check">Check</option>
+                      <option value="mobile_money">Mobile Money</option>
+                    </select>
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Paid Amount</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formValues.amount}
-                onChange={(e) => handleFormChange('amount', Number(e.target.value || 0))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                required
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Payment Date</span>
+                    <input
+                      type="date"
+                      value={formValues.paymentDate}
+                      onChange={(e) => handleFormChange('paymentDate', e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      required
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Remaining Balance</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formValues.remainingBalance}
-                onChange={(e) => handleFormChange('remainingBalance', Number(e.target.value || 0))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Reference Number</span>
+                    <input
+                      type="text"
+                      value={formValues.receiptNumber}
+                      onChange={(e) => handleFormChange('receiptNumber', e.target.value)}
+                      placeholder="Optional"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Payment Date</span>
-              <input
-                type="date"
-                value={formValues.paymentDate}
-                onChange={(e) => handleFormChange('paymentDate', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                required
-              />
-            </label>
+                  <label className="space-y-1 text-sm md:col-span-2">
+                    <span className="font-medium text-slate-700">Remarks</span>
+                    <textarea
+                      value={formValues.remarks}
+                      onChange={(e) => handleFormChange('remarks', e.target.value)}
+                      rows={2}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+                </div>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Payment Method</span>
-              <select
-                value={formValues.paymentMethod}
-                onChange={(e) => handleFormChange('paymentMethod', e.target.value as PaymentMethod)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="cash">Cash</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="check">Check</option>
-                <option value="mobile_money">Mobile Money</option>
-              </select>
-            </label>
+                <div className="mt-4 rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900">
+                  <div className="font-semibold">Live Summary</div>
+                  <div className="mt-2 grid gap-2 md:grid-cols-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-cyan-700">Net Amount</div>
+                      <div className="mt-1 font-semibold">{currencyFormatter.format(livePaymentSummary.netAmount)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-cyan-700">Remaining Balance</div>
+                      <div className="mt-1 font-semibold">{currencyFormatter.format(livePaymentSummary.remainingBalance)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-cyan-700">Status</div>
+                      <div className={`mt-1 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${livePaymentSummary.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                        {livePaymentSummary.status === 'paid' ? 'Paid' : 'Pending'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Status</span>
-              <select
-                value={formValues.status}
-                onChange={(e) => handleFormChange('status', e.target.value as PaymentStatus)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="overdue">Overdue</option>
-              </select>
-            </label>
-
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Cashier</span>
-              <input
-                type="text"
-                value={formValues.cashier}
-                onChange={(e) => handleFormChange('cashier', e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                placeholder="Cashier name"
-              />
-            </label>
-
-            <label className="space-y-1 text-sm">
-              <span className="font-medium text-slate-700">Semester</span>
-              <select
-                value={formValues.semester}
-                onChange={(e) => handleFormChange('semester', Number(e.target.value) as 1 | 2)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              >
-                <option value="1">Semester 1</option>
-                <option value="2">Semester 2</option>
-              </select>
-            </label>
-
-            <label className="space-y-1 text-sm md:col-span-2 xl:col-span-4">
-              <span className="font-medium text-slate-700">Remarks</span>
-              <textarea
-                value={formValues.remarks}
-                onChange={(e) => handleFormChange('remarks', e.target.value)}
-                rows={2}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
-
-            <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900 md:col-span-2 xl:col-span-4">
-              <div className="font-semibold">Payment Plan Preview</div>
+            <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900">
+              <div className="font-semibold">Quick Cashier Summary</div>
               <div className="mt-1">Expected installment for current plan: {currencyFormatter.format(expectedInstallmentAmount)}</div>
               <div>Total due after discount: {currencyFormatter.format(formValues.tuitionAmount - formValues.discount)}</div>
               <div>Outstanding balance: {currencyFormatter.format(formValues.remainingBalance)}</div>
             </div>
 
-            <div className="flex gap-3 md:col-span-2 xl:col-span-4">
+            <div className="flex gap-3">
               <button
                 type="submit"
                 disabled={loading}
