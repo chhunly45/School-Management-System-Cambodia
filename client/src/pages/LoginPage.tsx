@@ -106,6 +106,9 @@ const LoginPage = () => {
           useOtp: false
         };
 
+        console.log('STEP 1: handleSubmit entered');
+        console.log('STEP 1 payload:', payload);
+
         const result = await login(payload as any);
         if (result && 'requiresOtp' in result && result.requiresOtp) {
           setStage('otp');
@@ -131,6 +134,9 @@ const LoginPage = () => {
           password: formData.password,
           useOtp: true
         };
+
+        console.log('STEP 1: handleSubmit entered');
+        console.log('STEP 1 payload:', payload);
 
         const result = await login(payload as any);
         if (result && 'requiresOtp' in result && result.requiresOtp) {

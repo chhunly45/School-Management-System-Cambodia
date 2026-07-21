@@ -20,8 +20,9 @@ const shouldIncludeRelations = (value) => {
 };
 
 const normalizePlan = (value, fallback = 'monthly') => {
-  const normalized = String(value || fallback).toLowerCase();
-  if (['monthly', 'quarterly', 'yearly'].includes(normalized)) return normalized;
+  const normalized = String(value || fallback).toLowerCase().trim();
+  if (normalized === 'semiannual') return 'semi-annual';
+  if (['monthly', 'quarterly', 'semi-annual', 'yearly'].includes(normalized)) return normalized;
   return fallback;
 };
 
@@ -102,7 +103,7 @@ const resolveDueDate = (payload) => {
     return resolveMonthlyDueDate(paymentDate, payload.monthlyDueDay);
   }
 
-  if (plan === 'quarterly') {
+  if (plan === 'quarterly' || plan === 'semi-annual') {
     const dueDate = resolveQuarterlyDueDate(paymentDate, payload.quarterlyDueDates);
     if (dueDate) return dueDate;
   }

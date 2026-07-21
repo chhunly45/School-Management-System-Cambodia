@@ -11,12 +11,12 @@ const PaymentSchema = new Schema({
   classId: { type: Schema.Types.ObjectId, ref: 'Class' },
   paymentType: {
     type: String,
-    enum: ['monthly', 'quarterly', 'yearly'],
+    enum: ['monthly', 'quarterly', 'semi-annual', 'yearly'],
     default: 'monthly'
   },
   paymentPlan: {
     type: String,
-    enum: ['monthly', 'quarterly', 'yearly'],
+    enum: ['monthly', 'quarterly', 'semi-annual', 'yearly'],
     default: 'monthly'
   },
   tuitionAmount: { type: Number, min: 0, default: 0 },
@@ -27,6 +27,7 @@ const PaymentSchema = new Schema({
   monthlyDueDay: { type: Number, min: 1, max: 31, default: 1 },
   quarterlyDueDates: [{ type: String, trim: true }],
   yearlyDueDate: { type: String, trim: true },
+  billingPeriod: { type: String, trim: true },
   gracePeriodDays: { type: Number, min: 0, default: 0 },
   cashier: { type: String, trim: true },
   paymentDate: { type: Date, required: true },

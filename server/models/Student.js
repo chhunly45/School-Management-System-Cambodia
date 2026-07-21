@@ -11,6 +11,7 @@ const StudentSchema = new Schema({
   guardianName: { type: String, trim: true },
   guardianPhone: { type: String, trim: true },
   className: { type: String, trim: true },
+  monthlyTuition: { type: Number, min: 0, default: 0 },
   academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear' },
   gradeId: { type: Schema.Types.ObjectId, ref: 'Grade' },
   classId: { type: Schema.Types.ObjectId, ref: 'Class' },

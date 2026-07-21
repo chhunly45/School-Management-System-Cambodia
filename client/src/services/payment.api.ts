@@ -2,7 +2,15 @@ import api from './api';
 
 export type PaymentMethod = 'cash' | 'bank_transfer' | 'check' | 'mobile_money';
 export type PaymentStatus = 'paid' | 'pending' | 'overdue' | 'due_soon' | 'grace_period';
-export type PaymentPlan = 'monthly' | 'quarterly' | 'yearly';
+export type PaymentPlan = 'monthly' | 'quarterly' | 'semi-annual' | 'yearly';
+
+export interface PaymentFeeEntryInput {
+  id: string;
+  label: string;
+  amount: number;
+  type: string;
+  description?: string;
+}
 
 export interface PaymentListQuery {
   search?: string;
@@ -39,6 +47,7 @@ export interface PaymentPayload {
   monthlyDueDay?: number;
   quarterlyDueDates?: string[];
   yearlyDueDate?: string;
+  billingPeriod?: string;
   gracePeriodDays?: number;
   cashier?: string;
   paymentDate: string;
@@ -47,6 +56,7 @@ export interface PaymentPayload {
   semester?: 1 | 2;
   status: PaymentStatus;
   remarks?: string;
+  feeEntries?: PaymentFeeEntryInput[];
 }
 
 export interface MonthlyPaymentSummaryQuery {

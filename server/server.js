@@ -1,4 +1,20 @@
 require('dotenv').config();
+console.log('[DEBUG] server.js NODE_ENV =', process.env.NODE_ENV || 'development');
+console.log('[DEBUG] server.js MONGODB_URI exists =', Boolean(process.env.MONGODB_URI));
+console.log('[DEBUG] server.js MONGO_URI exists =', Boolean(process.env.MONGO_URI));
+const maskMongoUri = (value) => {
+  if (!value) return '(empty)';
+  try {
+    const parsed = new URL(value);
+    const username = parsed.username ? '***' : '';
+    const password = parsed.password ? '***' : '';
+    const auth = username || password ? `${username}:${password}@` : '';
+    return `${parsed.protocol}//${auth}${parsed.host}${parsed.pathname}${parsed.search}`;
+  } catch (error) {
+    return value.replace(/(:\/\/)([^:@/]+)(:[^@/]+)?@/, '$1***:***@');
+  }
+};
+console.log('[DEBUG] server.js Mongo URI =', maskMongoUri(process.env.MONGODB_URI || process.env.MONGO_URI || ''));
 const http = require('http');
 const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');

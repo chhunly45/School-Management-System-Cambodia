@@ -14,13 +14,20 @@ import {
   type MonthlyPaymentSummary
 } from '../services/payment.api';
 import { listStudents } from '../services/student.api';
+import { listTransport } from '../services/transport.api';
 import { listAcademicYears, type AcademicYear } from '../services/academicYear.api';
 import { listGrades, type Grade } from '../services/grade.api';
 import { listClasses, type ClassItem } from '../services/class.api';
 import { getSchoolSettings, type SchoolSettings } from '../services/schoolSettings.api';
 import { getCurrencyFormatter } from '../utils/price';
 import { formatDateForApi, formatDateForDisplay, formatDateForInput } from '../utils/date';
-import { getLivePaymentSummary } from '../utils/paymentForm';
+import { getLivePaymentSummary, getTuitionAmountForPlan } from '../utils/paymentForm';
+import {
+  createLegacyPaymentPayload,
+  getPaymentEntrySections,
+  getPaymentSummaryItems,
+  type PaymentFeeEntry
+} from '../utils/paymentFeeExtensions';
 import PaymentReceipt, { type PrintableReceiptData } from '../components/receipts/PaymentReceipt';
 
 type AcademicYearRef = string | { _id: string; code: string; name: string };
@@ -46,9 +53,11 @@ interface PaymentRecord {
   monthlyDueDay?: number;
   quarterlyDueDates?: string[];
   yearlyDueDate?: string;
+  billingPeriod?: string;
   gracePeriodDays?: number;
   paymentLifecycleStatus?: 'paid' | 'due_soon' | 'grace_period' | 'overdue';
   paymentLifecycleStatusLabel?: string;
+  feeEntries?: PaymentFeeEntry[];
   cashier?: string;
   paymentDate: string;
   paymentMethod: PaymentMethod;
@@ -65,6 +74,7 @@ interface StudentLookupItem {
   phone?: string;
   guardianPhone?: string;
   className: string;
+  monthlyTuition?: number;
   academicYearId?: string;
   gradeId?: string;
   classId?: string;
@@ -92,11 +102,32 @@ interface PaymentFormValues {
   academicYear: string;
   semester: 1 | 2;
   status: PaymentStatus;
+  billingPeriod: string;
   remarks: string;
+  feeEntries: PaymentFeeEntry[];
 }
 
 const today = formatDateForInput(new Date());
 const monthKeyDefault = formatDateForInput(new Date()).slice(0, 7);
+
+const money = (value: number) => Number(value.toFixed(2));
+
+const buildFeeEntries = (tuitionAmount: number, existingEntries: PaymentFeeEntry[] = []) => {
+  const sections = getPaymentEntrySections();
+
+  return sections.map((section) => {
+    const existingEntry = existingEntries.find((entry) => entry.type === section.key);
+    const amount = section.key === 'tuition' ? money(tuitionAmount) : Number(existingEntry?.amount || 0);
+
+    return {
+      id: existingEntry?.id || `${section.key}-${Math.random().toString(36).slice(2, 8)}`,
+      label: existingEntry?.label || section.label,
+      amount,
+      type: section.key,
+      description: existingEntry?.description || section.description
+    } satisfies PaymentFeeEntry;
+  });
+};
 
 const emptyPaymentForm: PaymentFormValues = {
   receiptNumber: '',
@@ -120,14 +151,14 @@ const emptyPaymentForm: PaymentFormValues = {
   academicYear: '',
   semester: 1,
   status: 'pending',
-  remarks: ''
+  billingPeriod: monthKeyDefault,
+  remarks: '',
+  feeEntries: buildFeeEntries(0)
 };
 
 const getAcademicYearId = (value?: AcademicYearRef) => (typeof value === 'string' ? value : value?._id || '');
 const getGradeId = (value?: GradeRef) => (typeof value === 'string' ? value : value?._id || '');
 const getClassId = (value?: ClassRef) => (typeof value === 'string' ? value : value?._id || '');
-
-const money = (value: number) => Number(value.toFixed(2));
 
 const calcRemaining = (tuitionAmount: number, discount: number, amount: number) => {
   const totalDue = Math.max(money(tuitionAmount) - money(discount), 0);
@@ -146,10 +177,19 @@ const splitFullName = (fullName: string) => {
   return { englishName: trimmed, khmerName: '' };
 };
 
-const planMultiplier = (plan: PaymentPlan) => {
+const planMultiplier = (plan: PaymentPlan | string) => {
   if (plan === 'quarterly') return 3;
-  if (plan === 'yearly') return 12;
+  if (plan === 'yearly' || plan === 'annual') return 12;
+  if (plan === 'semi-annual' || plan === 'semiannual') return 6;
   return 1;
+};
+
+const getPlanAdjustedTuitionAmount = (value: number, fromPlan: PaymentPlan | string, toPlan: PaymentPlan | string) => {
+  const fromMultiplier = planMultiplier(fromPlan);
+  const toMultiplier = planMultiplier(toPlan);
+  if (!fromMultiplier || !toMultiplier) return money(value);
+  const baseValue = money(value / fromMultiplier);
+  return money(baseValue * toMultiplier);
 };
 
 const getComputedPaymentStatus = (payment: PaymentRecord): 'paid' | 'due_soon' | 'grace_period' | 'overdue' => {
@@ -173,14 +213,18 @@ const PaymentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentPlanFilter, setPaymentPlanFilter] = useState('');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
   const [selectedGradeId, setSelectedGradeId] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [students, setStudents] = useState<StudentLookupItem[]>([]);
+  const [selectedTransport, setSelectedTransport] = useState<{ routeName?: string; monthlyFee?: number } | null>(null);
   const [schoolSettings, setSchoolSettings] = useState<SchoolSettings | null>(null);
   const [studentLookupSearch, setStudentLookupSearch] = useState('');
   const [studentLookupOpen, setStudentLookupOpen] = useState(false);
@@ -254,6 +298,7 @@ const PaymentsPage = () => {
       const response = await listPayments({
         search: searchTerm || undefined,
         status: (statusFilter || undefined) as PaymentStatus | undefined,
+        paymentMethod: (paymentMethodFilter || undefined) as PaymentMethod | undefined,
         paymentPlan: (paymentPlanFilter || undefined) as PaymentPlan | undefined,
         academicYearId: selectedAcademicYearId || undefined,
         gradeId: selectedGradeId || undefined,
@@ -282,7 +327,9 @@ const PaymentsPage = () => {
           monthlyDueDay: item.monthlyDueDay,
           quarterlyDueDates: item.quarterlyDueDates,
           yearlyDueDate: item.yearlyDueDate,
+          billingPeriod: item.billingPeriod || '',
           gracePeriodDays: item.gracePeriodDays,
+          feeEntries: item.feeEntries || [],
           paymentLifecycleStatus: item.paymentLifecycleStatus,
           paymentLifecycleStatusLabel: item.paymentLifecycleStatusLabel
         }))
@@ -319,7 +366,22 @@ const PaymentsPage = () => {
 
   const recalculateRemainingBalance = (next: PaymentFormValues) => {
     const computed = calcRemaining(next.tuitionAmount, next.discount, next.amount);
-    return { ...next, remainingBalance: computed };
+    return {
+      ...next,
+      feeEntries:
+        next.feeEntries.length > 0
+          ? next.feeEntries.map((entry) => {
+              if (entry.type === 'tuition') return { ...entry, amount: money(next.tuitionAmount) };
+              if (entry.type === 'transport') {
+                const monthly = Number(selectedTransport?.monthlyFee || 0);
+                const multiplier = planMultiplier(next.paymentPlan || next.paymentType || 'monthly');
+                return { ...entry, amount: money(monthly * multiplier), label: selectedTransport?.routeName ? `Transport (${selectedTransport.routeName})` : entry.label, description: selectedTransport?.routeName || entry.description };
+              }
+              return entry;
+            })
+          : buildFeeEntries(next.tuitionAmount),
+      remainingBalance: computed
+    };
   };
 
   const getBadgeLabel = (payment: PaymentRecord) => {
@@ -335,12 +397,20 @@ const PaymentsPage = () => {
     setFormValues((prev) => {
       const next = { ...prev, [key]: value } as PaymentFormValues;
 
+      if (key === 'paymentDate' && !prev.billingPeriod) {
+        const fallbackBillingPeriod = typeof value === 'string' ? value : prev.paymentDate;
+        const derivedBillingPeriod = formatDateForApi(fallbackBillingPeriod)?.slice(0, 7) || '';
+        next.billingPeriod = derivedBillingPeriod;
+      }
+
       if (key === 'paymentPlan') {
         next.paymentType = value as PaymentPlan;
+        next.tuitionAmount = getPlanAdjustedTuitionAmount(prev.tuitionAmount, prev.paymentPlan || prev.paymentType || 'monthly', value as PaymentPlan);
       }
 
       if (key === 'paymentType') {
         next.paymentPlan = value as PaymentPlan;
+        next.tuitionAmount = getPlanAdjustedTuitionAmount(prev.tuitionAmount, prev.paymentPlan || prev.paymentType || 'monthly', value as PaymentPlan);
       }
 
       if (key === 'tuitionAmount' || key === 'amount' || key === 'discount' || key === 'paymentType' || key === 'paymentPlan') {
@@ -351,7 +421,20 @@ const PaymentsPage = () => {
     });
   };
 
-  const applyStudentLookup = (studentId: string) => {
+  const handleFeeEntryAmountChange = (feeType: PaymentFeeEntry['type'], value: number) => {
+    setFormValues((prev) => {
+      const nextEntries = prev.feeEntries.map((entry) => (entry.type === feeType ? { ...entry, amount: money(value) } : entry));
+      const next = { ...prev, feeEntries: nextEntries } as PaymentFormValues;
+
+      if (feeType === 'tuition') {
+        return recalculateRemainingBalance({ ...next, tuitionAmount: value, amount: prev.amount });
+      }
+
+      return next;
+    });
+  };
+
+  const applyStudentLookup = async (studentId: string) => {
     const selected = students.find((item) => item.studentId === studentId);
     if (!selected) return;
 
@@ -361,6 +444,10 @@ const PaymentsPage = () => {
     const { englishName, khmerName } = splitFullName(selected.fullName || '');
 
     setFormValues((prev) => {
+      const nextTuitionAmount = editingId
+        ? prev.tuitionAmount
+        : money(getTuitionAmountForPlan(Number(selected.monthlyTuition || 0), prev.paymentPlan || prev.paymentType || 'monthly'));
+
       const next = {
         ...prev,
         studentId: selected.studentId,
@@ -371,10 +458,40 @@ const PaymentsPage = () => {
         academicYearId: selected.academicYearId || prev.academicYearId,
         gradeId: selected.gradeId || prev.gradeId,
         classId: selected.classId || prev.classId,
-        academicYear: linkedAcademicYear ? `${linkedAcademicYear.code} - ${linkedAcademicYear.name}` : prev.academicYear
+        academicYear: linkedAcademicYear ? `${linkedAcademicYear.code} - ${linkedAcademicYear.name}` : prev.academicYear,
+        tuitionAmount: nextTuitionAmount
       };
       return recalculateRemainingBalance(next);
     });
+
+    // fetch transport record for selected student (use student._id as source of truth)
+    try {
+      const resp = await listTransport({ studentId: selected._id, perPage: 5 });
+      const items = resp.data?.items || [];
+      const transportRec = items.find((r: any) => r.status === 'active') || items[0] || null;
+      const monthly = Number(transportRec?.monthlyFee || 0);
+      const routeName = transportRec?.routeName || '';
+
+      setSelectedTransport({ routeName, monthlyFee: monthly });
+
+      // update feeEntries transport amount and label
+      setFormValues((prev) => {
+        const multiplier = planMultiplier(prev.paymentPlan || prev.paymentType || 'monthly');
+        const nextEntries = prev.feeEntries.map((entry) => {
+          if (entry.type === 'transport') {
+            return { ...entry, amount: money(monthly * multiplier), label: routeName ? `Transport (${routeName})` : entry.label, description: routeName || entry.description };
+          }
+          if (entry.type === 'tuition') return { ...entry, amount: money(prev.tuitionAmount) };
+          return entry;
+        });
+
+        return { ...prev, feeEntries: nextEntries, remainingBalance: calcRemaining(prev.tuitionAmount, prev.discount, prev.amount) } as PaymentFormValues;
+      });
+    } catch (err) {
+      console.error('Unable to fetch transport record for student', err);
+      setSelectedTransport(null);
+    }
+
     setStudentLookupSearch(`${selected.studentId} - ${selected.fullName}`);
     setStudentLookupOpen(false);
   };
@@ -392,7 +509,7 @@ const PaymentsPage = () => {
   const handleAdd = () => {
     setEditingId(null);
     setSelectedReceipt(null);
-    setFormValues(emptyPaymentForm);
+    setFormValues({ ...emptyPaymentForm, feeEntries: buildFeeEntries(0) });
     setMessage('');
     setShowSuccessDialog(false);
     setSuccessPayment(null);
@@ -426,37 +543,55 @@ const PaymentsPage = () => {
       academicYear: payment.academicYear || '',
       semester: payment.semester || 1,
       status: payment.status,
-      remarks: payment.remarks || ''
+      billingPeriod: payment.billingPeriod || '',
+      remarks: payment.remarks || '',
+      feeEntries: buildFeeEntries(Number(payment.tuitionAmount || 0), payment.feeEntries || [])
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const toPayload = (): PaymentPayload => ({
-    receiptNumber: formValues.receiptNumber || undefined,
-    studentId: formValues.studentId.trim(),
-    studentName: formValues.studentName.trim() || formValues.studentId.trim(),
-    className: formValues.className.trim(),
-    academicYearId: formValues.academicYearId || undefined,
-    gradeId: formValues.gradeId || undefined,
-    classId: formValues.classId || undefined,
-    paymentType: formValues.paymentType,
-    paymentPlan: formValues.paymentPlan,
-    tuitionAmount: money(formValues.tuitionAmount),
-    amount: money(formValues.amount),
-    discount: money(formValues.discount),
-    remainingBalance: money(formValues.remainingBalance),
-    monthlyDueDay: Number(monthlyDueDay || 1),
-    quarterlyDueDates: quarterlyDueDates.split(',').map((item) => item.trim()).filter(Boolean),
-    yearlyDueDate: yearlyDueDate.trim() || undefined,
-    gracePeriodDays,
-    cashier: formValues.cashier.trim() || undefined,
-    paymentDate: formatDateForApi(formValues.paymentDate) || formatDateForInput(formValues.paymentDate),
-    paymentMethod: formValues.paymentMethod,
-    academicYear: formValues.academicYear.trim() || undefined,
-    semester: formValues.semester,
-    status: formValues.status,
-    remarks: formValues.remarks.trim() || undefined
-  });
+  const toPayload = (): PaymentPayload => {
+    const legacyPayload = createLegacyPaymentPayload({
+      studentId: formValues.studentId.trim(),
+      studentName: formValues.studentName.trim() || formValues.studentId.trim(),
+      className: formValues.className.trim(),
+      amount: money(formValues.amount),
+      discount: money(formValues.discount),
+      paymentDate: formatDateForApi(formValues.paymentDate) || formatDateForInput(formValues.paymentDate),
+      paymentMethod: formValues.paymentMethod,
+      remarks: formValues.remarks.trim() || undefined,
+      paymentPlan: formValues.paymentPlan,
+      status: formValues.status,
+      feeEntries: formValues.feeEntries
+    });
+
+    return {
+      ...legacyPayload,
+      receiptNumber: formValues.receiptNumber || undefined,
+      academicYearId: formValues.academicYearId || undefined,
+      gradeId: formValues.gradeId || undefined,
+      classId: formValues.classId || undefined,
+      paymentType: formValues.paymentType,
+      paymentPlan: formValues.paymentPlan,
+      tuitionAmount: money(formValues.tuitionAmount),
+      amount: money(formValues.amount),
+      discount: money(formValues.discount),
+      remainingBalance: money(formValues.remainingBalance),
+      monthlyDueDay: Number(monthlyDueDay || 1),
+      quarterlyDueDates: quarterlyDueDates.split(',').map((item) => item.trim()).filter(Boolean),
+      yearlyDueDate: yearlyDueDate.trim() || undefined,
+      billingPeriod: formValues.billingPeriod.trim() || formatDateForApi(formValues.paymentDate)?.slice(0, 7) || monthKeyDefault,
+      gracePeriodDays,
+      cashier: formValues.cashier.trim() || undefined,
+      paymentDate: formatDateForApi(formValues.paymentDate) || formatDateForInput(formValues.paymentDate),
+      paymentMethod: formValues.paymentMethod,
+      academicYear: formValues.academicYear.trim() || undefined,
+      semester: formValues.semester,
+      status: formValues.status,
+      remarks: formValues.remarks.trim() || undefined,
+      feeEntries: formValues.feeEntries
+    };
+  };
 
   const validateForm = () => {
     if (!formValues.studentId.trim()) return 'Student ID is required.';
@@ -469,6 +604,11 @@ const PaymentsPage = () => {
   const livePaymentSummary = useMemo(() => {
     return getLivePaymentSummary(formValues.tuitionAmount, formValues.discount, formValues.amount, formValues.paymentPlan, formValues.paymentDate);
   }, [formValues.amount, formValues.discount, formValues.paymentDate, formValues.paymentPlan, formValues.tuitionAmount]);
+
+  const feeSummaryItems = useMemo(
+    () => getPaymentSummaryItems(formValues.tuitionAmount, formValues.discount, formValues.amount),
+    [formValues.amount, formValues.discount, formValues.tuitionAmount]
+  );
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -500,7 +640,7 @@ const PaymentsPage = () => {
       }
 
       setEditingId(null);
-      setFormValues(emptyPaymentForm);
+      setFormValues({ ...emptyPaymentForm, feeEntries: buildFeeEntries(0) });
       await Promise.all([loadPayments(), loadMonthlySummary()]);
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Error saving payment. Please try again.');
@@ -576,7 +716,9 @@ const PaymentsPage = () => {
       remainingBalance: formValues.remainingBalance,
       paymentMethod: formValues.paymentMethod,
       cashier: formValues.cashier || user?.name || 'Cashier',
-      academicYear: formValues.academicYear || '-'
+      academicYear: formValues.academicYear || '-',
+      billingPeriod: formValues.billingPeriod || monthKeyDefault,
+      feeEntries: formValues.feeEntries
     } as PrintableReceiptData) : null);
 
     if (!source) return;
@@ -585,7 +727,7 @@ const PaymentsPage = () => {
     window.setTimeout(() => window.print(), 100);
   };
 
-  const handleDownloadPdf = () => {
+  const handleReceiptDownload = () => {
     if (!successPayment) return;
 
     const receiptText = [
@@ -608,6 +750,89 @@ const PaymentsPage = () => {
     setSelectedReceipt(payment);
     setMessage(`Receipt ${payment.receiptNumber} ready for reprint.`);
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
+  const handlePrintHistoryReceipt = (payment: PaymentRecord) => {
+    const source: PrintableReceiptData = {
+      receiptNumber: payment.receiptNumber,
+      paymentDate: payment.paymentDate,
+      studentId: payment.studentId,
+      studentName: payment.studentName,
+      khmerName: payment.studentName,
+      englishName: payment.studentName,
+      gradeName: getGradeLabel(payment),
+      className: getClassLabel(payment),
+      paymentPlan: payment.paymentPlan,
+      tuitionAmount: Number(payment.tuitionAmount || 0),
+      discount: Number(payment.discount || 0),
+      amount: Number(payment.amount || 0),
+      remainingBalance: Number(payment.remainingBalance || 0),
+      paymentMethod: payment.paymentMethod,
+      cashier: payment.cashier || user?.name || 'Cashier',
+      academicYear: getAcademicYearLabel(payment),
+      billingPeriod: payment.billingPeriod || '',
+      feeEntries: payment.feeEntries || []
+    };
+
+    setPrintableReceipt(source);
+    window.setTimeout(() => window.print(), 100);
+  };
+
+  const handleExportCsv = () => {
+    const rows = filteredPayments.map((payment) => ({
+      receiptNumber: payment.receiptNumber,
+      student: `${payment.studentName} (${payment.studentId})`,
+      paymentDate: formatDateForDisplay(payment.paymentDate),
+      method: payment.paymentMethod.replace('_', ' '),
+      totalPaid: Number(payment.amount || 0),
+      remainingBalance: Number(payment.remainingBalance || 0),
+      status: getBadgeLabel(payment)
+    }));
+
+    const header = ['Receipt Number', 'Student', 'Payment Date', 'Method', 'Total Paid', 'Remaining Balance', 'Status'];
+    const csv = [header.join(','), ...rows.map((row) => [row.receiptNumber, row.student, row.paymentDate, row.method, row.totalPaid, row.remainingBalance, row.status].join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'payments-history.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage('Payment history exported as CSV.');
+  };
+
+  const handleExportExcel = () => {
+    const rows = filteredPayments.map((payment) => ({
+      receiptNumber: payment.receiptNumber,
+      student: `${payment.studentName} (${payment.studentId})`,
+      paymentDate: formatDateForDisplay(payment.paymentDate),
+      method: payment.paymentMethod.replace('_', ' '),
+      totalPaid: Number(payment.amount || 0),
+      remainingBalance: Number(payment.remainingBalance || 0),
+      status: getBadgeLabel(payment)
+    }));
+
+    const worksheet = rows.map((row) => Object.values(row).join('\t')).join('\n');
+    const blob = new Blob([worksheet], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'payments-history.xls';
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage('Payment history exported as Excel-compatible spreadsheet.');
+  };
+
+  const handleHistoryPdfExport = () => {
+    const pdfText = filteredPayments.map((payment) => `${payment.receiptNumber} | ${payment.studentName} | ${currencyFormatter.format(Number(payment.amount || 0))} | ${currencyFormatter.format(Number(payment.remainingBalance || 0))}`).join('\n');
+    const blob = new Blob([pdfText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'payments-history.txt';
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage('Payment history export prepared for PDF handoff.');
   };
 
   const getStudentContact = (studentId: string) => students.find((item) => item.studentId === studentId);
@@ -650,6 +875,64 @@ const PaymentsPage = () => {
       }),
     [payments]
   );
+
+  const paymentStats = useMemo(() => {
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayPayments = payments.filter((payment) => {
+      const paymentDate = new Date(payment.paymentDate);
+      return paymentDate >= startOfToday && paymentDate <= today;
+    });
+
+    const todaysCollection = todayPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const todaysTransactions = todayPayments.length;
+    const outstandingBalance = payments.reduce((sum, payment) => sum + Number(payment.remainingBalance || 0), 0);
+    const overdueStudents = new Set(overduePayments.map((payment) => payment.studentId)).size;
+
+    return {
+      todaysCollection,
+      todaysTransactions,
+      outstandingBalance,
+      overdueStudents
+    };
+  }, [overduePayments, payments]);
+
+  const filteredPayments = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const from = dateFrom ? new Date(dateFrom) : null;
+    const to = dateTo ? new Date(dateTo) : null;
+
+    return payments.filter((payment) => {
+      const paymentDate = new Date(payment.paymentDate);
+      const student = students.find((item) => item.studentId === payment.studentId);
+      const searchableText = [
+        payment.receiptNumber,
+        payment.studentName,
+        payment.studentId,
+        student?.phone,
+        student?.guardianPhone
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      if (normalizedSearch && !searchableText.includes(normalizedSearch)) return false;
+      if (from && paymentDate < from) return false;
+      if (to) {
+        const endOfDay = new Date(to);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (paymentDate > endOfDay) return false;
+      }
+      if (paymentMethodFilter && payment.paymentMethod !== paymentMethodFilter) return false;
+      if (statusFilter) {
+        const computedStatus = getComputedPaymentStatus(payment);
+        const matchesStatus = statusFilter === 'pending' ? payment.status === 'pending' : computedStatus === statusFilter;
+        if (!matchesStatus) return false;
+      }
+      if (paymentPlanFilter && payment.paymentPlan !== paymentPlanFilter) return false;
+      return true;
+    });
+  }, [dateFrom, dateTo, paymentMethodFilter, paymentPlanFilter, payments, searchTerm, statusFilter, students]);
 
   const timelinePayments = useMemo(() => {
     if (!timelineStudentId) return [];
@@ -726,7 +1009,7 @@ const PaymentsPage = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={handleDownloadPdf}
+                  onClick={handleReceiptDownload}
                   className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                 >
                   Download PDF
@@ -842,6 +1125,36 @@ const PaymentsPage = () => {
                   </label>
 
                   <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Route</span>
+                    <input
+                      type="text"
+                      value={selectedTransport?.routeName || '-'}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
+
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Monthly Route Fee</span>
+                    <input
+                      type="text"
+                      value={currencyFormatter.format(Number(selectedTransport?.monthlyFee || 0))}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
+
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Transport Charge</span>
+                    <input
+                      type="text"
+                      value={currencyFormatter.format(Number(selectedTransport?.monthlyFee || 0) * planMultiplier(formValues.paymentPlan))}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                    />
+                  </label>
+
+                  <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">English Name</span>
                     <input
                       type="text"
@@ -883,21 +1196,27 @@ const PaymentsPage = () => {
 
                   <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">Payment Plan</span>
-                    <input
-                      type="text"
-                      value={formValues.paymentPlan.charAt(0).toUpperCase() + formValues.paymentPlan.slice(1)}
-                      readOnly
-                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
-                    />
+                    <select
+                      value={formValues.paymentPlan}
+                      onChange={(e) => handleFormChange('paymentPlan', e.target.value as PaymentPlan)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="semi-annual">Semi-Annual</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
                   </label>
 
                   <label className="space-y-1 text-sm">
-                    <span className="font-medium text-slate-700">Monthly Tuition</span>
+                    <span className="font-medium text-slate-700">Tuition Amount</span>
                     <input
-                      type="text"
-                      value={currencyFormatter.format(formValues.tuitionAmount)}
-                      readOnly
-                      className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formValues.tuitionAmount}
+                      onChange={(e) => handleFormChange('tuitionAmount', Number(e.target.value || 0))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
                     />
                   </label>
 
@@ -971,6 +1290,31 @@ const PaymentsPage = () => {
                   </label>
 
                   <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Payment Plan</span>
+                    <select
+                      value={formValues.paymentPlan}
+                      onChange={(e) => handleFormChange('paymentPlan', e.target.value as PaymentPlan)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="semi-annual">Semi-Annual</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </label>
+
+                  <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Billing Period</span>
+                    <input
+                      type="text"
+                      value={formValues.billingPeriod}
+                      onChange={(e) => handleFormChange('billingPeriod', e.target.value)}
+                      placeholder="YYYY-MM"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    />
+                  </label>
+
+                  <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">Payment Date</span>
                     <input
                       type="date"
@@ -1020,6 +1364,44 @@ const PaymentsPage = () => {
                         {livePaymentSummary.status === 'paid' ? 'Paid' : 'Pending'}
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">Fee breakdown</div>
+                      <div className="text-xs text-violet-700">Extension-ready for tuition, transport, books, registration, and more.</div>
+                    </div>
+                    <span className="rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+                      Future-ready
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-2 md:grid-cols-3">
+                    {feeSummaryItems.map((item) => (
+                      <div key={item.label} className="rounded-lg border border-violet-100 bg-white/70 p-3">
+                        <div className="text-[11px] uppercase tracking-wide text-violet-700">{item.label}</div>
+                        <div className="mt-1 font-semibold text-violet-900">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    {formValues.feeEntries.map((entry) => (
+                      <label key={entry.id} className="space-y-1 rounded-lg border border-violet-200 bg-white p-3 text-sm text-violet-900">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold">{entry.label}</span>
+                          <span className="text-[11px] uppercase tracking-wide text-violet-600">{entry.type}</span>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={entry.amount}
+                          onChange={(e) => handleFeeEntryAmountChange(entry.type, Number(e.target.value || 0))}
+                          className="w-full rounded-lg border border-violet-200 px-3 py-2"
+                        />
+                      </label>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -1081,6 +1463,7 @@ const PaymentsPage = () => {
               <option value="">All plans</option>
               <option value="monthly">Monthly</option>
               <option value="quarterly">Quarterly</option>
+              <option value="semi-annual">Semi-Annual</option>
               <option value="yearly">Yearly</option>
             </select>
 
@@ -1261,25 +1644,91 @@ const PaymentsPage = () => {
         </section>
 
         <section className="rounded-2xl bg-white p-6 shadow">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">Payment History</h2>
-            <button onClick={handleAdd} className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800">
-              + Add Payment
-            </button>
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Payment History</h2>
+              <p className="text-sm text-slate-500">Search, filter, and manage payment records with a professional history view.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={handleExportCsv} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                Export CSV
+              </button>
+              <button type="button" onClick={handleExportExcel} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                Export Excel
+              </button>
+              <button type="button" onClick={handleHistoryPdfExport} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
+                Download PDF
+              </button>
+              <button onClick={handleAdd} className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800">
+                + Add Payment
+              </button>
+            </div>
           </div>
+
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl bg-emerald-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-emerald-700">Today's Collection</div>
+              <div className="mt-2 text-2xl font-semibold text-emerald-900">{currencyFormatter.format(paymentStats.todaysCollection)}</div>
+            </div>
+            <div className="rounded-xl bg-sky-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-sky-700">Today's Transactions</div>
+              <div className="mt-2 text-2xl font-semibold text-sky-900">{paymentStats.todaysTransactions}</div>
+            </div>
+            <div className="rounded-xl bg-amber-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-amber-700">Outstanding Balance</div>
+              <div className="mt-2 text-2xl font-semibold text-amber-900">{currencyFormatter.format(paymentStats.outstandingBalance)}</div>
+            </div>
+            <div className="rounded-xl bg-rose-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-rose-700">Overdue Students</div>
+              <div className="mt-2 text-2xl font-semibold text-rose-900">{paymentStats.overdueStudents}</div>
+            </div>
+          </div>
+
+          <form className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6" onSubmit={handleSearch}>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Receipt / Student / ID / Phone"
+              className="rounded-lg border border-slate-300 px-3 py-2 xl:col-span-2"
+            />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2"
+            />
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2"
+            />
+            <select value={paymentMethodFilter} onChange={(e) => setPaymentMethodFilter(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2">
+              <option value="">All Methods</option>
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="check">Check</option>
+              <option value="mobile_money">Mobile Money</option>
+            </select>
+            <button type="submit" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">
+              Apply Filters
+            </button>
+          </form>
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-100 text-slate-700">
                 <tr>
-                  <th className="px-3 py-2 text-left">Receipt</th>
+                  <th className="px-3 py-2 text-left">Receipt Number</th>
                   <th className="px-3 py-2 text-left">Student</th>
-                  <th className="px-3 py-2 text-left">Class</th>
+                  <th className="px-3 py-2 text-left">Route</th>
                   <th className="px-3 py-2 text-left">Plan</th>
-                  <th className="px-3 py-2 text-right">Tuition</th>
-                  <th className="px-3 py-2 text-right">Paid</th>
-                  <th className="px-3 py-2 text-right">Balance</th>
-                  <th className="px-3 py-2 text-left">Date</th>
+                  <th className="px-3 py-2 text-left">Billing</th>
+                  <th className="px-3 py-2 text-left">Payment Date</th>
+                  <th className="px-3 py-2 text-left">Method</th>
+                  <th className="px-3 py-2 text-right">Total Paid</th>
+                  <th className="px-3 py-2 text-right">Remaining Balance</th>
                   <th className="px-3 py-2 text-left">Status</th>
                   <th className="px-3 py-2 text-center">Actions</th>
                 </tr>
@@ -1291,14 +1740,14 @@ const PaymentsPage = () => {
                       Loading...
                     </td>
                   </tr>
-                ) : payments.length === 0 ? (
+                ) : filteredPayments.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="px-3 py-6 text-center text-slate-500">
                       No payments found.
                     </td>
                   </tr>
                 ) : (
-                  payments.map((payment) => (
+                  filteredPayments.map((payment) => (
                     <tr key={payment._id} className="border-b border-slate-100">
                       {(() => {
                         const computedStatus = getComputedPaymentStatus(payment);
@@ -1325,16 +1774,13 @@ const PaymentsPage = () => {
                           </button>
                         </div>
                       </td>
-                      <td className="px-3 py-2">
-                        <div>{getClassLabel(payment)}</div>
-                        <div className="text-xs text-slate-500">{getGradeLabel(payment)}</div>
-                        <div className="text-xs text-slate-500">{getAcademicYearLabel(payment)}</div>
-                      </td>
-                      <td className="px-3 py-2 capitalize">{payment.paymentPlan}</td>
-                      <td className="px-3 py-2 text-right">{currencyFormatter.format(Number(payment.tuitionAmount || 0))}</td>
+                      <td className="px-3 py-2">{((payment.feeEntries || []).find(e => e.type === 'transport')?.description) || ((payment.feeEntries || []).find(e => e.type === 'transport')?.label) || '-'}</td>
+                      <td className="px-3 py-2">{payment.paymentPlan || payment.paymentType || '-'}</td>
+                      <td className="px-3 py-2">{payment.billingPeriod || '-'}</td>
+                      <td className="px-3 py-2">{formatDateForDisplay(payment.paymentDate)}</td>
+                      <td className="px-3 py-2 capitalize">{payment.paymentMethod.replace('_', ' ')}</td>
                       <td className="px-3 py-2 text-right font-semibold text-emerald-700">{currencyFormatter.format(Number(payment.amount || 0))}</td>
                       <td className="px-3 py-2 text-right font-semibold text-rose-700">{currencyFormatter.format(Number(payment.remainingBalance || 0))}</td>
-                      <td className="px-3 py-2">{formatDateForDisplay(payment.paymentDate)}</td>
                       <td className="px-3 py-2">
                         <span
                           className={`rounded-full px-2 py-1 text-xs font-semibold ${
@@ -1351,11 +1797,14 @@ const PaymentsPage = () => {
                         </span>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <button onClick={() => handleEdit(payment)} className="mr-2 text-cyan-700 hover:text-cyan-900">
-                          Edit
-                        </button>
                         <button onClick={() => handleReprintReceipt(payment)} className="mr-2 text-slate-700 hover:text-slate-900">
-                          Reprint
+                          View Receipt
+                        </button>
+                        <button onClick={() => handlePrintHistoryReceipt(payment)} className="mr-2 text-cyan-700 hover:text-cyan-900">
+                          Print Receipt
+                        </button>
+                        <button onClick={() => handleEdit(payment)} className="mr-2 text-amber-700 hover:text-amber-900">
+                          Edit
                         </button>
                         <button onClick={() => handleDelete(payment._id)} className="text-rose-700 hover:text-rose-900">
                           Delete
@@ -1403,6 +1852,7 @@ const PaymentsPage = () => {
                 <div className="text-sm"><span className="font-semibold">Class:</span> {getClassLabel(selectedReceipt)}</div>
                 <div className="text-sm"><span className="font-semibold">Academic:</span> {getAcademicYearLabel(selectedReceipt)}</div>
                 <div className="text-sm"><span className="font-semibold">Plan:</span> {selectedReceipt.paymentPlan}</div>
+                <div className="text-sm"><span className="font-semibold">Billing Period:</span> {selectedReceipt.billingPeriod || '-'}</div>
                 <div className="text-sm"><span className="font-semibold">Paid:</span> {currencyFormatter.format(Number(selectedReceipt.amount))}</div>
                 <div className="text-sm"><span className="font-semibold">Remaining:</span> {currencyFormatter.format(Number(selectedReceipt.remainingBalance))}</div>
                 <div className="text-sm"><span className="font-semibold">Cashier:</span> {selectedReceipt.cashier || '-'}</div>

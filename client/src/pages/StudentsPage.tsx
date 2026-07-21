@@ -19,6 +19,7 @@ interface Student {
   guardianName: string;
   guardianPhone: string;
   className: string;
+  monthlyTuition?: number;
   academicYearId?: string | { _id: string; code: string; name: string };
   gradeId?: string | { _id: string; code: string; name: string; level: number };
   classId?: string | { _id: string; className: string };
@@ -36,6 +37,7 @@ interface StudentFormValues {
   guardianName: string;
   guardianPhone: string;
   className: string;
+  monthlyTuition: number;
   academicYearId: string;
   gradeId: string;
   classId: string;
@@ -55,6 +57,7 @@ const emptyStudentForm: StudentFormValues = {
   guardianName: '',
   guardianPhone: '',
   className: '',
+  monthlyTuition: 0,
   academicYearId: '',
   gradeId: '',
   classId: '',
@@ -239,8 +242,8 @@ const StudentsPage = () => {
     await loadStudents(searchTerm, nextPage);
   };
 
-  const handleChange = (key: StudentField, value: string) => {
-    setFormValues((prev) => ({ ...prev, [key]: value }));
+  const handleChange = (key: StudentField, value: string | number) => {
+    setFormValues((prev) => ({ ...prev, [key]: value } as StudentFormValues));
     setFormErrors((prev) => {
       const next = { ...prev };
       delete next[key];
@@ -269,6 +272,10 @@ const StudentsPage = () => {
 
     if (formValues.guardianPhone.trim() && !/^\+?[0-9\s-]{7,20}$/.test(formValues.guardianPhone.trim())) {
       nextErrors.guardianPhone = 'Enter a valid guardian phone number.';
+    }
+
+    if (formValues.monthlyTuition < 0) {
+      nextErrors.monthlyTuition = 'Monthly tuition cannot be negative.';
     }
 
     if (formValues.dateOfBirth) {
@@ -309,6 +316,7 @@ const StudentsPage = () => {
       guardianName: student.guardianName,
       guardianPhone: student.guardianPhone,
       className: student.className || '',
+      monthlyTuition: Number(student.monthlyTuition || 0),
       academicYearId: getAcademicYearId(student.academicYearId),
       gradeId: getGradeId(student.gradeId),
       classId: getClassId(student.classId),
@@ -339,6 +347,7 @@ const StudentsPage = () => {
       guardianName: formValues.guardianName,
       guardianPhone: formValues.guardianPhone,
       className: formValues.className,
+      monthlyTuition: Number(formValues.monthlyTuition || 0),
       academicYearId: formValues.academicYearId || undefined,
       gradeId: formValues.gradeId || undefined,
       classId: formValues.classId || undefined,
@@ -621,6 +630,24 @@ const StudentsPage = () => {
               disabled={loading}
             />
           </label>
+          <div className="md:col-span-3 rounded-lg border border-muted bg-slate-50 p-4">
+            <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-secondary">Payment Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="space-y-2">
+                <span className="text-sm font-medium">Base Monthly Tuition</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formValues.monthlyTuition}
+                  onChange={(e) => handleChange('monthlyTuition', Number(e.target.value || 0))}
+                  className={getFieldClassName('monthlyTuition')}
+                  disabled={loading}
+                />
+                {formErrors.monthlyTuition && <p className="text-sm text-rose-600">{formErrors.monthlyTuition}</p>}
+              </label>
+            </div>
+          </div>
           <label className="space-y-2 md:col-span-3">
             <span className="text-sm font-medium">Guardian Name</span>
             <input
@@ -680,6 +707,7 @@ const StudentsPage = () => {
               <th className="px-4 py-3 text-left text-sm font-semibold">Grade</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Class</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Phone</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Monthly Tuition</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Guardian</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Actions</th>
@@ -688,13 +716,13 @@ const StudentsPage = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={13} className="px-4 py-8 text-center text-text-secondary">
+                <td colSpan={14} className="px-4 py-8 text-center text-text-secondary">
                   Loading...
                 </td>
               </tr>
             ) : students.length === 0 ? (
               <tr>
-                <td colSpan={13} className="px-4 py-8 text-center text-text-secondary">
+                <td colSpan={14} className="px-4 py-8 text-center text-text-secondary">
                   No students found.
                 </td>
               </tr>
@@ -714,6 +742,7 @@ const StudentsPage = () => {
                     <td className="px-4 py-3">{getGradeLabel(student)}</td>
                     <td className="px-4 py-3">{getClassLabel(student)}</td>
                     <td className="px-4 py-3">{student.phone}</td>
+                    <td className="px-4 py-3">{student.monthlyTuition ?? 0}</td>
                     <td className="px-4 py-3">{student.guardianName}</td>
                     <td className="px-4 py-3">
                     <span

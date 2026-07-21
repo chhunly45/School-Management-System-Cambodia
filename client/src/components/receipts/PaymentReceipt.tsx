@@ -1,5 +1,6 @@
 import type { SchoolSettings } from '../../services/schoolSettings.api';
 import { formatDateForDisplay } from '../../utils/date';
+import type { PaymentFeeEntry } from '../../utils/paymentFeeExtensions';
 
 export interface PrintableReceiptData {
   receiptNumber: string;
@@ -18,6 +19,8 @@ export interface PrintableReceiptData {
   paymentMethod: string;
   cashier?: string;
   academicYear?: string;
+  billingPeriod?: string;
+  feeEntries?: PaymentFeeEntry[];
 }
 
 interface PaymentReceiptProps {
@@ -28,6 +31,8 @@ interface PaymentReceiptProps {
 
 const PaymentReceipt = ({ payment, schoolSettings, currencyFormatter }: PaymentReceiptProps) => {
   const displayDate = payment.paymentDate ? formatDateForDisplay(payment.paymentDate) : '-';
+  const feeEntries = payment.feeEntries?.filter((entry) => Number(entry.amount || 0) > 0) || [];
+  const showFeeBreakdown = feeEntries.length > 0;
 
   return (
     <>
@@ -124,6 +129,7 @@ const PaymentReceipt = ({ payment, schoolSettings, currencyFormatter }: PaymentR
             <div style={{ fontSize: '14px', lineHeight: 1.7 }}>
               <div><strong>Payment Date:</strong> {displayDate}</div>
               <div><strong>Payment Plan:</strong> {payment.paymentPlan || '-'}</div>
+              <div><strong>Billing Period:</strong> {payment.billingPeriod || '-'}</div>
               <div><strong>Payment Method:</strong> {payment.paymentMethod || '-'}</div>
               <div><strong>Cashier:</strong> {payment.cashier || '-'}</div>
               <div><strong>Academic Year:</strong> {payment.academicYear || '-'}</div>
@@ -136,22 +142,47 @@ const PaymentReceipt = ({ payment, schoolSettings, currencyFormatter }: PaymentR
             Financial Summary
           </div>
           <div style={{ padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-              <span>Tuition Fee</span>
-              <span>{currencyFormatter.format(payment.tuitionAmount || 0)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-              <span>Discount</span>
-              <span>- {currencyFormatter.format(payment.discount || 0)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
-              <span>Paid Amount</span>
-              <span>{currencyFormatter.format(payment.amount || 0)}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 700, fontSize: '16px' }}>
-              <span>Remaining Balance</span>
-              <span>{currencyFormatter.format(payment.remainingBalance || 0)}</span>
-            </div>
+            {showFeeBreakdown ? (
+              <>
+                {feeEntries.map((entry) => (
+                  <div key={entry.id || entry.type} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                    <span>{entry.label || entry.type}</span>
+                    <span>{currencyFormatter.format(entry.amount || 0)}</span>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid #e2e8f0', marginTop: '8px' }}>
+                  <span>Discount</span>
+                  <span>- {currencyFormatter.format(payment.discount || 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                  <span>Paid Amount</span>
+                  <span>{currencyFormatter.format(payment.amount || 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 700, fontSize: '16px' }}>
+                  <span>Remaining Balance</span>
+                  <span>{currencyFormatter.format(payment.remainingBalance || 0)}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                  <span>Tuition Fee</span>
+                  <span>{currencyFormatter.format(payment.tuitionAmount || 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                  <span>Discount</span>
+                  <span>- {currencyFormatter.format(payment.discount || 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                  <span>Paid Amount</span>
+                  <span>{currencyFormatter.format(payment.amount || 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 700, fontSize: '16px' }}>
+                  <span>Remaining Balance</span>
+                  <span>{currencyFormatter.format(payment.remainingBalance || 0)}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

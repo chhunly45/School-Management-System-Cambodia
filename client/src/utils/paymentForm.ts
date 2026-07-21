@@ -1,5 +1,10 @@
 import type { PaymentPlan, PaymentStatus } from '../services/payment.api';
 
+export const getTuitionAmountForPlan = (monthlyBaseTuition: number, plan: PaymentPlan | string) => {
+  const multiplier = plan === 'quarterly' ? 3 : plan === 'yearly' || plan === 'annual' ? 12 : plan === 'semi-annual' || plan === 'semiannual' ? 6 : 1;
+  return Number((Number(monthlyBaseTuition || 0) * multiplier).toFixed(2));
+};
+
 export const getLivePaymentSummary = (
   tuitionAmount: number,
   discount: number,

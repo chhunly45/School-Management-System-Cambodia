@@ -85,6 +85,13 @@ const FinancePage = () => {
     perPage: 20
   });
 
+  const transportRevenue = useMemo(() => {
+    return payments.reduce((sum, payment) => {
+      const transportEntry = (payment as any).feeEntries?.find((e: any) => e.type === 'transport');
+      return sum + Number(transportEntry?.amount || 0);
+    }, 0);
+  }, [payments]);
+
   useEffect(() => {
     if (!user) return navigate('/login');
     if (user.role !== 'admin') return;
@@ -185,6 +192,17 @@ const FinancePage = () => {
             <DollarSign className="h-8 w-8 text-primary opacity-20" />
           </div>
         </div>
+
+      <div className="mt-4">
+        <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-text-secondary">Transport Income</p>
+              <p className="text-2xl font-bold text-text-primary">{currencyFormatter.format(transportRevenue)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
         <div className="rounded-lg border border-muted bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">

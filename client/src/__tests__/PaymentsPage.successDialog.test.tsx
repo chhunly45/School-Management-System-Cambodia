@@ -85,7 +85,25 @@ describe('PaymentsPage success dialog', () => {
     });
 
     expect(screen.getByRole('button', { name: /Print Receipt/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Download PDF/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Download PDF/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /New Payment/i }).length).toBeGreaterThan(0);
+  });
+
+  it('renders the payment history overview cards and export actions', async () => {
+    render(
+      <MemoryRouter>
+        <PaymentsPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: /^Payment History$/i })).toBeInTheDocument());
+
+    expect(screen.getAllByText(/Today's Collection/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Today's Transactions/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Outstanding Balance/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Overdue Students/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /Export CSV/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Export Excel/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Download PDF/i }).length).toBeGreaterThan(0);
   });
 });
