@@ -21,6 +21,7 @@ export interface LegacyPaymentPayloadLike {
   remarks?: string;
   paymentPlan?: PaymentPlan;
   status?: PaymentStatus;
+  studyShift?: 'morning' | 'afternoon' | 'evening';
   feeEntries?: PaymentFeeEntry[];
 }
 

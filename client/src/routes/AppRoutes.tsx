@@ -69,6 +69,7 @@ const AppRoutes = () => (
     <Route path="/chat" element={<Navigate replace to="/messages" />} />
     <Route path="/messages" element={<ChatPage />} />
     <Route path="/messages/:id" element={<ChatPage />} />
+    <Route path="/students" element={<Navigate replace to="/admin/students" />} />
     <Route path="/dashboard" element={<DashboardPage />} />
     <Route path="/seller/analytics" element={<SellerAnalyticsPage />} />
     <Route path="/seller/promotions" element={<SellerPromotionsPage />} />

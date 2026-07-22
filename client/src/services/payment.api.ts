@@ -34,6 +34,7 @@ export interface PaymentPayload {
   studentId: string;
   studentName: string;
   className: string;
+  studyShift?: 'morning' | 'afternoon' | 'evening';
   academicYearId?: string;
   gradeId?: string;
   classId?: string;
@@ -48,6 +49,9 @@ export interface PaymentPayload {
   quarterlyDueDates?: string[];
   yearlyDueDate?: string;
   billingPeriod?: string;
+  paymentMonth?: number;
+  paymentYear?: number;
+  paymentPeriod?: string;
   gracePeriodDays?: number;
   cashier?: string;
   paymentDate: string;

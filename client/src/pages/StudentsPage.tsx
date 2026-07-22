@@ -7,6 +7,7 @@ import { listAcademicYears, type AcademicYear } from '../services/academicYear.a
 import { listGrades, type Grade } from '../services/grade.api';
 import { listClasses, type ClassItem } from '../services/class.api';
 import { formatDateForApi, formatDateForInput, parseLocalDate } from '../utils/date';
+import { STUDY_SHIFT_OPTIONS, type StudyShift } from '../utils/paymentPeriod';
 
 interface Student {
   _id: string;
@@ -19,6 +20,7 @@ interface Student {
   guardianName: string;
   guardianPhone: string;
   className: string;
+  studyShift?: StudyShift;
   monthlyTuition?: number;
   academicYearId?: string | { _id: string; code: string; name: string };
   gradeId?: string | { _id: string; code: string; name: string; level: number };
@@ -37,6 +39,7 @@ interface StudentFormValues {
   guardianName: string;
   guardianPhone: string;
   className: string;
+  studyShift: StudyShift;
   monthlyTuition: number;
   academicYearId: string;
   gradeId: string;
@@ -57,6 +60,7 @@ const emptyStudentForm: StudentFormValues = {
   guardianName: '',
   guardianPhone: '',
   className: '',
+  studyShift: 'morning',
   monthlyTuition: 0,
   academicYearId: '',
   gradeId: '',
@@ -316,6 +320,7 @@ const StudentsPage = () => {
       guardianName: student.guardianName,
       guardianPhone: student.guardianPhone,
       className: student.className || '',
+      studyShift: (student.studyShift as StudyShift) || 'morning',
       monthlyTuition: Number(student.monthlyTuition || 0),
       academicYearId: getAcademicYearId(student.academicYearId),
       gradeId: getGradeId(student.gradeId),
@@ -347,6 +352,7 @@ const StudentsPage = () => {
       guardianName: formValues.guardianName,
       guardianPhone: formValues.guardianPhone,
       className: formValues.className,
+      studyShift: formValues.studyShift,
       monthlyTuition: Number(formValues.monthlyTuition || 0),
       academicYearId: formValues.academicYearId || undefined,
       gradeId: formValues.gradeId || undefined,
@@ -571,6 +577,19 @@ const StudentsPage = () => {
               placeholder="Class name fallback"
               disabled={loading}
             />
+          </label>
+          <label className="space-y-2">
+            <span className="text-sm font-medium">Study Shift</span>
+            <select
+              value={formValues.studyShift}
+              onChange={(e) => handleChange('studyShift', e.target.value as StudyShift)}
+              className={getFieldClassName('studyShift')}
+              disabled={loading}
+            >
+              {STUDY_SHIFT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium">Gender</span>

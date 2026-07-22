@@ -22,6 +22,7 @@ import { getSchoolSettings, type SchoolSettings } from '../services/schoolSettin
 import { getCurrencyFormatter } from '../utils/price';
 import { formatDateForApi, formatDateForDisplay, formatDateForInput } from '../utils/date';
 import { getLivePaymentSummary, getTuitionAmountForPlan } from '../utils/paymentForm';
+import { derivePaymentPeriodLabel, formatStudyShiftLabel, STUDY_SHIFT_OPTIONS, type StudyShift } from '../utils/paymentPeriod';
 import {
   createLegacyPaymentPayload,
   getPaymentEntrySections,
@@ -54,6 +55,8 @@ interface PaymentRecord {
   quarterlyDueDates?: string[];
   yearlyDueDate?: string;
   billingPeriod?: string;
+  paymentPeriod?: string;
+  studyShift?: StudyShift;
   gracePeriodDays?: number;
   paymentLifecycleStatus?: 'paid' | 'due_soon' | 'grace_period' | 'overdue';
   paymentLifecycleStatusLabel?: string;
@@ -87,6 +90,7 @@ interface PaymentFormValues {
   englishName: string;
   khmerName: string;
   className: string;
+  studyShift: StudyShift;
   academicYearId: string;
   gradeId: string;
   classId: string;
@@ -136,6 +140,7 @@ const emptyPaymentForm: PaymentFormValues = {
   englishName: '',
   khmerName: '',
   className: '',
+  studyShift: 'morning',
   academicYearId: '',
   gradeId: '',
   classId: '',
@@ -213,6 +218,8 @@ const PaymentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentPlanFilter, setPaymentPlanFilter] = useState('');
+  const [studyShiftFilter, setStudyShiftFilter] = useState('');
+  const [paymentPeriodFilter, setPaymentPeriodFilter] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState('');
   const [selectedGradeId, setSelectedGradeId] = useState('');
@@ -321,6 +328,7 @@ const PaymentsPage = () => {
               ? Number(item.remainingBalance || 0)
               : calcRemaining(Number(item.tuitionAmount || item.amount || 0), Number(item.discount || 0), Number(item.amount || 0)),
           paymentDate: item.paymentDate ? formatDateForInput(item.paymentDate) : '',
+          studyShift: item.studyShift || 'morning',
           semester: item.semester || 1,
           academicYear: item.academicYear || '',
           dueDate: item.dueDate ? formatDateForInput(item.dueDate) : undefined,
@@ -328,6 +336,7 @@ const PaymentsPage = () => {
           quarterlyDueDates: item.quarterlyDueDates,
           yearlyDueDate: item.yearlyDueDate,
           billingPeriod: item.billingPeriod || '',
+          paymentPeriod: item.paymentPeriod || '',
           gracePeriodDays: item.gracePeriodDays,
           feeEntries: item.feeEntries || [],
           paymentLifecycleStatus: item.paymentLifecycleStatus,
@@ -455,6 +464,7 @@ const PaymentsPage = () => {
         englishName,
         khmerName,
         className: linkedClass?.className || selected.className || prev.className,
+        studyShift: (selected as StudentLookupItem & { studyShift?: StudyShift }).studyShift || 'morning',
         academicYearId: selected.academicYearId || prev.academicYearId,
         gradeId: selected.gradeId || prev.gradeId,
         classId: selected.classId || prev.classId,
@@ -528,6 +538,7 @@ const PaymentsPage = () => {
       englishName,
       khmerName,
       className: payment.className,
+      studyShift: (payment as PaymentRecord & { studyShift?: StudyShift }).studyShift || 'morning',
       academicYearId: getAcademicYearId(payment.academicYearId),
       gradeId: getGradeId(payment.gradeId),
       classId: getClassId(payment.classId),
@@ -562,6 +573,7 @@ const PaymentsPage = () => {
       remarks: formValues.remarks.trim() || undefined,
       paymentPlan: formValues.paymentPlan,
       status: formValues.status,
+      studyShift: formValues.studyShift,
       feeEntries: formValues.feeEntries
     });
 
@@ -581,6 +593,9 @@ const PaymentsPage = () => {
       quarterlyDueDates: quarterlyDueDates.split(',').map((item) => item.trim()).filter(Boolean),
       yearlyDueDate: yearlyDueDate.trim() || undefined,
       billingPeriod: formValues.billingPeriod.trim() || formatDateForApi(formValues.paymentDate)?.slice(0, 7) || monthKeyDefault,
+      paymentMonth: Number((formValues.paymentDate || '').slice(5, 7) || new Date().getMonth() + 1),
+      paymentYear: Number((formValues.paymentDate || '').slice(0, 4) || new Date().getFullYear()),
+      paymentPeriod: derivePaymentPeriodLabel(formValues.paymentPlan, Number((formValues.paymentDate || '').slice(0, 4) || new Date().getFullYear()), Number((formValues.paymentDate || '').slice(5, 7) || new Date().getMonth() + 1)),
       gracePeriodDays,
       cashier: formValues.cashier.trim() || undefined,
       paymentDate: formatDateForApi(formValues.paymentDate) || formatDateForInput(formValues.paymentDate),
@@ -930,9 +945,11 @@ const PaymentsPage = () => {
         if (!matchesStatus) return false;
       }
       if (paymentPlanFilter && payment.paymentPlan !== paymentPlanFilter) return false;
+      if (studyShiftFilter && (payment as PaymentRecord & { studyShift?: StudyShift }).studyShift !== studyShiftFilter) return false;
+      if (paymentPeriodFilter && ((payment as PaymentRecord & { paymentPeriod?: string }).paymentPeriod || 'N/A') !== paymentPeriodFilter) return false;
       return true;
     });
-  }, [dateFrom, dateTo, paymentMethodFilter, paymentPlanFilter, payments, searchTerm, statusFilter, students]);
+  }, [dateFrom, dateTo, paymentMethodFilter, paymentPlanFilter, paymentPeriodFilter, payments, searchTerm, statusFilter, students, studyShiftFilter]);
 
   const timelinePayments = useMemo(() => {
     if (!timelineStudentId) return [];
@@ -1185,6 +1202,19 @@ const PaymentsPage = () => {
                   </label>
 
                   <label className="space-y-1 text-sm">
+                    <span className="font-medium text-slate-700">Study Shift</span>
+                    <select
+                      value={formValues.studyShift}
+                      onChange={(e) => handleFormChange('studyShift', e.target.value as StudyShift)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                    >
+                      {STUDY_SHIFT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-1 text-sm">
                     <span className="font-medium text-slate-700">Academic Year</span>
                     <input
                       type="text"
@@ -1304,7 +1334,7 @@ const PaymentsPage = () => {
                   </label>
 
                   <label className="space-y-1 text-sm">
-                    <span className="font-medium text-slate-700">Billing Period</span>
+                    <span className="font-medium text-slate-700">Payment Period</span>
                     <input
                       type="text"
                       value={formValues.billingPeriod}
@@ -1465,6 +1495,29 @@ const PaymentsPage = () => {
               <option value="quarterly">Quarterly</option>
               <option value="semi-annual">Semi-Annual</option>
               <option value="yearly">Yearly</option>
+            </select>
+
+            <select
+              value={studyShiftFilter}
+              onChange={(e) => setStudyShiftFilter(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">All study shifts</option>
+              {STUDY_SHIFT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+
+            <select
+              value={paymentPeriodFilter}
+              onChange={(e) => setPaymentPeriodFilter(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">All periods</option>
+              <option value="N/A">N/A</option>
+              <option value="July 2026">July 2026</option>
+              <option value="August 2026">August 2026</option>
+              <option value="September 2026">September 2026</option>
             </select>
 
             <select
@@ -1724,7 +1777,8 @@ const PaymentsPage = () => {
                   <th className="px-3 py-2 text-left">Student</th>
                   <th className="px-3 py-2 text-left">Route</th>
                   <th className="px-3 py-2 text-left">Plan</th>
-                  <th className="px-3 py-2 text-left">Billing</th>
+                  <th className="px-3 py-2 text-left">Study Shift</th>
+                  <th className="px-3 py-2 text-left">Payment Period</th>
                   <th className="px-3 py-2 text-left">Payment Date</th>
                   <th className="px-3 py-2 text-left">Method</th>
                   <th className="px-3 py-2 text-right">Total Paid</th>
@@ -1776,7 +1830,8 @@ const PaymentsPage = () => {
                       </td>
                       <td className="px-3 py-2">{((payment.feeEntries || []).find(e => e.type === 'transport')?.description) || ((payment.feeEntries || []).find(e => e.type === 'transport')?.label) || '-'}</td>
                       <td className="px-3 py-2">{payment.paymentPlan || payment.paymentType || '-'}</td>
-                      <td className="px-3 py-2">{payment.billingPeriod || '-'}</td>
+                      <td className="px-3 py-2">{formatStudyShiftLabel((payment as PaymentRecord & { studyShift?: StudyShift }).studyShift)}</td>
+                      <td className="px-3 py-2">{(payment as PaymentRecord & { paymentPeriod?: string }).paymentPeriod || payment.billingPeriod || 'N/A'}</td>
                       <td className="px-3 py-2">{formatDateForDisplay(payment.paymentDate)}</td>
                       <td className="px-3 py-2 capitalize">{payment.paymentMethod.replace('_', ' ')}</td>
                       <td className="px-3 py-2 text-right font-semibold text-emerald-700">{currencyFormatter.format(Number(payment.amount || 0))}</td>
@@ -1850,8 +1905,10 @@ const PaymentsPage = () => {
                 <div className="text-sm"><span className="font-semibold">Receipt No:</span> {selectedReceipt.receiptNumber}</div>
                 <div className="text-sm"><span className="font-semibold">Student:</span> {selectedReceipt.studentName} ({selectedReceipt.studentId})</div>
                 <div className="text-sm"><span className="font-semibold">Class:</span> {getClassLabel(selectedReceipt)}</div>
+                <div className="text-sm"><span className="font-semibold">Study Shift:</span> {formatStudyShiftLabel((selectedReceipt as PaymentRecord & { studyShift?: StudyShift }).studyShift)}</div>
                 <div className="text-sm"><span className="font-semibold">Academic:</span> {getAcademicYearLabel(selectedReceipt)}</div>
                 <div className="text-sm"><span className="font-semibold">Plan:</span> {selectedReceipt.paymentPlan}</div>
+                <div className="text-sm"><span className="font-semibold">Payment Period:</span> {(selectedReceipt as PaymentRecord & { paymentPeriod?: string }).paymentPeriod || selectedReceipt.billingPeriod || '-'}</div>
                 <div className="text-sm"><span className="font-semibold">Billing Period:</span> {selectedReceipt.billingPeriod || '-'}</div>
                 <div className="text-sm"><span className="font-semibold">Paid:</span> {currencyFormatter.format(Number(selectedReceipt.amount))}</div>
                 <div className="text-sm"><span className="font-semibold">Remaining:</span> {currencyFormatter.format(Number(selectedReceipt.remainingBalance))}</div>

@@ -11,6 +11,8 @@ export interface PrintableReceiptData {
   englishName?: string;
   gradeName?: string;
   className?: string;
+  studyShift?: string;
+  paymentPeriod?: string;
   paymentPlan: string;
   tuitionAmount: number;
   discount: number;
@@ -122,6 +124,7 @@ const PaymentReceipt = ({ payment, schoolSettings, currencyFormatter }: PaymentR
               <div><strong>English Name:</strong> {payment.englishName || '-'}</div>
               <div><strong>Grade:</strong> {payment.gradeName || '-'}</div>
               <div><strong>Class:</strong> {payment.className || '-'}</div>
+              <div><strong>Study Shift:</strong> {payment.studyShift ? payment.studyShift.charAt(0).toUpperCase() + payment.studyShift.slice(1) : '-'}</div>
             </div>
           </div>
           <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '16px' }}>
@@ -129,6 +132,7 @@ const PaymentReceipt = ({ payment, schoolSettings, currencyFormatter }: PaymentR
             <div style={{ fontSize: '14px', lineHeight: 1.7 }}>
               <div><strong>Payment Date:</strong> {displayDate}</div>
               <div><strong>Payment Plan:</strong> {payment.paymentPlan || '-'}</div>
+              <div><strong>Payment Period:</strong> {payment.paymentPeriod || payment.billingPeriod || '-'}</div>
               <div><strong>Billing Period:</strong> {payment.billingPeriod || '-'}</div>
               <div><strong>Payment Method:</strong> {payment.paymentMethod || '-'}</div>
               <div><strong>Cashier:</strong> {payment.cashier || '-'}</div>

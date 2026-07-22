@@ -24,6 +24,10 @@ const config = {
     const defaultOrigins = [
       'http://localhost:5173',
       'http://localhost:5174',
+      'http://localhost:5175',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+      'http://127.0.0.1:5175',
       'https://kh-product.vercel.app',
       'https://school-management-system-cambodia.vercel.app',
       'https://konpuk.com',
@@ -31,6 +35,16 @@ const config = {
     ];
     const envClient = getEnvValue('CLIENT_URL', 'CLIENT_ORIGIN', 'FRONTEND_URL', 'FRONTEND');
     if (envClient && !defaultOrigins.includes(envClient)) defaultOrigins.push(envClient);
+
+    const extraOrigins = getEnvValue('CORS_ORIGINS')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+
+    for (const origin of extraOrigins) {
+      if (!defaultOrigins.includes(origin)) defaultOrigins.push(origin);
+    }
+
     return defaultOrigins;
   })(),
   rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
