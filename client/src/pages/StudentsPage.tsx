@@ -18,7 +18,7 @@ interface Student {
   guardianName: string;
   guardianPhone: string;
   className?: string;
-  studyShift?: StudyShift;
+  studyShift?: string;
   monthlyTuition?: number;
   academicYear?: string;
   course?: string;
@@ -38,7 +38,7 @@ interface StudentFormValues {
   address: string;
   guardianName: string;
   guardianPhone: string;
-  studyShift: StudyShift;
+  studyShift: string;
   monthlyTuition: number;
   academicYear: string;
   course: string;
@@ -48,6 +48,20 @@ interface StudentFormValues {
 }
 
 type StudentField = keyof StudentFormValues;
+
+const ACADEMIC_YEAR_SUGGESTIONS = ['2025-2026', '2026-2027', '2027-2028', '2028-2029'];
+const COURSE_SUGGESTIONS = ['First Friends', 'Super Kids', 'Headway'];
+const ROOM_SUGGESTIONS = Array.from({ length: 10 }, (_, index) => `Room ${index + 1}`);
+
+const LEVEL_SUGGESTIONS_BY_COURSE: Record<string, string[]> = {
+  'First Friends': ['Level 1', 'Level 2'],
+  'Super Kids': ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6'],
+  Headway: ['Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate', 'Upper Intermediate', 'Advanced']
+};
+
+const ALL_LEVEL_SUGGESTIONS = Array.from(
+  new Set(Object.values(LEVEL_SUGGESTIONS_BY_COURSE).flat())
+).sort((left, right) => left.localeCompare(right));
 
 const emptyStudentForm: StudentFormValues = {
   studentId: '',
@@ -59,7 +73,7 @@ const emptyStudentForm: StudentFormValues = {
   address: '',
   guardianName: '',
   guardianPhone: '',
-  studyShift: 'morning',
+  studyShift: 'Morning',
   monthlyTuition: 0,
   academicYear: '',
   course: '',
@@ -281,7 +295,7 @@ const StudentsPage = () => {
       address: student.address,
       guardianName: student.guardianName,
       guardianPhone: student.guardianPhone,
-      studyShift: (student.studyShift as StudyShift) || 'morning',
+      studyShift: STUDY_SHIFT_OPTIONS.find((option) => option.value === String(student.studyShift).toLowerCase())?.label || student.studyShift || 'Morning',
       monthlyTuition: Number(student.monthlyTuition || 0),
       academicYear: student.academicYear || '',
       course: student.course || '',
@@ -304,6 +318,10 @@ const StudentsPage = () => {
       return;
     }
 
+    const normalizedStudyShift = STUDY_SHIFT_OPTIONS.find(
+      (option) => option.label.toLowerCase() === formValues.studyShift.trim().toLowerCase()
+    )?.value || formValues.studyShift.trim();
+
     const payload = {
       studentId: formValues.studentId,
       fullName: buildStudentFullName(formValues.englishName, formValues.khmerName),
@@ -313,7 +331,7 @@ const StudentsPage = () => {
       address: formValues.address,
       guardianName: formValues.guardianName,
       guardianPhone: formValues.guardianPhone,
-      studyShift: formValues.studyShift,
+      studyShift: normalizedStudyShift,
       monthlyTuition: Number(formValues.monthlyTuition || 0),
       academicYear: formValues.academicYear.trim(),
       course: formValues.course.trim(),
@@ -378,30 +396,43 @@ const StudentsPage = () => {
 
   const getRoomLabel = (student: Student) => student.room || student.className || '-';
 
-  const getStudyShiftLabel = (student: Student) => student.studyShift || '-';
+  const getStudyShiftLabel = (student: Student) => {
+    if (!student.studyShift) return '-';
+    const shiftItem = STUDY_SHIFT_OPTIONS.find(
+      (option) => option.value === student.studyShift?.toLowerCase()
+    );
+    return shiftItem ? shiftItem.label : student.studyShift;
+  };
 
   const academicYearOptions = Array.from(
-    new Set(students.map((student) => student.academicYear?.trim()).filter((value): value is string => Boolean(value)))
+    new Set([
+      ...ACADEMIC_YEAR_SUGGESTIONS,
+      ...students.map((student) => student.academicYear?.trim()).filter((value): value is string => Boolean(value))
+    ])
   ).sort((left, right) => left.localeCompare(right));
 
   const courseOptions = Array.from(
-    new Set(students.map((student) => student.course?.trim()).filter((value): value is string => Boolean(value)))
+    new Set([
+      ...COURSE_SUGGESTIONS,
+      ...students.map((student) => student.course?.trim()).filter((value): value is string => Boolean(value))
+    ])
   ).sort((left, right) => left.localeCompare(right));
 
   const levelOptions = Array.from(
-    new Set(students.map((student) => student.level?.trim() || student.grade?.trim()).filter((value): value is string => Boolean(value)))
+    new Set([
+      ...(LEVEL_SUGGESTIONS_BY_COURSE[formValues.course] || ALL_LEVEL_SUGGESTIONS),
+      ...students.map((student) => (student.level?.trim() || student.grade?.trim())).filter((value): value is string => Boolean(value))
+    ])
   ).sort((left, right) => left.localeCompare(right));
 
   const roomOptions = Array.from(
-    new Set(students.map((student) => student.room?.trim() || student.className?.trim()).filter((value): value is string => Boolean(value)))
-  ).sort((left, right) => left.localeCompare(right));
-
-  const studyShiftOptions = Array.from(
     new Set([
-      ...students.map((student) => student.studyShift?.trim()).filter((value): value is string => Boolean(value)),
-      ...STUDY_SHIFT_OPTIONS.map((option) => option.value)
+      ...ROOM_SUGGESTIONS,
+      ...students.map((student) => student.room?.trim() || student.className?.trim()).filter((value): value is string => Boolean(value))
     ])
   ).sort((left, right) => left.localeCompare(right));
+
+  const studyShiftOptions = STUDY_SHIFT_OPTIONS.map((option) => option.label);
 
   if (accessDenied) {
     return <div className="p-8 text-center text-red-600">Access Denied - Admin Only</div>;

@@ -30,10 +30,15 @@ const EditableSmartAutocomplete = ({
   const filteredOptions = useMemo(() => {
     const trimmedValue = value.trim().toLowerCase();
     if (!trimmedValue) {
-      return normalizedOptions.slice(0, 8);
+      return normalizedOptions;
     }
 
-    return normalizedOptions.filter((option) => option.toLowerCase().includes(trimmedValue)).slice(0, 8);
+    const hasExactMatch = normalizedOptions.some((option) => option.toLowerCase() === trimmedValue);
+    if (hasExactMatch) {
+      return normalizedOptions;
+    }
+
+    return normalizedOptions.filter((option) => option.toLowerCase().includes(trimmedValue));
   }, [normalizedOptions, value]);
 
   useEffect(() => {
@@ -55,7 +60,13 @@ const EditableSmartAutocomplete = ({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         onFocus={() => setIsOpen(true)}
-        onBlur={() => window.setTimeout(() => setIsOpen(false), 120)}
+        onBlur={(event) => {
+          const nextTarget = event.relatedTarget as Node | null;
+          if (nextTarget && containerRef.current?.contains(nextTarget)) {
+            return;
+          }
+          setIsOpen(false);
+        }}
         placeholder={placeholder}
         disabled={disabled}
         className={className}
