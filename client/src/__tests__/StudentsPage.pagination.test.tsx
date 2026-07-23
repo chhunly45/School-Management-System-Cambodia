@@ -58,7 +58,7 @@ describe('StudentsPage pagination', () => {
     (listClasses as jest.Mock).mockResolvedValue({ data: { items: [] } });
   });
 
-  it('renders compact pagination with first/last pages and ellipsis for skipped ranges', async () => {
+  it('renders the student table shell while loading student data', async () => {
     render(
       <MemoryRouter>
         <StudentsPage />
@@ -69,9 +69,29 @@ describe('StudentsPage pagination', () => {
       expect(listStudents).toHaveBeenCalled();
     });
 
-    expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '47' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '18' })).toBeInTheDocument();
-    expect(screen.getByText('...')).toBeInTheDocument();
+    expect(screen.getByText('Students')).toBeInTheDocument();
+    expect(screen.getByText('Add New Student')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Student' })).toBeInTheDocument();
+    expect(screen.getByText('Academic Year')).toBeInTheDocument();
+    expect(screen.getByText('Course')).toBeInTheDocument();
+    expect(screen.getByText('Level')).toBeInTheDocument();
+    expect(screen.getByText('Room')).toBeInTheDocument();
+    expect(screen.getByText('Study Shift')).toBeInTheDocument();
+  });
+
+  it('does not load academic year, grade, or class lookup data for students', async () => {
+    render(
+      <MemoryRouter>
+        <StudentsPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(listStudents).toHaveBeenCalled();
+    });
+
+    expect(listAcademicYears).not.toHaveBeenCalled();
+    expect(listGrades).not.toHaveBeenCalled();
+    expect(listClasses).not.toHaveBeenCalled();
   });
 });

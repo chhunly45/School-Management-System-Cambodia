@@ -1,60 +1,7 @@
 const mongoose = require('mongoose');
-const { Student, AcademicYear, Grade, Class: ClassModel } = require('../models');
+const { Student } = require('../models');
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const ensureMongoId = (id, fieldName) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    const error = new Error(`Invalid ${fieldName}`);
-    error.statusCode = 400;
-    throw error;
-  }
-};
-
-const ensureReferencesExist = async ({ academicYearId, gradeId, classId }) => {
-  const checks = [];
-
-  if (academicYearId) {
-    ensureMongoId(academicYearId, 'academicYearId');
-    checks.push(
-      AcademicYear.exists({ _id: academicYearId }).then((exists) => {
-        if (!exists) {
-          const error = new Error('Academic year not found');
-          error.statusCode = 404;
-          throw error;
-        }
-      })
-    );
-  }
-
-  if (gradeId) {
-    ensureMongoId(gradeId, 'gradeId');
-    checks.push(
-      Grade.exists({ _id: gradeId }).then((exists) => {
-        if (!exists) {
-          const error = new Error('Grade not found');
-          error.statusCode = 404;
-          throw error;
-        }
-      })
-    );
-  }
-
-  if (classId) {
-    ensureMongoId(classId, 'classId');
-    checks.push(
-      ClassModel.exists({ _id: classId }).then((exists) => {
-        if (!exists) {
-          const error = new Error('Class not found');
-          error.statusCode = 404;
-          throw error;
-        }
-      })
-    );
-  }
-
-  await Promise.all(checks);
-};
 
 const listStudents = async (filters = {}) => {
   const query = {};
@@ -81,19 +28,32 @@ const listStudents = async (filters = {}) => {
     query.className = new RegExp(escapeRegex(String(filters.className).trim()), 'i');
   }
 
-  if (filters.academicYearId) {
-    ensureMongoId(filters.academicYearId, 'academicYearId');
-    query.academicYearId = filters.academicYearId;
+  if (filters.academicYear) {
+    query.academicYear = new RegExp(escapeRegex(String(filters.academicYear).trim()), 'i');
   }
 
-  if (filters.gradeId) {
-    ensureMongoId(filters.gradeId, 'gradeId');
-    query.gradeId = filters.gradeId;
+  if (filters.course) {
+    query.course = new RegExp(escapeRegex(String(filters.course).trim()), 'i');
   }
 
-  if (filters.classId) {
-    ensureMongoId(filters.classId, 'classId');
-    query.classId = filters.classId;
+  if (filters.level) {
+    query.level = new RegExp(escapeRegex(String(filters.level).trim()), 'i');
+  }
+
+  if (filters.room) {
+    query.room = new RegExp(escapeRegex(String(filters.room).trim()), 'i');
+  }
+
+  if (filters.studyShift) {
+    query.studyShift = new RegExp(escapeRegex(String(filters.studyShift).trim()), 'i');
+  }
+
+  if (filters.grade) {
+    query.grade = new RegExp(escapeRegex(String(filters.grade).trim()), 'i');
+  }
+
+  if (filters.className) {
+    query.className = new RegExp(escapeRegex(String(filters.className).trim()), 'i');
   }
 
   const page = Number(filters.page) || 1;
@@ -105,9 +65,6 @@ const listStudents = async (filters = {}) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('academicYearId', 'code name status')
-      .populate('gradeId', 'code name level status')
-      .populate('classId', 'className academicYearId gradeId status')
       .lean(),
     Student.countDocuments(query)
   ]);
@@ -122,11 +79,7 @@ const getStudentById = async (id) => {
     throw error;
   }
 
-  const student = await Student.findById(id)
-    .populate('academicYearId', 'code name status')
-    .populate('gradeId', 'code name level status')
-    .populate('classId', 'className academicYearId gradeId status')
-    .lean();
+  const student = await Student.findById(id).lean();
   if (!student) {
     const error = new Error('Student not found');
     error.statusCode = 404;
@@ -143,12 +96,6 @@ const createStudent = async (payload) => {
     error.statusCode = 409;
     throw error;
   }
-
-  await ensureReferencesExist({
-    academicYearId: payload.academicYearId,
-    gradeId: payload.gradeId,
-    classId: payload.classId
-  });
 
   const student = await Student.create(payload);
   return student;
@@ -176,12 +123,6 @@ const updateStudent = async (id, payload) => {
       throw error;
     }
   }
-
-  await ensureReferencesExist({
-    academicYearId: payload.academicYearId,
-    gradeId: payload.gradeId,
-    classId: payload.classId
-  });
 
   Object.assign(student, payload);
   await student.save();

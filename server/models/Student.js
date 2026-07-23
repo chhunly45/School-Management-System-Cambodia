@@ -12,9 +12,12 @@ const StudentSchema = new Schema({
   guardianPhone: { type: String, trim: true },
   className: { type: String, trim: true },
   monthlyTuition: { type: Number, min: 0, default: 0 },
-  academicYearId: { type: Schema.Types.ObjectId, ref: 'AcademicYear' },
-  gradeId: { type: Schema.Types.ObjectId, ref: 'Grade' },
-  classId: { type: Schema.Types.ObjectId, ref: 'Class' },
+  academicYear: { type: String, trim: true },
+  course: { type: String, trim: true },
+  level: { type: String, trim: true },
+  room: { type: String, trim: true },
+  studyShift: { type: String, trim: true },
+  grade: { type: String, trim: true },
   status: { type: String, enum: ['active', 'inactive', 'graduated'], default: 'active' },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   updatedBy: { type: Schema.Types.ObjectId, ref: 'User' }
@@ -23,9 +26,12 @@ const StudentSchema = new Schema({
 });
 
 StudentSchema.index({ studentId: 1 }, { unique: true, sparse: true });
-StudentSchema.index({ academicYearId: 1 });
-StudentSchema.index({ gradeId: 1 });
-StudentSchema.index({ classId: 1 });
+StudentSchema.index({ academicYear: 1 });
+StudentSchema.index({ course: 1 });
+StudentSchema.index({ level: 1 });
+StudentSchema.index({ room: 1 });
+StudentSchema.index({ studyShift: 1 });
+StudentSchema.index({ grade: 1 });
 StudentSchema.index({ fullName: 'text', className: 'text', guardianName: 'text', address: 'text' });
 
 module.exports = model('Student', StudentSchema);

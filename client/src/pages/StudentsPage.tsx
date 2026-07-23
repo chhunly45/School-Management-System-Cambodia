@@ -3,9 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { listStudents, createStudent, updateStudent, deleteStudent } from '../services/student.api';
 import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
-import { listAcademicYears, type AcademicYear } from '../services/academicYear.api';
-import { listGrades, type Grade } from '../services/grade.api';
-import { listClasses, type ClassItem } from '../services/class.api';
+import EditableSmartAutocomplete from '../components/common/EditableSmartAutocomplete';
 import { formatDateForApi, formatDateForInput, parseLocalDate } from '../utils/date';
 import { STUDY_SHIFT_OPTIONS, type StudyShift } from '../utils/paymentPeriod';
 
@@ -19,12 +17,14 @@ interface Student {
   address: string;
   guardianName: string;
   guardianPhone: string;
-  className: string;
+  className?: string;
   studyShift?: StudyShift;
   monthlyTuition?: number;
-  academicYearId?: string | { _id: string; code: string; name: string };
-  gradeId?: string | { _id: string; code: string; name: string; level: number };
-  classId?: string | { _id: string; className: string };
+  academicYear?: string;
+  course?: string;
+  level?: string;
+  room?: string;
+  grade?: string;
   status: 'active' | 'inactive' | 'graduated';
 }
 
@@ -38,12 +38,12 @@ interface StudentFormValues {
   address: string;
   guardianName: string;
   guardianPhone: string;
-  className: string;
   studyShift: StudyShift;
   monthlyTuition: number;
-  academicYearId: string;
-  gradeId: string;
-  classId: string;
+  academicYear: string;
+  course: string;
+  level: string;
+  room: string;
   status: 'active' | 'inactive' | 'graduated';
 }
 
@@ -59,18 +59,14 @@ const emptyStudentForm: StudentFormValues = {
   address: '',
   guardianName: '',
   guardianPhone: '',
-  className: '',
   studyShift: 'morning',
   monthlyTuition: 0,
-  academicYearId: '',
-  gradeId: '',
-  classId: '',
+  academicYear: '',
+  course: '',
+  level: '',
+  room: '',
   status: 'active'
 };
-
-const getAcademicYearId = (value: Student['academicYearId']) => (typeof value === 'string' ? value : value?._id || '');
-const getGradeId = (value: Student['gradeId']) => (typeof value === 'string' ? value : value?._id || '');
-const getClassId = (value: Student['classId']) => (typeof value === 'string' ? value : value?._id || '');
 
 const splitStudentName = (fullName: string) => {
   const trimmed = fullName?.trim() || '';
@@ -117,9 +113,6 @@ const StudentsPage = () => {
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [formValues, setFormValues] = useState<StudentFormValues>(emptyStudentForm);
-  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [classes, setClasses] = useState<ClassItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -145,7 +138,7 @@ const StudentsPage = () => {
       setAccessDenied(true);
       return;
     }
-    void Promise.all([loadLookups(), loadStudents('', 1)]);
+    void loadStudents('', 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -156,38 +149,6 @@ const StudentsPage = () => {
     if (Array.isArray(response.items)) return response.items;
     if (Array.isArray(response.data?.items)) return response.data.items;
     return [];
-  };
-
-  const loadLookups = async () => {
-    let lookupError = false;
-
-    try {
-      const yearsResp = await listAcademicYears({ perPage: 100 });
-      setAcademicYears(getResponseItems<AcademicYear>(yearsResp));
-    } catch (err) {
-      lookupError = true;
-      console.error('Unable to load academic years lookup.', err);
-    }
-
-    try {
-      const gradesResp = await listGrades({ perPage: 100 });
-      setGrades(getResponseItems<Grade>(gradesResp));
-    } catch (err) {
-      lookupError = true;
-      console.error('Unable to load grades lookup.', err);
-    }
-
-    try {
-      const classesResp = await listClasses({ perPage: 100 });
-      setClasses(getResponseItems<ClassItem>(classesResp));
-    } catch (err) {
-      lookupError = true;
-      console.error('Unable to load classes lookup.', err);
-    }
-
-    if (lookupError) {
-      setMessage('Unable to load some academic lookup data.');
-    }
   };
 
   const loadStudents = async (search = '', pageNumber = 1, options: { preserveMessage?: boolean } = {}) => {
@@ -308,6 +269,7 @@ const StudentsPage = () => {
 
   const handleEdit = (student: Student) => {
     const { englishName, khmerName } = splitStudentName(student.fullName || '');
+
     setEditingId(student._id);
     setFormValues({
       studentId: student.studentId,
@@ -319,12 +281,12 @@ const StudentsPage = () => {
       address: student.address,
       guardianName: student.guardianName,
       guardianPhone: student.guardianPhone,
-      className: student.className || '',
       studyShift: (student.studyShift as StudyShift) || 'morning',
       monthlyTuition: Number(student.monthlyTuition || 0),
-      academicYearId: getAcademicYearId(student.academicYearId),
-      gradeId: getGradeId(student.gradeId),
-      classId: getClassId(student.classId),
+      academicYear: student.academicYear || '',
+      course: student.course || '',
+      level: student.level || student.grade || '',
+      room: student.room || student.className || '',
       status: student.status
     });
     setFormErrors({});
@@ -351,12 +313,12 @@ const StudentsPage = () => {
       address: formValues.address,
       guardianName: formValues.guardianName,
       guardianPhone: formValues.guardianPhone,
-      className: formValues.className,
       studyShift: formValues.studyShift,
       monthlyTuition: Number(formValues.monthlyTuition || 0),
-      academicYearId: formValues.academicYearId || undefined,
-      gradeId: formValues.gradeId || undefined,
-      classId: formValues.classId || undefined,
+      academicYear: formValues.academicYear.trim(),
+      course: formValues.course.trim(),
+      level: formValues.level.trim(),
+      room: formValues.room.trim(),
       status: formValues.status
     };
 
@@ -408,32 +370,38 @@ const StudentsPage = () => {
 
   const getStudentNameParts = (student: Student) => splitStudentName(student.fullName || '');
 
-  const getAcademicYearLabel = (student: Student) => {
-    if (typeof student.academicYearId !== 'string' && student.academicYearId) {
-      return `${student.academicYearId.code} - ${student.academicYearId.name}`;
-    }
+  const getAcademicYearLabel = (student: Student) => student.academicYear || '-';
 
-    const selected = academicYears.find((item) => item._id === getAcademicYearId(student.academicYearId));
-    return selected ? `${selected.code} - ${selected.name}` : '-';
-  };
+  const getCourseLabel = (student: Student) => student.course || '-';
 
-  const getGradeLabel = (student: Student) => {
-    if (typeof student.gradeId !== 'string' && student.gradeId) {
-      return `${student.gradeId.code} - ${student.gradeId.name}`;
-    }
+  const getLevelLabel = (student: Student) => student.level || student.grade || '-';
 
-    const selected = grades.find((item) => item._id === getGradeId(student.gradeId));
-    return selected ? `${selected.code} - ${selected.name}` : '-';
-  };
+  const getRoomLabel = (student: Student) => student.room || student.className || '-';
 
-  const getClassLabel = (student: Student) => {
-    if (typeof student.classId !== 'string' && student.classId) {
-      return student.classId.className;
-    }
+  const getStudyShiftLabel = (student: Student) => student.studyShift || '-';
 
-    const selected = classes.find((item) => item._id === getClassId(student.classId));
-    return selected?.className || student.className || '-';
-  };
+  const academicYearOptions = Array.from(
+    new Set(students.map((student) => student.academicYear?.trim()).filter((value): value is string => Boolean(value)))
+  ).sort((left, right) => left.localeCompare(right));
+
+  const courseOptions = Array.from(
+    new Set(students.map((student) => student.course?.trim()).filter((value): value is string => Boolean(value)))
+  ).sort((left, right) => left.localeCompare(right));
+
+  const levelOptions = Array.from(
+    new Set(students.map((student) => student.level?.trim() || student.grade?.trim()).filter((value): value is string => Boolean(value)))
+  ).sort((left, right) => left.localeCompare(right));
+
+  const roomOptions = Array.from(
+    new Set(students.map((student) => student.room?.trim() || student.className?.trim()).filter((value): value is string => Boolean(value)))
+  ).sort((left, right) => left.localeCompare(right));
+
+  const studyShiftOptions = Array.from(
+    new Set([
+      ...students.map((student) => student.studyShift?.trim()).filter((value): value is string => Boolean(value)),
+      ...STUDY_SHIFT_OPTIONS.map((option) => option.value)
+    ])
+  ).sort((left, right) => left.localeCompare(right));
 
   if (accessDenied) {
     return <div className="p-8 text-center text-red-600">Access Denied - Admin Only</div>;
@@ -460,7 +428,7 @@ const StudentsPage = () => {
         <form onSubmit={handleSearch} className="flex flex-1 gap-2">
           <input
             type="text"
-            placeholder="Search by student ID, name, class, year, or grade..."
+            placeholder="Search by student ID, name, academic year, course, level, room, or shift..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -519,77 +487,63 @@ const StudentsPage = () => {
           {formErrors.englishName && <p className="text-sm text-rose-600 md:col-span-2">{formErrors.englishName}</p>}
           <label className="space-y-2">
             <span className="text-sm font-medium">Academic Year</span>
-            <select
-              value={formValues.academicYearId}
-              onChange={(e) => handleChange('academicYearId', e.target.value)}
-              className={getFieldClassName('academicYearId')}
+            <EditableSmartAutocomplete
+              id="student-academic-year"
+              value={formValues.academicYear}
+              onChange={(value) => handleChange('academicYear', value)}
+              options={academicYearOptions}
+              placeholder="e.g. 2025-2026"
               disabled={loading}
-            >
-              <option value="">Select Academic Year (optional)</option>
-              {academicYears.map((item) => (
-                <option key={item._id} value={item._id}>{`${item.code} - ${item.name}`}</option>
-              ))}
-            </select>
+              className={getFieldClassName('academicYear')}
+            />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-medium">Grade</span>
-            <select
-              value={formValues.gradeId}
-              onChange={(e) => handleChange('gradeId', e.target.value)}
-              className={getFieldClassName('gradeId')}
+            <span className="text-sm font-medium">Course</span>
+            <EditableSmartAutocomplete
+              id="student-course"
+              value={formValues.course}
+              onChange={(value) => handleChange('course', value)}
+              options={courseOptions}
+              placeholder="e.g. Science"
               disabled={loading}
-            >
-              <option value="">Select Grade (optional)</option>
-              {grades.map((item) => (
-                <option key={item._id} value={item._id}>{`${item.code} - ${item.name}`}</option>
-              ))}
-            </select>
+              className={getFieldClassName('course')}
+            />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-medium">Class</span>
-            <select
-              value={formValues.classId}
-              onChange={(e) => {
-                const classId = e.target.value;
-                handleChange('classId', classId);
-                const selected = classes.find((item) => item._id === classId);
-                if (selected) {
-                  handleChange('className', selected.className);
-                }
-              }}
-              className={getFieldClassName('classId')}
+            <span className="text-sm font-medium">Level</span>
+            <EditableSmartAutocomplete
+              id="student-level"
+              value={formValues.level}
+              onChange={(value) => handleChange('level', value)}
+              options={levelOptions}
+              placeholder="e.g. Grade 10"
               disabled={loading}
-            >
-              <option value="">Select Class (optional)</option>
-              {classes.map((item) => (
-                <option key={item._id} value={item._id}>
-                  {item.className}
-                </option>
-              ))}
-            </select>
+              className={getFieldClassName('level')}
+            />
           </label>
           <label className="space-y-2">
-            <span className="text-sm font-medium">Class Name (Legacy)</span>
-            <input
-              value={formValues.className}
-              onChange={(e) => handleChange('className', e.target.value)}
-              className={getFieldClassName('className')}
-              placeholder="Class name fallback"
+            <span className="text-sm font-medium">Room</span>
+            <EditableSmartAutocomplete
+              id="student-room"
+              value={formValues.room}
+              onChange={(value) => handleChange('room', value)}
+              options={roomOptions}
+              placeholder="e.g. 10A"
               disabled={loading}
+              className={getFieldClassName('room')}
             />
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium">Study Shift</span>
-            <select
+            <EditableSmartAutocomplete
+              id="student-study-shift"
               value={formValues.studyShift}
-              onChange={(e) => handleChange('studyShift', e.target.value as StudyShift)}
-              className={getFieldClassName('studyShift')}
+              onChange={(value) => handleChange('studyShift', value)}
+              options={studyShiftOptions}
+              placeholder="e.g. Morning"
               disabled={loading}
-            >
-              {STUDY_SHIFT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
+              className={getFieldClassName('studyShift')}
+            />
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium">Gender</span>
@@ -723,8 +677,10 @@ const StudentsPage = () => {
               <th className="px-4 py-3 text-left text-sm font-semibold">Gender</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Date of Birth</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Academic Year</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Grade</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Class</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Course</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Level</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Room</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold">Study Shift</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Phone</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Monthly Tuition</th>
               <th className="px-4 py-3 text-left text-sm font-semibold">Guardian</th>
@@ -758,8 +714,10 @@ const StudentsPage = () => {
                     <td className="px-4 py-3">{student.gender}</td>
                     <td className="px-4 py-3">{student.dateOfBirth || '-'}</td>
                     <td className="px-4 py-3">{getAcademicYearLabel(student)}</td>
-                    <td className="px-4 py-3">{getGradeLabel(student)}</td>
-                    <td className="px-4 py-3">{getClassLabel(student)}</td>
+                    <td className="px-4 py-3">{getCourseLabel(student)}</td>
+                    <td className="px-4 py-3">{getLevelLabel(student)}</td>
+                    <td className="px-4 py-3">{getRoomLabel(student)}</td>
+                    <td className="px-4 py-3">{getStudyShiftLabel(student)}</td>
                     <td className="px-4 py-3">{student.phone}</td>
                     <td className="px-4 py-3">{student.monthlyTuition ?? 0}</td>
                     <td className="px-4 py-3">{student.guardianName}</td>

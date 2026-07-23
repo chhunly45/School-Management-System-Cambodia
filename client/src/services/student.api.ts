@@ -4,9 +4,8 @@ export interface StudentListQuery {
   search?: string;
   status?: string;
   className?: string;
-  academicYearId?: string;
-  gradeId?: string;
-  classId?: string;
+  academicYear?: string;
+  grade?: string;
   page?: number;
   perPage?: number;
 }
