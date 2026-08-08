@@ -36,6 +36,8 @@ const expenseRoutes = require('./expense.routes');
 const schoolDashboardRoutes = require('./schoolDashboard.routes');
 const financeRoutes = require('./finance.routes');
 const schoolSettingRoutes = require('./schoolSetting.routes');
+const teacherAttendanceRoutes = require('./teacherAttendance.routes');
+const teacherAttendanceAdminRoutes = require('./teacherAttendanceAdmin.routes');
 
 const router = express.Router();
 
@@ -78,5 +80,7 @@ router.use('/expenses', expenseRoutes);
 router.use('/school-dashboard', schoolDashboardRoutes);
 router.use('/finance', financeRoutes);
 router.use('/school-settings', schoolSettingRoutes);
+router.use('/teacher-attendance', teacherAttendanceRoutes);
+router.use('/admin/teacher-attendance', teacherAttendanceAdminRoutes);
 
 module.exports = router;

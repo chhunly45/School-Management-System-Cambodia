@@ -34,6 +34,9 @@ const TransportAssignment = require('./TransportAssignment');
 const FuelRecord = require('./FuelRecord');
 const Expense = require('./Expense');
 const SchoolSetting = require('./SchoolSetting');
+const TeacherAttendance = require('./TeacherAttendance');
+const AttendanceQrToken = require('./AttendanceQrToken');
+const AttendanceAttemptLog = require('./AttendanceAttemptLog');
 
 module.exports = {
   User,
@@ -71,5 +74,8 @@ module.exports = {
   TransportAssignment,
   FuelRecord,
   Expense,
-  SchoolSetting
+  SchoolSetting,
+  TeacherAttendance,
+  AttendanceQrToken,
+  AttendanceAttemptLog
 };

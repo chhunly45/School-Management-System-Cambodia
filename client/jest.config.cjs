@@ -10,11 +10,13 @@ module.exports = {
   },
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^.+/utils/viteEnv$': '<rootDir>/src/__mocks__/viteEnv.ts',
     '^lucide-react$': '<rootDir>/src/__mocks__/lucide-react.ts',
     '^react-helmet-async$': '<rootDir>/src/__mocks__/react-helmet-async.tsx'
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   testMatch: ['**/__tests__/**/*.+(ts|tsx|js)', '**/?(*.)+(spec|test).+(ts|tsx|js)'],
+  testPathIgnorePatterns: ['[/\\\\]e2e[/\\\\]'],
   collectCoverage: true,
   coverageProvider: 'v8',
   collectCoverageFrom: [

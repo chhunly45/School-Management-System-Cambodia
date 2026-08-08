@@ -47,6 +47,7 @@ import FuelPage from '../pages/FuelPage';
 import ExpensesPage from '../pages/ExpensesPage';
 import SchoolDashboardPage from '../pages/SchoolDashboardPage';
 import SchoolSettingsPage from '../pages/SchoolSettingsPage';
+import TeacherAttendancePage from '../pages/TeacherAttendancePage';
 
 const AppRoutes = () => (
   <Routes>
@@ -74,6 +75,7 @@ const AppRoutes = () => (
     <Route path="/seller/analytics" element={<SellerAnalyticsPage />} />
     <Route path="/seller/promotions" element={<SellerPromotionsPage />} />
     <Route path="/verification/request" element={<VerificationRequestPage />} />
+    <Route path="/teacher/attendance" element={<TeacherAttendancePage />} />
     <Route path="/admin" element={<AdminRoute />}>
       <Route element={<AdminLayout />}>
         <Route index element={<AdminDashboardPage />} />

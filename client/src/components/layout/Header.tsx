@@ -235,6 +235,7 @@ const Header = () => {
                 </button>
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-3xl shadow-xl border border-muted opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <Link to="/profile" className="block px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background rounded-t-3xl">ពត៌មានគណនី</Link>
+                  <Link to="/teacher/attendance" className="block px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background border-t border-muted">Teacher Attendance</Link>
                   <button type="button" onClick={async () => { try { await logout(); } catch { localStorage.removeItem('authToken'); localStorage.removeItem('refreshToken'); localStorage.removeItem('user'); } navigate('/'); }} className="w-full text-left px-4 py-3 text-sm font-semibold text-rose-600 hover:bg-background border-t border-muted rounded-b-3xl">ចេញពីប្រព័ន្ធ</button>
                 </div>
               </div>
@@ -343,6 +344,7 @@ const Header = () => {
                 <Link to="/admin/students" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Students</Link>
                 <Link to="/admin/teachers" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Teachers</Link>
                 <Link to="/admin/attendance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Attendance</Link>
+                <Link to="/teacher/attendance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Teacher Attendance</Link>
                 <Link to="/admin/payments" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Payments</Link>
                 <Link to="/admin/finance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Finance</Link>
                 <hr className="border-surface-muted" />

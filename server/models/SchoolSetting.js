@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
 
+const TIME_TEXT_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
 const SchoolSettingSchema = new Schema(
   {
     singletonKey: { type: String, required: true, unique: true, default: 'school-settings', trim: true },
@@ -25,6 +27,41 @@ const SchoolSettingSchema = new Schema(
     footerText: { type: String, trim: true, default: '' },
     principalName: { type: String, trim: true, default: '' },
     qrCodeEnabled: { type: Boolean, default: true },
+    attendanceEnabled: { type: Boolean, default: true },
+    attendanceQrEnabled: { type: Boolean, default: true },
+    attendanceFaceEnabled: { type: Boolean, default: false },
+    attendanceGpsEnabled: { type: Boolean, default: true },
+    attendanceSchoolLatitude: { type: Number, min: -90, max: 90, default: null },
+    attendanceSchoolLongitude: { type: Number, min: -180, max: 180, default: null },
+    attendanceAllowedRadius: { type: Number, min: 1, default: 100 },
+    attendanceLateAfter: {
+      type: String,
+      trim: true,
+      default: '08:00',
+      validate: {
+        validator: (value) => TIME_TEXT_REGEX.test(String(value || '')),
+        message: 'attendanceLateAfter must use HH:mm format'
+      }
+    },
+    attendanceStart: {
+      type: String,
+      trim: true,
+      default: '06:00',
+      validate: {
+        validator: (value) => TIME_TEXT_REGEX.test(String(value || '')),
+        message: 'attendanceStart must use HH:mm format'
+      }
+    },
+    attendanceEnd: {
+      type: String,
+      trim: true,
+      default: '18:00',
+      validate: {
+        validator: (value) => TIME_TEXT_REGEX.test(String(value || '')),
+        message: 'attendanceEnd must use HH:mm format'
+      }
+    },
+    attendanceQrRotationSeconds: { type: Number, min: 30, max: 60, default: 30 },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     updatedBy: { type: Schema.Types.ObjectId, ref: 'User' }
   },
