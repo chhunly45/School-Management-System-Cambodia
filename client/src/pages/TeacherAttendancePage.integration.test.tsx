@@ -5,14 +5,15 @@ import TeacherAttendancePage from './TeacherAttendancePage';
 
 const getTodayTeacherAttendanceMock = jest.fn();
 const getTeacherAttendanceHistoryMock = jest.fn();
+const mockAuthUser = {
+  id: 'u-teacher-1',
+  email: 'teacher@example.com',
+  role: 'teacher'
+};
 
 jest.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
-    user: {
-      id: 'u-teacher-1',
-      email: 'teacher@example.com',
-      role: 'teacher'
-    }
+    user: mockAuthUser
   })
 }));
 
@@ -61,6 +62,15 @@ jest.mock('../components/attendance/LocationStatusPanel', () => ({
   default: () => <div>Location status mock</div>
 }));
 
+const waitForInitialAttendanceLoad = async () => {
+  await waitFor(() => {
+    expect(getTodayTeacherAttendanceMock).toHaveBeenCalled();
+    expect(getTeacherAttendanceHistoryMock).toHaveBeenCalled();
+  });
+
+  await screen.findByRole('button', { name: /check in|already checked in/i });
+};
+
 describe('TeacherAttendancePage integration behavior', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -78,7 +88,7 @@ describe('TeacherAttendancePage integration behavior', () => {
       success: true,
       data: {
         attendance: null,
-        canCheckIn: true,
+        canCheckIn: false,
         canCheckOut: false
       }
     });
@@ -88,6 +98,8 @@ describe('TeacherAttendancePage integration behavior', () => {
         <TeacherAttendancePage />
       </MemoryRouter>
     );
+
+    await waitForInitialAttendanceLoad();
 
     expect(screen.getByRole('heading', { name: /today's attendance/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /scan qr code/i })).toBeInTheDocument();
@@ -104,7 +116,7 @@ describe('TeacherAttendancePage integration behavior', () => {
               success: true,
               data: {
                 attendance: null,
-                canCheckIn: true,
+                canCheckIn: false,
                 canCheckOut: false,
                 serverTime: new Date().toISOString(),
                 policy: {
@@ -128,8 +140,9 @@ describe('TeacherAttendancePage integration behavior', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: /today's attendance/i })).toBeInTheDocument();
+    await waitForInitialAttendanceLoad();
 
+    expect(screen.getByRole('heading', { name: /today's attendance/i })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText(/current status/i)).toBeInTheDocument();
     });
@@ -140,7 +153,7 @@ describe('TeacherAttendancePage integration behavior', () => {
       success: true,
       data: {
         attendance: null,
-        canCheckIn: true,
+        canCheckIn: false,
         canCheckOut: false
       }
     });
@@ -150,6 +163,8 @@ describe('TeacherAttendancePage integration behavior', () => {
         <TeacherAttendancePage />
       </MemoryRouter>
     );
+
+    await waitForInitialAttendanceLoad();
 
     fireEvent.click(screen.getByRole('button', { name: /scan qr code/i }));
 
