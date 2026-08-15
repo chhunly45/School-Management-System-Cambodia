@@ -38,6 +38,7 @@ const financeRoutes = require('./finance.routes');
 const schoolSettingRoutes = require('./schoolSetting.routes');
 const teacherAttendanceRoutes = require('./teacherAttendance.routes');
 const teacherAttendanceAdminRoutes = require('./teacherAttendanceAdmin.routes');
+const attendanceQrAdminRoutes = require('./attendanceQrAdmin.routes');
 
 const router = express.Router();
 
@@ -82,5 +83,6 @@ router.use('/finance', financeRoutes);
 router.use('/school-settings', schoolSettingRoutes);
 router.use('/teacher-attendance', teacherAttendanceRoutes);
 router.use('/admin/teacher-attendance', teacherAttendanceAdminRoutes);
+router.use('/admin/attendance/qr', attendanceQrAdminRoutes);
 
 module.exports = router;

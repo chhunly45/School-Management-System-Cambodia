@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus, GraduationCap, CalendarRange, Layers, Building2, Settings2 } from 'lucide-react';
+import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus, GraduationCap, CalendarRange, Layers, Building2, Settings2, QrCode } from 'lucide-react';
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: Home },
@@ -7,6 +7,7 @@ const navItems = [
   { label: 'Teachers', to: '/admin/teachers', icon: GraduationCap },
   { label: 'Payments', to: '/admin/payments', icon: ShoppingBag },
   { label: 'Attendance', to: '/admin/attendance', icon: CheckCircle },
+  { label: 'Attendance QR', to: '/admin/attendance/qr', icon: QrCode },
   { label: 'Employee Attendance', to: '/admin/employee-attendance', icon: Users },
   { label: 'Academic', to: '/admin/academic', icon: BookOpen },
   { label: 'Academic Years', to: '/admin/academic-years', icon: CalendarRange },
