@@ -33,7 +33,15 @@ const defaultSettings: SchoolSettingsPayload = {
   employeeRoles: ['teacher', 'driver', 'staff'],
   footerText: '',
   principalName: '',
-  qrCodeEnabled: true
+  qrCodeEnabled: true,
+  attendanceEnabled: true,
+  attendanceQrEnabled: true,
+  attendanceGpsEnabled: true,
+  attendanceSchoolLatitude: null,
+  attendanceSchoolLongitude: null,
+  attendanceAllowedRadius: 100,
+  attendanceStart: '06:00',
+  attendanceEnd: '18:00'
 };
 
 const currencyOptions: Array<'USD' | 'KHR'> = ['USD', 'KHR'];
@@ -101,7 +109,15 @@ const SchoolSettingsPage = () => {
         employeeRoles: data.employeeRoles?.length ? data.employeeRoles : ['teacher', 'driver', 'staff'],
         footerText: data.footerText || '',
         principalName: data.principalName || '',
-        qrCodeEnabled: Boolean(data.qrCodeEnabled)
+        qrCodeEnabled: Boolean(data.qrCodeEnabled),
+        attendanceEnabled: Boolean(data.attendanceEnabled ?? true),
+        attendanceQrEnabled: Boolean(data.attendanceQrEnabled ?? true),
+        attendanceGpsEnabled: Boolean(data.attendanceGpsEnabled ?? true),
+        attendanceSchoolLatitude: data.attendanceSchoolLatitude ?? null,
+        attendanceSchoolLongitude: data.attendanceSchoolLongitude ?? null,
+        attendanceAllowedRadius: Number(data.attendanceAllowedRadius ?? 100),
+        attendanceStart: data.attendanceStart || '06:00',
+        attendanceEnd: data.attendanceEnd || '18:00'
       };
       setFormValues(nextValues);
       setLogoPreview(data.logo || '');
@@ -153,6 +169,15 @@ const SchoolSettingsPage = () => {
     if (!formValues.employeeRoles.length) nextErrors.employeeRoles = 'At least one employee role is required.';
     if (formValues.nextReceiptNumber < 1) nextErrors.nextReceiptNumber = 'Next receipt number must be at least 1.';
     if (!formValues.receiptPrefix.trim()) nextErrors.receiptPrefix = 'Receipt prefix is required.';
+    if (formValues.attendanceSchoolLatitude !== null && (formValues.attendanceSchoolLatitude < -90 || formValues.attendanceSchoolLatitude > 90)) {
+      nextErrors.attendanceSchoolLatitude = 'Latitude must be between -90 and 90.';
+    }
+    if (formValues.attendanceSchoolLongitude !== null && (formValues.attendanceSchoolLongitude < -180 || formValues.attendanceSchoolLongitude > 180)) {
+      nextErrors.attendanceSchoolLongitude = 'Longitude must be between -180 and 180.';
+    }
+    if (formValues.attendanceAllowedRadius < 1) nextErrors.attendanceAllowedRadius = 'Allowed radius must be at least 1 meter.';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(formValues.attendanceStart)) nextErrors.attendanceStart = 'Use 24-hour HH:mm format.';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(formValues.attendanceEnd)) nextErrors.attendanceEnd = 'Use 24-hour HH:mm format.';
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -217,7 +242,15 @@ const SchoolSettingsPage = () => {
         employeeRoles: response.data?.employeeRoles?.length ? response.data.employeeRoles : payload.employeeRoles,
         footerText: response.data?.footerText || payload.footerText,
         principalName: response.data?.principalName || payload.principalName,
-        qrCodeEnabled: Boolean(response.data?.qrCodeEnabled ?? payload.qrCodeEnabled)
+        qrCodeEnabled: Boolean(response.data?.qrCodeEnabled ?? payload.qrCodeEnabled),
+        attendanceEnabled: Boolean(response.data?.attendanceEnabled ?? payload.attendanceEnabled),
+        attendanceQrEnabled: Boolean(response.data?.attendanceQrEnabled ?? payload.attendanceQrEnabled),
+        attendanceGpsEnabled: Boolean(response.data?.attendanceGpsEnabled ?? payload.attendanceGpsEnabled),
+        attendanceSchoolLatitude: response.data?.attendanceSchoolLatitude ?? payload.attendanceSchoolLatitude,
+        attendanceSchoolLongitude: response.data?.attendanceSchoolLongitude ?? payload.attendanceSchoolLongitude,
+        attendanceAllowedRadius: Number(response.data?.attendanceAllowedRadius ?? payload.attendanceAllowedRadius),
+        attendanceStart: response.data?.attendanceStart || payload.attendanceStart,
+        attendanceEnd: response.data?.attendanceEnd || payload.attendanceEnd
       });
       setLogoPreview(response.data?.logo || payload.logo);
       setLogoFile(null);
@@ -348,6 +381,52 @@ const SchoolSettingsPage = () => {
                   </label>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl bg-white p-6 shadow">
+            <h2 className="text-xl font-semibold text-slate-900">Attendance Settings</h2>
+            <p className="text-sm text-slate-500">Control teacher attendance availability, location rules, and the daily check-in window.</p>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <input type="checkbox" checked={formValues.attendanceEnabled} onChange={(e) => handleChange('attendanceEnabled', e.target.checked)} />
+                Attendance Enabled
+              </label>
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <input type="checkbox" checked={formValues.attendanceQrEnabled} onChange={(e) => handleChange('attendanceQrEnabled', e.target.checked)} />
+                Attendance QR Enabled
+              </label>
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <input type="checkbox" checked={formValues.attendanceGpsEnabled} onChange={(e) => handleChange('attendanceGpsEnabled', e.target.checked)} />
+                Attendance GPS Enabled
+              </label>
+
+              <label htmlFor="attendance-school-latitude" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">School Latitude</span>
+                <input id="attendance-school-latitude" type="number" min="-90" max="90" step="any" value={formValues.attendanceSchoolLatitude ?? ''} onChange={(e) => handleChange('attendanceSchoolLatitude', e.target.value === '' ? null : Number(e.target.value))} className={`w-full rounded-xl border px-3 py-2 ${errors.attendanceSchoolLatitude ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.attendanceSchoolLatitude ? <p className="text-xs text-rose-600">{errors.attendanceSchoolLatitude}</p> : <p className="text-xs text-slate-500">Optional; -90 to 90.</p>}
+              </label>
+              <label htmlFor="attendance-school-longitude" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">School Longitude</span>
+                <input id="attendance-school-longitude" type="number" min="-180" max="180" step="any" value={formValues.attendanceSchoolLongitude ?? ''} onChange={(e) => handleChange('attendanceSchoolLongitude', e.target.value === '' ? null : Number(e.target.value))} className={`w-full rounded-xl border px-3 py-2 ${errors.attendanceSchoolLongitude ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.attendanceSchoolLongitude ? <p className="text-xs text-rose-600">{errors.attendanceSchoolLongitude}</p> : <p className="text-xs text-slate-500">Optional; -180 to 180.</p>}
+              </label>
+              <label htmlFor="attendance-allowed-radius" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Allowed Radius (meters)</span>
+                <input id="attendance-allowed-radius" type="number" min="1" step="1" value={formValues.attendanceAllowedRadius} onChange={(e) => handleChange('attendanceAllowedRadius', Number(e.target.value || 0))} className={`w-full rounded-xl border px-3 py-2 ${errors.attendanceAllowedRadius ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.attendanceAllowedRadius ? <p className="text-xs text-rose-600">{errors.attendanceAllowedRadius}</p> : <p className="text-xs text-slate-500">Must be at least 1 meter.</p>}
+              </label>
+              <label htmlFor="attendance-start" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Attendance Start</span>
+                <input id="attendance-start" type="time" value={formValues.attendanceStart} onChange={(e) => handleChange('attendanceStart', e.target.value)} className={`w-full rounded-xl border px-3 py-2 ${errors.attendanceStart ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.attendanceStart && <p className="text-xs text-rose-600">{errors.attendanceStart}</p>}
+              </label>
+              <label htmlFor="attendance-end" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Attendance End</span>
+                <input id="attendance-end" type="time" value={formValues.attendanceEnd} onChange={(e) => handleChange('attendanceEnd', e.target.value)} className={`w-full rounded-xl border px-3 py-2 ${errors.attendanceEnd ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.attendanceEnd && <p className="text-xs text-rose-600">{errors.attendanceEnd}</p>}
+              </label>
             </div>
           </section>
 

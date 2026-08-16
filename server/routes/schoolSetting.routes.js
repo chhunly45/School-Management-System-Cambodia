@@ -37,7 +37,15 @@ const baseValidators = [
   employeeRolesValidator,
   body('footerText').optional().trim().isString(),
   body('principalName').optional().trim().isString(),
-  body('qrCodeEnabled').optional().isBoolean()
+  body('qrCodeEnabled').optional().isBoolean().toBoolean(),
+  body('attendanceEnabled').optional().isBoolean().toBoolean(),
+  body('attendanceQrEnabled').optional().isBoolean().toBoolean(),
+  body('attendanceGpsEnabled').optional().isBoolean().toBoolean(),
+  body('attendanceSchoolLatitude').optional({ nullable: true }).isFloat({ min: -90, max: 90 }).toFloat(),
+  body('attendanceSchoolLongitude').optional({ nullable: true }).isFloat({ min: -180, max: 180 }).toFloat(),
+  body('attendanceAllowedRadius').optional().isFloat({ min: 1 }).toFloat(),
+  body('attendanceStart').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/),
+  body('attendanceEnd').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/)
 ];
 
 router.get('/', adminOnly, validate, schoolSettingController.getSchoolSettings);
@@ -49,3 +57,4 @@ router.put('/', adminOnly, ...baseValidators, validate, schoolSettingController.
 router.delete('/', adminOnly, validate, schoolSettingController.deleteSchoolSettings);
 
 module.exports = router;
+module.exports.baseValidators = baseValidators;

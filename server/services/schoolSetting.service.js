@@ -20,7 +20,7 @@ const normalizeEmployeeRoles = (value) => {
   return unique.length > 0 ? unique : DEFAULT_EMPLOYEE_ROLES;
 };
 
-const normalizeSettingsPayload = (payload = {}) => {
+const normalizeSettingsPayload = (payload = {}, { partial = false } = {}) => {
   const next = {
     singletonKey: SINGLETON_KEY,
     schoolName: toTrimmedString(payload.schoolName),
@@ -39,12 +39,26 @@ const normalizeSettingsPayload = (payload = {}) => {
     footerText: toTrimmedString(payload.footerText),
     principalName: toTrimmedString(payload.principalName),
     qrCodeEnabled: payload.qrCodeEnabled === undefined ? true : String(payload.qrCodeEnabled).toLowerCase() !== 'false',
+    attendanceEnabled: payload.attendanceEnabled === undefined ? true : Boolean(payload.attendanceEnabled),
+    attendanceQrEnabled: payload.attendanceQrEnabled === undefined ? true : Boolean(payload.attendanceQrEnabled),
+    attendanceGpsEnabled: payload.attendanceGpsEnabled === undefined ? true : Boolean(payload.attendanceGpsEnabled),
+    attendanceSchoolLatitude: payload.attendanceSchoolLatitude === undefined ? null : payload.attendanceSchoolLatitude,
+    attendanceSchoolLongitude: payload.attendanceSchoolLongitude === undefined ? null : payload.attendanceSchoolLongitude,
+    attendanceAllowedRadius: payload.attendanceAllowedRadius === undefined ? 100 : Number(payload.attendanceAllowedRadius),
+    attendanceStart: payload.attendanceStart === undefined ? '06:00' : String(payload.attendanceStart).trim(),
+    attendanceEnd: payload.attendanceEnd === undefined ? '18:00' : String(payload.attendanceEnd).trim(),
     currentAcademicYearId: payload.currentAcademicYearId || null,
     createdBy: payload.createdBy,
     updatedBy: payload.updatedBy
   };
 
-  return next;
+  if (!partial) return next;
+
+  const partialPayload = {};
+  Object.keys(next).forEach((key) => {
+    if (key !== 'singletonKey' && payload[key] !== undefined) partialPayload[key] = next[key];
+  });
+  return partialPayload;
 };
 
 const ensureAcademicYearExists = async (academicYearId) => {
@@ -81,7 +95,15 @@ const getDefaultSettings = () => ({
   employeeRoles: DEFAULT_EMPLOYEE_ROLES,
   footerText: '',
   principalName: '',
-  qrCodeEnabled: true
+  qrCodeEnabled: true,
+  attendanceEnabled: true,
+  attendanceQrEnabled: true,
+  attendanceGpsEnabled: true,
+  attendanceSchoolLatitude: null,
+  attendanceSchoolLongitude: null,
+  attendanceAllowedRadius: 100,
+  attendanceStart: '06:00',
+  attendanceEnd: '18:00'
 });
 
 const populateSettings = (query) => query.populate('currentAcademicYearId', 'code name status isCurrent');
@@ -123,12 +145,15 @@ const createSchoolSettings = async (payload) => {
 const updateSchoolSettings = async (payload) => {
   await ensureAcademicYearExists(payload.currentAcademicYearId);
 
-  const nextPayload = normalizeSettingsPayload(payload);
-  const updated = await SchoolSetting.findOneAndUpdate(
-    { singletonKey: SINGLETON_KEY },
-    { $set: nextPayload, $setOnInsert: getDefaultSettings() },
-    { new: true, upsert: true, runValidators: true }
-  );
+  const nextPayload = normalizeSettingsPayload(payload, { partial: true });
+  const existing = await SchoolSetting.findOne({ singletonKey: SINGLETON_KEY }).select('_id');
+  const updated = existing
+    ? await SchoolSetting.findOneAndUpdate(
+        { singletonKey: SINGLETON_KEY },
+        { $set: nextPayload },
+        { new: true, runValidators: true }
+      )
+    : await SchoolSetting.create({ ...getDefaultSettings(), ...nextPayload });
 
   const populated = await populateSettings(SchoolSetting.findById(updated._id));
   return formatSettings(populated);

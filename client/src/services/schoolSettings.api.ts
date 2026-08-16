@@ -20,6 +20,14 @@ export interface SchoolSettings {
   footerText: string;
   principalName: string;
   qrCodeEnabled: boolean;
+  attendanceEnabled: boolean;
+  attendanceQrEnabled: boolean;
+  attendanceGpsEnabled: boolean;
+  attendanceSchoolLatitude: number | null;
+  attendanceSchoolLongitude: number | null;
+  attendanceAllowedRadius: number;
+  attendanceStart: string;
+  attendanceEnd: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -42,6 +50,14 @@ export interface SchoolSettingsPayload {
   footerText: string;
   principalName: string;
   qrCodeEnabled: boolean;
+  attendanceEnabled: boolean;
+  attendanceQrEnabled: boolean;
+  attendanceGpsEnabled: boolean;
+  attendanceSchoolLatitude: number | null;
+  attendanceSchoolLongitude: number | null;
+  attendanceAllowedRadius: number;
+  attendanceStart: string;
+  attendanceEnd: string;
 }
 
 export const getSchoolSettings = () => api.get('/school-settings').then((r) => r.data);
