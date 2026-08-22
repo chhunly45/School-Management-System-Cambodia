@@ -125,7 +125,7 @@ const AttendancePage = () => {
         classId: selectedClassId || undefined,
         search: searchTerm,
         includeRelations: true,
-        perPage: 200
+        perPage: 10
       });
       const items = res.data?.items || [];
       setAttendance(
