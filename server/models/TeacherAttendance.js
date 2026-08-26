@@ -3,12 +3,24 @@ const { Schema, model } = mongoose;
 
 const ATTENDANCE_METHODS = ['QR', 'FACE', 'MANUAL'];
 const ATTENDANCE_STATUSES = ['PRESENT', 'LATE', 'ABSENT', 'LEAVE'];
+const ATTENDANCE_SESSIONS = ['morning', 'afternoon', 'evening'];
 
 const TeacherAttendanceSchema = new Schema(
   {
     teacherId: { type: Schema.Types.ObjectId, ref: 'Teacher', required: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     attendanceDate: { type: Date, required: true },
+    sessionType: {
+      type: String,
+      default: null,
+      validate: {
+        validator(value) {
+          if (value === null || value === undefined) return true;
+          return ATTENDANCE_SESSIONS.includes(value);
+        },
+        message: 'sessionType must be morning, afternoon, or evening'
+      }
+    },
     checkInTime: { type: Date, default: null },
     checkOutTime: {
       type: Date,
@@ -70,10 +82,23 @@ TeacherAttendanceSchema.path('deletedAt').validate({
 
 TeacherAttendanceSchema.index(
   { teacherId: 1, attendanceDate: 1 },
-  { unique: true, partialFilterExpression: { isDeleted: false } }
+  {
+    name: 'teacherId_1_attendanceDate_1_legacy',
+    unique: true,
+    partialFilterExpression: { isDeleted: false, sessionType: null }
+  }
+);
+TeacherAttendanceSchema.index(
+  { teacherId: 1, attendanceDate: 1, sessionType: 1 },
+  {
+    name: 'teacherId_1_attendanceDate_1_sessionType_1',
+    unique: true,
+    partialFilterExpression: { isDeleted: false, sessionType: { $type: 'string' } }
+  }
 );
 TeacherAttendanceSchema.index({ attendanceDate: -1, status: 1 });
 TeacherAttendanceSchema.index({ userId: 1, attendanceDate: -1 });
+TeacherAttendanceSchema.index({ sessionType: 1, attendanceDate: -1 });
 TeacherAttendanceSchema.index({ qrTokenId: 1, attendanceDate: -1 });
 TeacherAttendanceSchema.index({ isDeleted: 1, attendanceDate: -1 });
 

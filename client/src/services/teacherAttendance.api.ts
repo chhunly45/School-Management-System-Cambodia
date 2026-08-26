@@ -2,6 +2,7 @@ import api from './api';
 
 export type AttendanceMethod = 'QR' | 'FACE' | 'MANUAL';
 export type AttendanceStatus = 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
+export type AttendanceSessionType = 'morning' | 'afternoon' | 'evening';
 
 export interface TeacherAttendanceRecord {
   _id: string;
@@ -16,6 +17,7 @@ export interface TeacherAttendanceRecord {
       };
   userId: string;
   attendanceDate: string;
+  sessionType: AttendanceSessionType | null;
   checkInTime: string | null;
   checkOutTime: string | null;
   attendanceMethod: AttendanceMethod;
@@ -38,6 +40,8 @@ export interface CheckInPayload {
   gpsAccuracy?: number;
   remarks?: string;
   device?: string;
+  sessionType?: AttendanceSessionType;
+  qrSessionType?: AttendanceSessionType | null;
 }
 
 export interface CheckOutPayload {
@@ -46,6 +50,7 @@ export interface CheckOutPayload {
   gpsAccuracy?: number;
   remarks?: string;
   device?: string;
+  sessionType?: AttendanceSessionType;
 }
 
 export interface TodayAttendanceState {
@@ -59,6 +64,7 @@ export interface AttendanceHistoryQuery {
   toDate?: string;
   status?: AttendanceStatus;
   attendanceMethod?: AttendanceMethod;
+  sessionType?: AttendanceSessionType;
   page?: number;
   perPage?: number;
 }

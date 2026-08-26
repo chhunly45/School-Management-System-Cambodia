@@ -245,6 +245,39 @@ describe('Attendance QR admin integration', () => {
     assert.equal(checkIn.data.data.attendanceMethod, 'QR');
   });
 
+  it('propagates the QR session into the teacher attendance record', async () => {
+    await createUser({ email: 'admin-session@example.com', password: 'Password123!', displayName: 'Session Admin', role: 'admin' });
+    await createUserWithTeacher({ email: 'teacher-session@example.com', password: 'Password123!', displayName: 'Session Teacher', teacherCode: 'T-QR-SESSION' });
+
+    const adminSession = await login('admin-session@example.com', 'Password123!');
+    const teacherSession = await login('teacher-session@example.com', 'Password123!');
+    const generated = await axios.post(
+      `${base}/admin/attendance/qr/generate`,
+      { expiresInSeconds: 300, sessionType: 'afternoon' },
+      { headers: authHeaders(adminSession) }
+    );
+
+    assert.equal(generated.data.data.current.sessionType, 'afternoon');
+    assert.deepEqual(JSON.parse(generated.data.data.current.qrPayload), {
+      token: generated.data.data.current.token,
+      sessionType: 'afternoon'
+    });
+
+    const checkIn = await axios.post(
+      `${base}/teacher-attendance/check-in`,
+      {
+        attendanceMethod: 'QR',
+        qrToken: generated.data.data.current.qrPayload,
+        latitude: SCHOOL_LAT,
+        longitude: SCHOOL_LNG,
+        gpsAccuracy: 5
+      },
+      { headers: authHeaders(teacherSession) }
+    );
+
+    assert.equal(checkIn.data.data.sessionType, 'afternoon');
+  });
+
   it('revoked and expired tokens are rejected by existing teacher attendance validation', async () => {
     await createUser({
       email: 'admin-reject@example.com',

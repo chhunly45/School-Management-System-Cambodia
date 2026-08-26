@@ -14,6 +14,7 @@ import ChatPage from '../pages/ChatPage';
 import DashboardPage from '../pages/DashboardPage';
 import SellerAnalyticsPage from '../pages/SellerAnalyticsPage';
 import AdminDashboardPage from '../pages/AdminDashboardPage';
+import AdminUsersPage from '../pages/AdminUsersPage';
 import AdminBannersPage from '../pages/AdminBannersPage';
 import AdminRevenuePage from '../pages/AdminRevenuePage';
 import AdminTrafficAnalyticsPage from '../pages/AdminTrafficAnalyticsPage';
@@ -49,6 +50,7 @@ import SchoolDashboardPage from '../pages/SchoolDashboardPage';
 import SchoolSettingsPage from '../pages/SchoolSettingsPage';
 import TeacherAttendancePage from '../pages/TeacherAttendancePage';
 import AdminAttendanceQrPage from '../pages/AdminAttendanceQrPage';
+import AdminTeacherAttendancePage from '../pages/AdminTeacherAttendancePage';
 
 const AppRoutes = () => (
   <Routes>
@@ -80,7 +82,7 @@ const AppRoutes = () => (
     <Route path="/admin" element={<AdminRoute />}>
       <Route element={<AdminLayout />}>
         <Route index element={<AdminDashboardPage />} />
-        <Route path="users" element={<AdminDashboardPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
         <Route path="sellers" element={<AdminDashboardPage />} />
         <Route path="verification" element={<AdminVerificationReviewPage />} />
         <Route path="products" element={<AdminDashboardPage />} />
@@ -94,6 +96,7 @@ const AppRoutes = () => (
         <Route path="students" element={<StudentsPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="attendance" element={<AttendancePage />} />
+        <Route path="teacher-attendance" element={<AdminTeacherAttendancePage />} />
         <Route path="attendance/qr" element={<AdminAttendanceQrPage />} />
         <Route path="employee-attendance" element={<EmployeeAttendancePage />} />
         <Route path="academic" element={<AcademicPage />} />

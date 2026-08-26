@@ -4,6 +4,7 @@ const { getDefaultPolicy, SCHOOL_SETTINGS_KEY } = require('./teacherAttendance/a
 
 const MIN_EXPIRY_SECONDS = 30;
 const MAX_EXPIRY_SECONDS = 60 * 60 * 24;
+const ATTENDANCE_SESSIONS = ['morning', 'afternoon', 'evening'];
 
 const createValidationError = (message, statusCode = 400) => {
   const error = new Error(message);
@@ -17,7 +18,12 @@ const createAttendanceQrAdminService = ({
   nowProvider = () => new Date(),
   settingsKey = SCHOOL_SETTINGS_KEY
 } = {}) => {
-  const buildQrPayload = (token) => JSON.stringify({ token });
+  const buildQrPayload = (token, sessionType = null) => JSON.stringify({ token, ...(sessionType ? { sessionType } : {}) });
+
+  const normalizeSessionType = (sessionType) => {
+    const value = String(sessionType || '').trim().toLowerCase();
+    return ATTENDANCE_SESSIONS.includes(value) ? value : null;
+  };
 
   const getDefaultExpirySeconds = async () => {
     const settings = await SchoolSettingModel.findOne({ singletonKey: settingsKey })
@@ -64,8 +70,9 @@ const createAttendanceQrAdminService = ({
       revokedAt: doc.revokedAt,
       createdBy: doc.createdBy ? String(doc.createdBy) : null,
       status,
-      qrPayloadFormat: 'json-token-v1',
-      qrPayload: buildQrPayload(doc.token)
+      sessionType: doc.sessionType || null,
+      qrPayloadFormat: doc.sessionType ? 'json-token-session-v1' : 'json-token-v1',
+      qrPayload: buildQrPayload(doc.token, doc.sessionType)
     };
   };
 
@@ -99,7 +106,7 @@ const createAttendanceQrAdminService = ({
     );
   };
 
-  const createTokenDoc = async ({ createdBy, expiresInSeconds, referenceTime = nowProvider() }) => {
+  const createTokenDoc = async ({ createdBy, expiresInSeconds, sessionType, referenceTime = nowProvider() }) => {
     const ttlSeconds = await resolveExpirySeconds(expiresInSeconds);
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -107,6 +114,7 @@ const createAttendanceQrAdminService = ({
       try {
         const created = await AttendanceQrTokenModel.create({
           token: createTokenValue(),
+          sessionType: normalizeSessionType(sessionType),
           rotationNumber,
           expiresAt: new Date(referenceTime.getTime() + ttlSeconds * 1000),
           createdBy: createdBy || null,
@@ -142,14 +150,14 @@ const createAttendanceQrAdminService = ({
     };
   };
 
-  const generateToken = async ({ createdBy, expiresInSeconds } = {}) => {
+  const generateToken = async ({ createdBy, expiresInSeconds, sessionType } = {}) => {
     const now = nowProvider();
     const existing = await getCurrentActiveDoc(now);
     if (existing) {
       throw createValidationError('An active attendance QR token already exists. Rotate or revoke it first.', 409);
     }
 
-    const { created, ttlSeconds } = await createTokenDoc({ createdBy, expiresInSeconds, referenceTime: now });
+    const { created, ttlSeconds } = await createTokenDoc({ createdBy, expiresInSeconds, sessionType, referenceTime: now });
     return {
       current: formatToken(created, now),
       policy: {
@@ -158,12 +166,12 @@ const createAttendanceQrAdminService = ({
     };
   };
 
-  const rotateToken = async ({ createdBy, expiresInSeconds } = {}) => {
+  const rotateToken = async ({ createdBy, expiresInSeconds, sessionType } = {}) => {
     const now = nowProvider();
     const activeDocs = await AttendanceQrTokenModel.find(getActiveFilter(now)).sort({ createdAt: -1, rotationNumber: -1 });
     await revokeDocs(activeDocs, now);
 
-    const { created, ttlSeconds } = await createTokenDoc({ createdBy, expiresInSeconds, referenceTime: now });
+    const { created, ttlSeconds } = await createTokenDoc({ createdBy, expiresInSeconds, sessionType, referenceTime: now });
     return {
       previous: activeDocs.map((item) => formatToken(item, now)),
       current: formatToken(created, now),

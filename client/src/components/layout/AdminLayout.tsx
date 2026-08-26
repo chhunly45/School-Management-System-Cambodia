@@ -3,10 +3,12 @@ import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: Home },
+  { label: 'Users', to: '/admin/users', icon: Users },
   { label: 'Students', to: '/admin/students', icon: Users },
   { label: 'Teachers', to: '/admin/teachers', icon: GraduationCap },
   { label: 'Payments', to: '/admin/payments', icon: ShoppingBag },
   { label: 'Attendance', to: '/admin/attendance', icon: CheckCircle },
+  { label: 'Teacher Attendance', to: '/admin/teacher-attendance', icon: CheckCircle },
   { label: 'Attendance QR', to: '/admin/attendance/qr', icon: QrCode },
   { label: 'Employee Attendance', to: '/admin/employee-attendance', icon: Users },
   { label: 'Academic', to: '/admin/academic', icon: BookOpen },

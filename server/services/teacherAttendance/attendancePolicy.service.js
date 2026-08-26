@@ -4,6 +4,12 @@ const { parseTimeToMinutes, getLocalMinutes } = require('./time.utils');
 
 const SCHOOL_SETTINGS_KEY = 'school-settings';
 
+const getDefaultSessionPolicy = () => ({
+  checkInStart: '06:00',
+  lateAfter: '08:00',
+  checkoutTime: '18:00'
+});
+
 const getDefaultPolicy = () => ({
   attendanceEnabled: true,
   attendanceQrEnabled: true,
@@ -15,8 +21,51 @@ const getDefaultPolicy = () => ({
   attendanceLateAfter: '08:00',
   attendanceStart: '06:00',
   attendanceEnd: '18:00',
-  attendanceQrRotationSeconds: 30
+  attendanceQrRotationSeconds: 30,
+  morningCheckInStart: null,
+  morningLateAfter: null,
+  morningCheckoutTime: null,
+  afternoonCheckInStart: null,
+  afternoonLateAfter: null,
+  afternoonCheckoutTime: null,
+  eveningCheckInStart: null,
+  eveningLateAfter: null,
+  eveningCheckoutTime: null
 });
+
+const normalizeSessionType = (sessionType) => {
+  const value = String(sessionType || 'morning').trim().toLowerCase();
+  if (value === 'morning' || value === 'afternoon' || value === 'evening') {
+    return value;
+  }
+  return 'morning';
+};
+
+const getSessionPolicy = (policy, sessionType = 'morning') => {
+  const normalized = normalizeSessionType(sessionType);
+  const configMap = {
+    morning: {
+      checkInStart: policy.morningCheckInStart || policy.attendanceStart || '06:00',
+      lateAfter: policy.morningLateAfter || policy.attendanceLateAfter || '08:00',
+      checkoutTime: policy.morningCheckoutTime || policy.attendanceEnd || '18:00'
+    },
+    afternoon: {
+      checkInStart: policy.afternoonCheckInStart || policy.attendanceStart || '06:00',
+      lateAfter: policy.afternoonLateAfter || policy.attendanceLateAfter || '08:00',
+      checkoutTime: policy.afternoonCheckoutTime || policy.attendanceEnd || '18:00'
+    },
+    evening: {
+      checkInStart: policy.eveningCheckInStart || policy.attendanceStart || '06:00',
+      lateAfter: policy.eveningLateAfter || policy.attendanceLateAfter || '08:00',
+      checkoutTime: policy.eveningCheckoutTime || policy.attendanceEnd || '18:00'
+    }
+  };
+
+  return {
+    ...getDefaultSessionPolicy(),
+    ...configMap[normalized]
+  };
+};
 
 const createAttendancePolicyService = ({
   SchoolSettingModel = SchoolSetting,
@@ -52,35 +101,36 @@ const createAttendancePolicyService = ({
     }
   };
 
-  const ensureWithinAttendanceWindow = (policy, referenceTime = nowProvider()) => {
-    const startMinutes = parseTimeToMinutes(policy.attendanceStart);
-    const endMinutes = parseTimeToMinutes(policy.attendanceEnd);
-    if (startMinutes === null || endMinutes === null) {
+  const ensureWithinAttendanceWindow = (policy, referenceTime = nowProvider(), sessionType = 'morning') => {
+    const sessionPolicy = getSessionPolicy(policy, sessionType);
+    const startMinutes = parseTimeToMinutes(sessionPolicy.checkInStart);
+    if (startMinutes === null) {
       throw createAttendanceError('INVALID_POLICY', 'Attendance policy time format is invalid', 500);
     }
 
     const currentMinutes = getLocalMinutes(referenceTime);
-    const withinWindow = startMinutes <= endMinutes
-      ? (currentMinutes >= startMinutes && currentMinutes <= endMinutes)
-      : (currentMinutes >= startMinutes || currentMinutes <= endMinutes);
-
-    if (!withinWindow) {
+    if (currentMinutes < startMinutes) {
       throw createAttendanceError('OUTSIDE_ATTENDANCE_WINDOW', 'Current time is outside attendance window', 422);
     }
   };
 
   return {
     getPolicy,
+    getSessionPolicy,
     ensureAttendanceEnabled,
     ensureMethodEnabled,
     ensureGpsEnabled,
     ensureWithinAttendanceWindow,
-    getDefaultPolicy
+    getDefaultPolicy,
+    normalizeSessionType
   };
 };
 
 module.exports = {
   createAttendancePolicyService,
   getDefaultPolicy,
+  getDefaultSessionPolicy,
+  getSessionPolicy,
+  normalizeSessionType,
   SCHOOL_SETTINGS_KEY
 };

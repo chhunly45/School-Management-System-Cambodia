@@ -6,7 +6,18 @@ const createQrTokenValidationService = ({
   nowProvider = () => new Date()
 } = {}) => {
   const validateToken = async (tokenText) => {
-    const token = String(tokenText || '').trim();
+    let token = String(tokenText || '').trim();
+    let payloadSessionType = null;
+
+    if (token.startsWith('{') && token.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(token);
+        token = String(parsed.token || parsed.qrToken || '').trim();
+        payloadSessionType = String(parsed.sessionType || '').trim().toLowerCase() || null;
+      } catch {
+        token = '';
+      }
+    }
     if (!token) {
       throw createAttendanceError('QR_INVALID', 'QR token is required', 422);
     }
@@ -25,7 +36,10 @@ const createQrTokenValidationService = ({
       throw createAttendanceError('QR_EXPIRED', 'QR token has expired', 422);
     }
 
-    return doc;
+    return {
+      doc,
+      sessionType: doc.sessionType || payloadSessionType || null
+    };
   };
 
   return {

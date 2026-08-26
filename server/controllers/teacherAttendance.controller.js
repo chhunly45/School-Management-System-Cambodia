@@ -16,7 +16,8 @@ const createTeacherAttendanceController = ({
         device: req.body.device,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
-        requestId: req.headers['x-request-id']
+        requestId: req.headers['x-request-id'],
+        sessionType: req.body.sessionType
       });
 
       res.status(201).json({ success: true, data: attendance });
@@ -36,7 +37,8 @@ const createTeacherAttendanceController = ({
         device: req.body.device,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
-        requestId: req.headers['x-request-id']
+        requestId: req.headers['x-request-id'],
+        sessionType: req.body.sessionType
       });
 
       res.json({ success: true, data: attendance });

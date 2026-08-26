@@ -119,6 +119,96 @@ describe('Teacher Attendance business services', () => {
     assert.equal(payload.status, 'LATE');
   });
 
+  it('uses morning session rules and allows late check-in after checkout time', async () => {
+    await createDefaultSettings({
+      morningCheckInStart: '06:45',
+      morningLateAfter: '06:55',
+      morningCheckoutTime: '10:40'
+    });
+
+    const actor = { teacherId: new mongoose.Types.ObjectId(), userId: new mongoose.Types.ObjectId() };
+    const teacherServices = services.createTeacherAttendanceServices({ nowProvider: () => new Date('2026-08-07T06:50:00') });
+
+    const presentPayload = await teacherServices.checkInValidationService.validateCheckIn({
+      actor,
+      attendanceMethod: 'MANUAL',
+      sessionType: 'morning',
+      latitude: SCHOOL_LAT,
+      longitude: SCHOOL_LNG
+    });
+    assert.equal(presentPayload.status, 'PRESENT');
+
+    const lateServices = services.createTeacherAttendanceServices({ nowProvider: () => new Date('2026-08-07T06:56:00') });
+    const latePayload = await lateServices.checkInValidationService.validateCheckIn({
+      actor,
+      attendanceMethod: 'MANUAL',
+      sessionType: 'morning',
+      latitude: SCHOOL_LAT,
+      longitude: SCHOOL_LNG
+    });
+    assert.equal(latePayload.status, 'LATE');
+
+    const afterCheckoutServices = services.createTeacherAttendanceServices({ nowProvider: () => new Date('2026-08-07T10:45:00') });
+    const afterCheckoutPayload = await afterCheckoutServices.checkInValidationService.validateCheckIn({
+      actor,
+      attendanceMethod: 'MANUAL',
+      sessionType: 'morning',
+      latitude: SCHOOL_LAT,
+      longitude: SCHOOL_LNG
+    });
+    assert.equal(afterCheckoutPayload.status, 'LATE');
+  });
+
+  it('keeps morning and afternoon session records independent on the same date', async () => {
+    await createDefaultSettings({
+      morningCheckInStart: '06:45',
+      morningLateAfter: '06:55',
+      morningCheckoutTime: '10:40',
+      afternoonCheckInStart: '12:30',
+      afternoonLateAfter: '12:40',
+      afternoonCheckoutTime: '16:00'
+    });
+
+    const teacherId = new mongoose.Types.ObjectId();
+    const userId = new mongoose.Types.ObjectId();
+    const actor = { teacherId, userId };
+
+    await models.TeacherAttendance.create({
+      teacherId,
+      userId,
+      attendanceDate: new Date('2026-08-07T00:00:00'),
+      sessionType: 'morning',
+      checkInTime: new Date('2026-08-07T06:50:00'),
+      attendanceMethod: 'MANUAL',
+      status: 'PRESENT'
+    });
+
+    const teacherServices = services.createTeacherAttendanceServices({ nowProvider: () => new Date('2026-08-07T12:35:00') });
+    const payload = await teacherServices.checkInValidationService.validateCheckIn({
+      actor,
+      attendanceMethod: 'MANUAL',
+      sessionType: 'afternoon',
+      latitude: SCHOOL_LAT,
+      longitude: SCHOOL_LNG
+    });
+
+    assert.equal(payload.sessionType, 'afternoon');
+    assert.equal(payload.status, 'PRESENT');
+
+    await assert.rejects(
+      async () => {
+        await teacherServices.checkInValidationService.validateCheckIn({
+          actor,
+          attendanceMethod: 'MANUAL',
+          sessionType: 'morning',
+          latitude: SCHOOL_LAT,
+          longitude: SCHOOL_LNG
+        });
+      },
+      (error) => error && error.code === 'ALREADY_CHECKED_IN'
+    );
+  });
+
   it('rejects duplicate check-in when teacher already checked in', async () => {
     await createDefaultSettings();
     const teacherId = new mongoose.Types.ObjectId();

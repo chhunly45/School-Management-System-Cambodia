@@ -22,6 +22,10 @@ const AttendanceHistoryList = ({ items }: AttendanceHistoryListProps) => {
             </div>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-text-secondary">
               <div>
+                <dt className="font-medium text-muted">Session</dt>
+                <dd>{item.sessionType ? item.sessionType.charAt(0).toUpperCase() + item.sessionType.slice(1) : 'Legacy'}</dd>
+              </div>
+              <div>
                 <dt className="font-medium text-muted">Method</dt>
                 <dd>{item.attendanceMethod}</dd>
               </div>
@@ -47,6 +51,7 @@ const AttendanceHistoryList = ({ items }: AttendanceHistoryListProps) => {
           <thead>
             <tr className="border-b border-muted text-left text-text-secondary">
               <th className="py-2 pr-3">Date</th>
+              <th className="py-2 pr-3">Session</th>
               <th className="py-2 pr-3">Status</th>
               <th className="py-2 pr-3">Method</th>
               <th className="py-2 pr-3">Check-in</th>
@@ -58,6 +63,7 @@ const AttendanceHistoryList = ({ items }: AttendanceHistoryListProps) => {
             {items.map((item) => (
               <tr key={item._id} className="border-b border-muted/70 text-text-primary">
                 <td className="py-2 pr-3">{formatDateForDisplay(item.attendanceDate)}</td>
+                <td className="py-2 pr-3">{item.sessionType ? item.sessionType.charAt(0).toUpperCase() + item.sessionType.slice(1) : 'Legacy'}</td>
                 <td className="py-2 pr-3"><AttendanceStatusBadge status={item.status} /></td>
                 <td className="py-2 pr-3">{item.attendanceMethod}</td>
                 <td className="py-2 pr-3">{formatDateTimeForDisplay(item.checkInTime)}</td>

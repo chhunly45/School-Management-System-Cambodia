@@ -8,6 +8,7 @@ import {
   getTeacherAttendanceHistory,
   getTodayTeacherAttendance,
   type AttendanceStatus,
+  type AttendanceSessionType,
   type TeacherAttendanceRecord,
   type TodayAttendanceState
 } from '../services/teacherAttendance.api';
@@ -37,6 +38,7 @@ const TeacherAttendancePage = () => {
   const [fromDate, setFromDate] = useState(formatDateForInput(new Date()));
   const [toDate, setToDate] = useState(formatDateForInput(new Date()));
   const [qrToken, setQrToken] = useState('');
+  const [sessionType, setSessionType] = useState<AttendanceSessionType>('morning');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [capturedLocation, setCapturedLocation] = useState<CapturedLocation | null>(null);
   const [gpsStatus, setGpsStatus] = useState<LocationStatus>('Unavailable');
@@ -131,6 +133,7 @@ const TeacherAttendancePage = () => {
         fromDate: fromDate || undefined,
         toDate: toDate || undefined,
         status: historyStatusFilter || undefined,
+        sessionType: sessionType,
         page,
         perPage: 10
       });
@@ -152,7 +155,8 @@ const TeacherAttendancePage = () => {
       await checkInTeacherAttendance({
         ...buildCommonPayload(),
         attendanceMethod: 'QR',
-        qrToken: qrToken.trim() || undefined
+        qrToken: qrToken.trim() || undefined,
+        sessionType
       });
       setMessage('Check-in successful.');
       setQrToken('');
@@ -169,7 +173,7 @@ const TeacherAttendancePage = () => {
 
     setProcessingCheckOut(true);
     try {
-      await checkOutTeacherAttendance(buildCommonPayload());
+      await checkOutTeacherAttendance({ ...buildCommonPayload(), sessionType });
       setMessage('Check-out successful.');
       await Promise.all([loadTodayState(), loadHistory(1)]);
     } catch (error: any) {
@@ -253,14 +257,24 @@ const TeacherAttendancePage = () => {
 
             {scannerOpen && (
               <QrScannerPanel
-                onDecodedToken={(token) => {
-                  setQrToken(token);
+                onDecodedToken={(payload) => {
+                  setQrToken(payload.token);
+                  if (payload.sessionType) setSessionType(payload.sessionType);
                   setMessage('QR code captured successfully. Ready for check-in.');
                 }}
                 onClose={() => setScannerOpen(false)}
                 onStatusChange={setCameraStatus}
               />
             )}
+
+            <label className="space-y-1 text-sm text-text-secondary">
+              <span>Attendance session</span>
+              <select value={sessionType} onChange={(event) => setSessionType(event.target.value as AttendanceSessionType)} className="w-full rounded-xl border border-muted px-4 py-3 text-text-primary">
+                <option value="morning">Morning</option>
+                <option value="afternoon">Afternoon</option>
+                <option value="evening">Evening</option>
+              </select>
+            </label>
 
             <label className="space-y-1 text-sm text-text-secondary">
               <span>QR Token</span>

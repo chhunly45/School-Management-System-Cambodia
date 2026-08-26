@@ -26,27 +26,33 @@ const createCheckInValidationService = ({
     qrToken,
     latitude,
     longitude,
-    gpsAccuracy
+    gpsAccuracy,
+    sessionType = 'morning'
   }) => {
     ensureLoggedInTeacher(actor);
 
     const policy = await policyService.getPolicy();
     const now = nowProvider();
+    let normalizedSessionType = policyService.normalizeSessionType ? policyService.normalizeSessionType(sessionType) : sessionType;
 
     policyService.ensureAttendanceEnabled(policy);
     policyService.ensureMethodEnabled(policy, attendanceMethod);
-    policyService.ensureWithinAttendanceWindow(policy, now);
+    let qrTokenDoc = null;
+    if (attendanceMethod === 'QR') {
+      qrTokenDoc = await qrTokenValidationService.validateToken(qrToken);
+      if (qrTokenDoc.sessionType) {
+        normalizedSessionType = policyService.normalizeSessionType(qrTokenDoc.sessionType);
+      }
+    }
+
+    policyService.ensureWithinAttendanceWindow(policy, now, normalizedSessionType);
 
     const attendanceDate = normalizeToDayStart(now);
     await duplicatePreventionService.ensureNoExistingCheckIn({
       teacherId: actor.teacherId,
-      attendanceDate
+      attendanceDate,
+      sessionType: normalizedSessionType
     });
-
-    let qrTokenDoc = null;
-    if (attendanceMethod === 'QR') {
-      qrTokenDoc = await qrTokenValidationService.validateToken(qrToken);
-    }
 
     let distanceFromSchool = null;
     if (policy.attendanceGpsEnabled) {
@@ -60,22 +66,25 @@ const createCheckInValidationService = ({
       distanceFromSchool = gpsResult.distanceFromSchool;
     }
 
+    const sessionPolicy = policyService.getSessionPolicy ? policyService.getSessionPolicy(policy, normalizedSessionType) : { lateAfter: policy.attendanceLateAfter };
     const status = attendanceStatusService.calculateCheckInStatus({
       checkInTime: now,
-      lateAfter: policy.attendanceLateAfter
+      lateAfter: sessionPolicy.lateAfter
     });
 
     return {
       attendanceDate,
+      sessionType: normalizedSessionType,
       checkInTime: now,
       attendanceMethod,
       status,
-      qrTokenId: qrTokenDoc ? qrTokenDoc._id : null,
+      qrTokenId: qrTokenDoc ? qrTokenDoc.doc._id : null,
       latitude: latitude === undefined ? null : Number(latitude),
       longitude: longitude === undefined ? null : Number(longitude),
       gpsAccuracy: gpsAccuracy === undefined ? null : Number(gpsAccuracy),
       distanceFromSchool,
-      policy
+      policy,
+      sessionPolicy
     };
   };
 

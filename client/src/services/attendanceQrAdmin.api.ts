@@ -1,10 +1,12 @@
 import api from './api';
+import type { AttendanceSessionType } from './teacherAttendance.api';
 
 export type AttendanceQrTokenStatus = 'ACTIVE' | 'REVOKED' | 'EXPIRED';
 
 export interface AttendanceQrTokenView {
   id: string;
   token: string;
+  sessionType: AttendanceSessionType | null;
   rotationNumber: number;
   createdAt: string;
   expiresAt: string;
@@ -12,7 +14,7 @@ export interface AttendanceQrTokenView {
   revokedAt: string | null;
   createdBy: string | null;
   status: AttendanceQrTokenStatus;
-  qrPayloadFormat: 'json-token-v1';
+  qrPayloadFormat: 'json-token-v1' | 'json-token-session-v1';
   qrPayload: string;
 }
 
@@ -27,10 +29,10 @@ export interface AttendanceQrAdminState {
 export const getAttendanceQrState = () =>
   api.get('/admin/attendance/qr').then((response) => response.data);
 
-export const generateAttendanceQrToken = (payload: { expiresInSeconds?: number } = {}) =>
+export const generateAttendanceQrToken = (payload: { expiresInSeconds?: number; sessionType?: AttendanceSessionType } = {}) =>
   api.post('/admin/attendance/qr/generate', payload).then((response) => response.data);
 
-export const rotateAttendanceQrToken = (payload: { expiresInSeconds?: number } = {}) =>
+export const rotateAttendanceQrToken = (payload: { expiresInSeconds?: number; sessionType?: AttendanceSessionType } = {}) =>
   api.post('/admin/attendance/qr/rotate', payload).then((response) => response.data);
 
 export const revokeAttendanceQrToken = () =>

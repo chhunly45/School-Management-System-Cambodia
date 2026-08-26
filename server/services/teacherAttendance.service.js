@@ -6,6 +6,7 @@ const {
 const { createTeacherAttendanceServices } = require('./teacherAttendance');
 const { normalizeToDayStart } = require('./teacherAttendance/time.utils');
 const { createAttendanceError } = require('./teacherAttendance/errors');
+const config = require('../config');
 
 const normalizePhone = (value = '') => String(value || '').replace(/[^\d+]/g, '');
 
@@ -35,7 +36,8 @@ const createTeacherAttendanceService = ({
   TeacherAttendanceModel = TeacherAttendance,
   AttendanceAttemptLogModel = AttendanceAttemptLog,
   businessServices = createTeacherAttendanceServices(),
-  nowProvider = () => new Date()
+  nowProvider = () => new Date(),
+  sessionWritesEnabled = config.teacherAttendanceSessionWritesEnabled
 } = {}) => {
   const resolveActorFromUser = async (user) => {
     if (!user || !user._id) {
@@ -114,7 +116,8 @@ const createTeacherAttendanceService = ({
     device,
     ipAddress,
     userAgent,
-    requestId
+    requestId,
+    sessionType = 'morning'
   }) => {
     const actor = await resolveActorFromUser(user);
 
@@ -125,13 +128,15 @@ const createTeacherAttendanceService = ({
         qrToken,
         latitude,
         longitude,
-        gpsAccuracy
+        gpsAccuracy,
+        sessionType: sessionWritesEnabled ? sessionType : null
       });
 
       const attendance = await TeacherAttendanceModel.create({
         teacherId: actor.teacherId,
         userId: actor.userId,
         attendanceDate: validated.attendanceDate,
+        sessionType: sessionWritesEnabled ? validated.sessionType : null,
         checkInTime: validated.checkInTime,
         attendanceMethod: validated.attendanceMethod,
         status: validated.status,
@@ -188,7 +193,8 @@ const createTeacherAttendanceService = ({
     device,
     ipAddress,
     userAgent,
-    requestId
+    requestId,
+    sessionType = 'morning'
   }) => {
     const actor = await resolveActorFromUser(user);
 
@@ -197,10 +203,15 @@ const createTeacherAttendanceService = ({
         actor,
         latitude,
         longitude,
-        gpsAccuracy
+        gpsAccuracy,
+        sessionType
       });
 
       const attendance = validated.attendance;
+      if (!sessionWritesEnabled && attendance.sessionType) {
+        throw createAttendanceError('SESSION_ATTENDANCE_WRITES_DISABLED', 'Session-aware attendance writes are temporarily disabled', 503);
+      }
+      attendance.sessionType = validated.sessionType || attendance.sessionType;
       attendance.checkOutTime = validated.checkOutTime;
       attendance.status = validated.status;
       attendance.latitude = validated.latitude;
@@ -279,6 +290,7 @@ const createTeacherAttendanceService = ({
       toDate: query.toDate,
       status: query.status,
       attendanceMethod: query.attendanceMethod,
+      sessionType: query.sessionType,
       page: query.page,
       perPage: query.perPage
     });

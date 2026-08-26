@@ -11,6 +11,7 @@ import {
   type AttendanceQrAdminState,
   type AttendanceQrTokenView
 } from '../services/attendanceQrAdmin.api';
+import type { AttendanceSessionType } from '../services/teacherAttendance.api';
 
 const defaultState: AttendanceQrAdminState = {
   current: null,
@@ -48,7 +49,8 @@ const AdminAttendanceQrPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState('');
-  const [expiresInSeconds, setExpiresInSeconds] = useState('300');
+  const [expiresInSeconds, setExpiresInSeconds] = useState('30');
+  const [sessionType, setSessionType] = useState<AttendanceSessionType>('morning');
 
   useEffect(() => {
     if (!user) {
@@ -134,7 +136,7 @@ const AdminAttendanceQrPage = () => {
   const runMutation = async (action: 'generate' | 'rotate' | 'revoke') => {
     setSubmitting(true);
     try {
-      const payload = { expiresInSeconds: parseExpiryPayload() };
+      const payload = { expiresInSeconds: parseExpiryPayload(), sessionType };
       const response =
         action === 'generate'
           ? await generateAttendanceQrToken(payload)
@@ -215,6 +217,7 @@ const AdminAttendanceQrPage = () => {
                 <img src={qrDataUrl} alt="Attendance QR code" className="mx-auto w-full max-w-[320px] rounded-2xl bg-white p-3 ring-1 ring-border" />
                 <div>
                   <p className="text-lg font-semibold text-text-primary">SMS-CAM Teacher Attendance</p>
+                    <p className="mt-1 text-sm font-semibold text-[#0F766E]">Session: {currentToken.sessionType ? currentToken.sessionType.charAt(0).toUpperCase() + currentToken.sessionType.slice(1) : 'Legacy'}</p>
                   <p className="mt-1 text-sm text-text-secondary">Scan this QR, then submit GPS-confirmed check-in.</p>
                 </div>
               </div>
@@ -270,6 +273,15 @@ const AdminAttendanceQrPage = () => {
               className="w-full rounded-2xl border border-muted px-4 py-3 text-text-primary"
             />
             <span className="block text-xs text-text-secondary">Current selection: {toDurationLabel(durationValue)}</span>
+          </label>
+
+          <label className="block space-y-2 text-sm text-text-secondary">
+            <span>Attendance session</span>
+            <select value={sessionType} onChange={(event) => setSessionType(event.target.value as AttendanceSessionType)} className="w-full rounded-2xl border border-muted px-4 py-3 text-text-primary">
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+              <option value="evening">Evening</option>
+            </select>
           </label>
 
           <div className="grid gap-3 sm:grid-cols-2">

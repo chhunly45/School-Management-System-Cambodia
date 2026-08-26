@@ -1,9 +1,20 @@
 const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
+const ATTENDANCE_SESSIONS = ['morning', 'afternoon', 'evening'];
 
 const AttendanceQrTokenSchema = new Schema(
   {
     token: { type: String, required: true, trim: true, minlength: 16, maxlength: 256 },
+    sessionType: {
+      type: String,
+      default: null,
+      validate: {
+        validator(value) {
+          return value === null || value === undefined || ATTENDANCE_SESSIONS.includes(value);
+        },
+        message: 'sessionType must be morning, afternoon, or evening'
+      }
+    },
     rotationNumber: { type: Number, required: true, min: 1 },
     expiresAt: {
       type: Date,

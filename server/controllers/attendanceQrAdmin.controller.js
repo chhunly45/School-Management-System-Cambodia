@@ -14,7 +14,8 @@ const createAttendanceQrAdminController = ({ service = defaultService } = {}) =>
     try {
       const data = await service.generateToken({
         createdBy: req.user?._id,
-        expiresInSeconds: req.body.expiresInSeconds
+        expiresInSeconds: req.body.expiresInSeconds,
+        sessionType: req.body.sessionType
       });
       res.status(201).json({ success: true, data });
     } catch (error) {
@@ -26,7 +27,8 @@ const createAttendanceQrAdminController = ({ service = defaultService } = {}) =>
     try {
       const data = await service.rotateToken({
         createdBy: req.user?._id,
-        expiresInSeconds: req.body.expiresInSeconds
+        expiresInSeconds: req.body.expiresInSeconds,
+        sessionType: req.body.sessionType
       });
       res.status(201).json({ success: true, data });
     } catch (error) {

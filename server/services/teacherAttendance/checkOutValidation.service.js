@@ -18,19 +18,21 @@ const createCheckOutValidationService = ({
     }
   };
 
-  const validateCheckOut = async ({ actor, latitude, longitude, gpsAccuracy }) => {
+  const validateCheckOut = async ({ actor, latitude, longitude, gpsAccuracy, sessionType = 'morning' }) => {
     ensureLoggedInTeacher(actor);
 
     const policy = await policyService.getPolicy();
     const now = nowProvider();
+    const normalizedSessionType = policyService.normalizeSessionType ? policyService.normalizeSessionType(sessionType) : sessionType;
 
     policyService.ensureAttendanceEnabled(policy);
-    policyService.ensureWithinAttendanceWindow(policy, now);
+    policyService.ensureWithinAttendanceWindow(policy, now, normalizedSessionType);
 
     const attendanceDate = normalizeToDayStart(now);
     const attendance = await duplicatePreventionService.ensureCanCheckOut({
       teacherId: actor.teacherId,
-      attendanceDate
+      attendanceDate,
+      sessionType: normalizedSessionType
     });
 
     let distanceFromSchool = null;
@@ -45,21 +47,25 @@ const createCheckOutValidationService = ({
       distanceFromSchool = gpsResult.distanceFromSchool;
     }
 
+    const sessionPolicy = policyService.getSessionPolicy ? policyService.getSessionPolicy(policy, normalizedSessionType) : { checkoutTime: policy.attendanceEnd };
     const nextStatus = attendanceStatusService.calculateFinalStatus({
       existingStatus: attendance.status,
-      checkOutTime: now
+      checkOutTime: now,
+      sessionCheckoutTime: sessionPolicy.checkoutTime
     });
 
     return {
       attendance,
       attendanceDate,
+      sessionType: normalizedSessionType,
       checkOutTime: now,
       status: nextStatus,
       latitude: latitude === undefined ? null : Number(latitude),
       longitude: longitude === undefined ? null : Number(longitude),
       gpsAccuracy: gpsAccuracy === undefined ? null : Number(gpsAccuracy),
       distanceFromSchool,
-      policy
+      policy,
+      sessionPolicy
     };
   };
 

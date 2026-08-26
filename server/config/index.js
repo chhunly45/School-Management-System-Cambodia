@@ -63,6 +63,7 @@ const config = {
   uploadDir: path.resolve(process.cwd(), process.env.UPLOAD_DIR || 'uploads'),
   nodeEnv,
   isProduction,
+  teacherAttendanceSessionWritesEnabled: process.env.TEACHER_ATTENDANCE_SESSION_WRITES_ENABLED === 'true' || (!isProduction && process.env.TEACHER_ATTENDANCE_SESSION_WRITES_ENABLED !== 'false'),
   cloudinary: {
     cloudName: getEnvValue('CLOUDINARY_CLOUD_NAME') || '',
     apiKey: getEnvValue('CLOUDINARY_API_KEY') || '',

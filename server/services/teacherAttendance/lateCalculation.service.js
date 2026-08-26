@@ -9,7 +9,7 @@ const createLateCalculationService = () => {
     }
 
     const checkInMinutes = getLocalMinutes(checkInTime);
-    return checkInMinutes > lateAfterMinutes;
+    return checkInMinutes >= lateAfterMinutes;
   };
 
   return {

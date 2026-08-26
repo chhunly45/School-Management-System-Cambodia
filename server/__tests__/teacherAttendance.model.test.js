@@ -41,6 +41,15 @@ beforeEach(async () => {
 });
 
 describe('TeacherAttendance model', () => {
+  it('declares only the named legacy and session-aware uniqueness indexes', () => {
+    const indexes = TeacherAttendance.schema.indexes();
+    const names = indexes.map(([, options]) => options?.name).filter(Boolean);
+
+    assert.ok(names.includes('teacherId_1_attendanceDate_1_legacy'));
+    assert.ok(names.includes('teacherId_1_attendanceDate_1_sessionType_1'));
+    assert.equal(names.includes('teacherId_1_attendanceDate_1'), false);
+  });
+
   it('requires qrTokenId when attendanceMethod is QR', async () => {
     await assert.rejects(
       async () => {

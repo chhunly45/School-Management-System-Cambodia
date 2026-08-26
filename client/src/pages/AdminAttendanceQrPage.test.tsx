@@ -100,7 +100,7 @@ describe('AdminAttendanceQrPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /rotate qr/i }));
 
     await waitFor(() => {
-      expect(rotateAttendanceQrTokenMock).toHaveBeenCalledWith({ expiresInSeconds: 600 });
+      expect(rotateAttendanceQrTokenMock).toHaveBeenCalledWith({ expiresInSeconds: 600, sessionType: 'morning' });
     });
   });
 });

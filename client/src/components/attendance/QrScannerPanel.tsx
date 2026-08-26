@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import QrScanner from 'qr-scanner';
-import { normalizeDecodedToken } from './qrTokenPayload';
+import { normalizeDecodedPayload, type DecodedQrAttendancePayload } from './qrTokenPayload';
 
 QrScanner.WORKER_PATH = new URL('qr-scanner/qr-scanner-worker.min.js', import.meta.url).toString();
 
@@ -9,7 +9,7 @@ type PermissionState = 'idle' | 'requesting' | 'granted' | 'denied' | 'error';
 export type CameraStatus = 'Ready' | 'Permission Required' | 'Unavailable';
 
 interface QrScannerPanelProps {
-  onDecodedToken: (token: string) => void;
+  onDecodedToken: (payload: DecodedQrAttendancePayload) => void;
   onClose?: () => void;
   onStatusChange?: (status: CameraStatus) => void;
 }
@@ -53,14 +53,14 @@ const QrScannerPanel = ({ onDecodedToken, onClose, onStatusChange }: QrScannerPa
   const handleDecode = async (result: QrScanner.ScanResult) => {
     const decodedText = result.data || '';
 
-    const token = normalizeDecodedToken(decodedText);
-    if (!token) {
+    const payload = normalizeDecodedPayload(decodedText);
+    if (!payload) {
       setMessage('QR decoded but token format is invalid for attendance.');
       return;
     }
 
     setMessage('QR code captured successfully.');
-    onDecodedToken(token);
+    onDecodedToken(payload);
     await stopScanner();
   };
 

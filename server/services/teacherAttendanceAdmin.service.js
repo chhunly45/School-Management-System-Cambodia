@@ -78,7 +78,7 @@ const createTeacherAttendanceAdminService = ({
     return teachers.map((item) => item._id);
   };
 
-  const getTodayAttendance = async ({ search, status, page = 1, perPage = 20, date } = {}) => {
+  const getTodayAttendance = async ({ search, status, sessionType, page = 1, perPage = 20, date } = {}) => {
     const dayStart = normalizeToDayStart(date || nowProvider());
     const dayEnd = addDays(dayStart, 1);
 
@@ -89,6 +89,9 @@ const createTeacherAttendanceAdminService = ({
 
     if (status) {
       query.status = String(status).trim().toUpperCase();
+    }
+    if (sessionType) {
+      query.sessionType = String(sessionType).trim().toLowerCase();
     }
 
     const teacherIds = await resolveTeacherIdsBySearch(search);
@@ -129,6 +132,8 @@ const createTeacherAttendanceAdminService = ({
     };
   };
 
+  const settleAbsent = async ({ date, sessionType } = {}) => businessServices.absentSettlementService.settleAbsent({ date, sessionType });
+
   const getTeacherAttendanceDetail = async (teacherId, query = {}) => {
     ensureMongoId(teacherId, 'teacherId');
 
@@ -145,6 +150,7 @@ const createTeacherAttendanceAdminService = ({
       toDate: query.toDate,
       status: query.status,
       attendanceMethod: query.attendanceMethod,
+      sessionType: query.sessionType,
       page: query.page,
       perPage: query.perPage
     });
@@ -313,10 +319,11 @@ const createTeacherAttendanceAdminService = ({
         ['Absent', report.summary.byStatus.ABSENT],
         ['Leave', report.summary.byStatus.LEAVE],
         [],
-        ['Teacher Code', 'Teacher Name', 'Status', 'Method', 'Check In', 'Check Out'],
+        ['Teacher Code', 'Teacher Name', 'Session', 'Status', 'Method', 'Check In', 'Check Out'],
         ...report.items.map((item) => [
           item.teacherId?.teacherId || '',
           item.teacherId?.fullName || '',
+          item.sessionType || 'legacy',
           item.status,
           item.attendanceMethod,
           item.checkInTime ? new Date(item.checkInTime).toISOString() : '',
@@ -359,7 +366,7 @@ const createTeacherAttendanceAdminService = ({
         `Leave: ${report.summary.byStatus.LEAVE}`,
         '',
         'Records:',
-        ...report.items.slice(0, 50).map((item) => `${item.teacherId?.teacherId || '-'} | ${item.teacherId?.fullName || '-'} | ${item.status} | ${item.attendanceMethod}`)
+        ...report.items.slice(0, 50).map((item) => `${item.teacherId?.teacherId || '-'} | ${item.teacherId?.fullName || '-'} | ${item.sessionType || 'legacy'} | ${item.status} | ${item.attendanceMethod}`)
       ];
 
     return {
@@ -376,6 +383,7 @@ const createTeacherAttendanceAdminService = ({
     getMonthlyReport,
     exportExcel,
     exportPdf
+    ,settleAbsent
   };
 };
 

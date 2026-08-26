@@ -11,6 +11,7 @@ const createAttendanceHistoryQueryService = ({ TeacherAttendanceModel = TeacherA
     toDate,
     status,
     attendanceMethod,
+    sessionType,
     page = 1,
     perPage = 20
   } = {}) => {
@@ -20,6 +21,7 @@ const createAttendanceHistoryQueryService = ({ TeacherAttendanceModel = TeacherA
     if (userId) query.userId = userId;
     if (status) query.status = String(status).trim().toUpperCase();
     if (attendanceMethod) query.attendanceMethod = String(attendanceMethod).trim().toUpperCase();
+    if (sessionType) query.sessionType = String(sessionType).trim().toLowerCase();
 
     if (fromDate || toDate) {
       const start = fromDate ? normalizeToDayStart(fromDate) : new Date(0);

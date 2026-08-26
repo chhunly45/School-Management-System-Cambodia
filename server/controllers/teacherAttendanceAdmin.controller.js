@@ -19,6 +19,15 @@ const createTeacherAttendanceAdminController = ({ service = defaultService } = {
     }
   };
 
+  const settleAbsent = async (req, res, next) => {
+    try {
+      const data = await service.settleAbsent({ date: req.body.date || req.query.date, sessionType: req.body.sessionType || req.query.sessionType });
+      res.json({ success: true, data });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   const getDailyReport = async (req, res, next) => {
     try {
       const data = await service.getDailyReport(req.query);
@@ -66,6 +75,7 @@ const createTeacherAttendanceAdminController = ({ service = defaultService } = {
     getMonthlyReport,
     exportExcel,
     exportPdf
+    ,settleAbsent
   };
 };
 

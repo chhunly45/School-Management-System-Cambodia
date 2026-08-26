@@ -1,4 +1,11 @@
-export const normalizeDecodedToken = (rawValue: string): string | null => {
+export type AttendanceSessionType = 'morning' | 'afternoon' | 'evening';
+
+export interface DecodedQrAttendancePayload {
+  token: string;
+  sessionType: AttendanceSessionType | null;
+}
+
+export const normalizeDecodedPayload = (rawValue: string): DecodedQrAttendancePayload | null => {
   const trimmed = String(rawValue || '').trim();
   if (!trimmed) return null;
 
@@ -11,7 +18,12 @@ export const normalizeDecodedToken = (rawValue: string): string | null => {
         (typeof parsed.code === 'string' && parsed.code) ||
         '';
       const next = String(candidate).trim();
-      return next || null;
+      if (!next) return null;
+      const session = String(parsed.sessionType || '').trim().toLowerCase();
+      return {
+        token: next,
+        sessionType: ['morning', 'afternoon', 'evening'].includes(session) ? session as AttendanceSessionType : null
+      };
     } catch {
       return null;
     }
@@ -26,7 +38,11 @@ export const normalizeDecodedToken = (rawValue: string): string | null => {
         url.searchParams.get('code') ||
         '';
       const next = candidate.trim();
-      return next || null;
+      const session = String(url.searchParams.get('sessionType') || '').trim().toLowerCase();
+      return next ? {
+        token: next,
+        sessionType: ['morning', 'afternoon', 'evening'].includes(session) ? session as AttendanceSessionType : null
+      } : null;
     } catch {
       return null;
     }
@@ -40,5 +56,7 @@ export const normalizeDecodedToken = (rawValue: string): string | null => {
     return null;
   }
 
-  return trimmed;
+  return { token: trimmed, sessionType: null };
 };
+
+export const normalizeDecodedToken = (rawValue: string): string | null => normalizeDecodedPayload(rawValue)?.token || null;

@@ -9,10 +9,11 @@ const router = express.Router();
 const adminOnly = [authMiddleware, roleMiddleware(['admin'])];
 
 const expiryValidator = body('expiresInSeconds').optional().isInt({ min: 30, max: 86400 }).toInt();
+const sessionValidator = body('sessionType').optional().isIn(['morning', 'afternoon', 'evening']);
 
 router.get('/', adminOnly, validate, controller.getCurrent);
-router.post('/generate', adminOnly, expiryValidator, validate, controller.generate);
-router.post('/rotate', adminOnly, expiryValidator, validate, controller.rotate);
+router.post('/generate', adminOnly, expiryValidator, sessionValidator, validate, controller.generate);
+router.post('/rotate', adminOnly, expiryValidator, sessionValidator, validate, controller.rotate);
 router.post('/revoke', adminOnly, validate, controller.revoke);
 
 module.exports = router;

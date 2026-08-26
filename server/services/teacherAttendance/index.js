@@ -8,6 +8,7 @@ const { createCheckInValidationService } = require('./checkInValidation.service'
 const { createCheckOutValidationService } = require('./checkOutValidation.service');
 const { createAttendanceHistoryQueryService } = require('./attendanceHistoryQuery.service');
 const { createTodayAttendanceSummaryService } = require('./todayAttendanceSummary.service');
+const { createAbsentSettlementService } = require('./absentSettlement.service');
 
 const createTeacherAttendanceServices = (deps = {}) => {
   const policyService = createAttendancePolicyService(deps);
@@ -33,6 +34,7 @@ const createTeacherAttendanceServices = (deps = {}) => {
   });
   const attendanceHistoryQueryService = createAttendanceHistoryQueryService(deps);
   const todayAttendanceSummaryService = createTodayAttendanceSummaryService(deps);
+  const absentSettlementService = createAbsentSettlementService({ ...deps, policyService });
 
   return {
     policyService,
@@ -45,6 +47,7 @@ const createTeacherAttendanceServices = (deps = {}) => {
     checkOutValidationService,
     attendanceHistoryQueryService,
     todayAttendanceSummaryService
+    ,absentSettlementService
   };
 };
 
@@ -60,5 +63,6 @@ module.exports = {
   createCheckOutValidationService,
   createAttendanceHistoryQueryService,
   createTodayAttendanceSummaryService,
+  createAbsentSettlementService,
   getDefaultPolicy
 };

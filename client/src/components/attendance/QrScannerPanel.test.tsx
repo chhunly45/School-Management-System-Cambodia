@@ -1,8 +1,15 @@
-import { normalizeDecodedToken } from './qrTokenPayload';
+import { normalizeDecodedPayload, normalizeDecodedToken } from './qrTokenPayload';
 
 describe('normalizeDecodedToken', () => {
   it('accepts the admin QR JSON payload format', () => {
     expect(normalizeDecodedToken('{"token":"attqr_test_token_123"}')).toBe('attqr_test_token_123');
+  });
+
+  it('preserves session metadata from the admin QR JSON payload', () => {
+    expect(normalizeDecodedPayload('{"token":"attqr_test_token_123","sessionType":"afternoon"}')).toEqual({
+      token: 'attqr_test_token_123',
+      sessionType: 'afternoon'
+    });
   });
 
   it('accepts a raw token string', () => {
