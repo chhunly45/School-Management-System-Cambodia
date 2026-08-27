@@ -18,6 +18,15 @@ const getTeacher = async (req, res, next) => {
   }
 };
 
+const createTeacherAccount = async (req, res, next) => {
+  try {
+    const result = await teacherService.createTeacherAccount(req.params.id);
+    res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const createTeacher = async (req, res, next) => {
   try {
     const teacher = await teacherService.createTeacher(req.body);
@@ -48,6 +57,7 @@ const deleteTeacher = async (req, res, next) => {
 module.exports = {
   listTeachers,
   getTeacher,
+  createTeacherAccount,
   createTeacher,
   updateTeacher,
   deleteTeacher

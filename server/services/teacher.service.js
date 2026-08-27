@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
-const { Teacher, Subject, Class: ClassModel } = require('../models');
+const { User, Teacher, Subject, Class: ClassModel } = require('../models');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const authService = require('./auth.service');
+const { normalizeCambodiaPhone, phoneSearchVariants } = require('../utils/phone');
 
 const MAX_PER_PAGE = 100;
 
@@ -102,7 +106,16 @@ const listTeachers = async (filters = {}) => {
     Teacher.countDocuments(query)
   ]);
 
-  return { items, meta: { page, limit, total } };
+  const teacherEmails = items.map((item) => String(item.email || '').trim().toLowerCase()).filter(Boolean);
+  const accountUsers = teacherEmails.length
+    ? await User.find({ email: { $in: teacherEmails } }).select('email').lean()
+    : [];
+  const accountEmails = new Set(accountUsers.map((item) => item.email));
+
+  return {
+    items: items.map((item) => ({ ...item, hasLoginAccount: accountEmails.has(String(item.email || '').trim().toLowerCase()) })),
+    meta: { page, limit, total }
+  };
 };
 
 const getTeacherById = async (id, options = {}) => {
@@ -118,6 +131,79 @@ const getTeacherById = async (id, options = {}) => {
   }
 
   return teacher;
+};
+
+const createTeacherAccount = async (id) => {
+  ensureMongoId(id, 'teacher id');
+
+  const teacher = await Teacher.findById(id).lean();
+  if (!teacher) {
+    const error = new Error('Teacher not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (teacher.status !== 'active') {
+    const error = new Error('Only active teachers can receive login accounts');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const email = String(teacher.email || '').trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const error = new Error('Teacher must have a valid email to receive a login account');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const phoneNumber = normalizeCambodiaPhone(teacher.phone);
+  const existingEmail = await User.findOne({ email }).select('_id').lean();
+  if (existingEmail) {
+    const error = new Error('A login account already exists for this teacher email');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (phoneNumber) {
+    const existingPhone = await User.findOne({ phoneNumber: { $in: phoneSearchVariants(phoneNumber) } }).select('_id').lean();
+    if (existingPhone) {
+      const error = new Error('A login account already exists for this teacher phone number');
+      error.statusCode = 409;
+      throw error;
+    }
+  }
+
+  const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
+  const user = await User.create({
+    email,
+    phoneNumber,
+    displayName: teacher.fullName,
+    passwordHash,
+    isActive: true,
+    role: 'teacher',
+    teacherId: teacher._id,
+    emailVerified: true
+  });
+
+  try {
+    await authService.requestPasswordReset(email);
+  } catch (error) {
+    await User.deleteOne({ _id: user._id });
+    throw error;
+  }
+
+  return {
+    accountCreated: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      displayName: user.displayName,
+      role: user.role,
+      isActive: user.isActive
+    },
+    passwordSetup: 'email-reset'
+  };
 };
 
 const createTeacher = async (payload) => {
@@ -183,6 +269,7 @@ const deleteTeacher = async (id) => {
 module.exports = {
   listTeachers,
   getTeacherById,
+  createTeacherAccount,
   createTeacher,
   updateTeacher,
   deleteTeacher

@@ -33,6 +33,14 @@ router.get(
 );
 
 router.post(
+  '/:id/account',
+  adminOnly,
+  param('id').isMongoId(),
+  validate,
+  teacherController.createTeacherAccount
+);
+
+router.post(
   '/',
   adminOnly,
   body('teacherId').notEmpty().trim().isString(),
