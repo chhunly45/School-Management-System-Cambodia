@@ -8,6 +8,17 @@ import { getViteEnv } from '../utils/viteEnv';
 const loginOtpEnabled = getViteEnv('VITE_LOGIN_OTP_ENABLED', 'false') === 'true';
 const phoneOtpEnabled = getViteEnv('VITE_PHONE_OTP_ENABLED', 'false') === 'true';
 
+export const getPostLoginPath = (authUser?: any) => {
+  const role = authUser?.role || authUser?.userRole || authUser?.roleName;
+  if (role === 'admin' || role === 'super_admin' || role === 'school_admin' || authUser?.isAdmin || authUser?.is_super_admin) {
+    return '/admin/school-dashboard';
+  }
+  if (role === 'teacher') {
+    return '/teacher/attendance';
+  }
+  return '/dashboard';
+};
+
 const LoginPage = () => {
   const { login, verifyLoginOtp } = useAuth();
   const navigate = useNavigate();
@@ -73,14 +84,6 @@ const LoginPage = () => {
     if (digits.startsWith('0')) return digits.replace(/^0+/, '855');
     if (digits.startsWith('855')) return digits;
     return digits;
-  };
-
-  const getPostLoginPath = (authUser?: any) => {
-    const role = authUser?.role || authUser?.userRole || authUser?.roleName;
-    if (role === 'admin' || role === 'super_admin' || role === 'school_admin' || authUser?.isAdmin || authUser?.is_super_admin) {
-      return '/admin/school-dashboard';
-    }
-    return '/dashboard';
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
