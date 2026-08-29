@@ -80,6 +80,7 @@ const apiLimiter = rateLimit({
   max: config.rateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path === '/health',
   message: { success: false, message: 'Too many requests, please try again later.' }
 });
 
