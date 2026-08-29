@@ -43,6 +43,15 @@ const SchoolSettingSchema = new Schema(
         message: 'morningCheckInStart must use HH:mm format'
       }
     },
+    morningCheckInEnd: {
+      type: String,
+      trim: true,
+      default: null,
+      validate: {
+        validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
+        message: 'morningCheckInEnd must use HH:mm format'
+      }
+    },
     morningLateAfter: {
       type: String,
       trim: true,
@@ -70,6 +79,15 @@ const SchoolSettingSchema = new Schema(
         message: 'afternoonCheckInStart must use HH:mm format'
       }
     },
+    afternoonCheckInEnd: {
+      type: String,
+      trim: true,
+      default: null,
+      validate: {
+        validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
+        message: 'afternoonCheckInEnd must use HH:mm format'
+      }
+    },
     afternoonLateAfter: {
       type: String,
       trim: true,
@@ -95,6 +113,15 @@ const SchoolSettingSchema = new Schema(
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'eveningCheckInStart must use HH:mm format'
+      }
+    },
+    eveningCheckInEnd: {
+      type: String,
+      trim: true,
+      default: null,
+      validate: {
+        validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
+        message: 'eveningCheckInEnd must use HH:mm format'
       }
     },
     eveningLateAfter: {

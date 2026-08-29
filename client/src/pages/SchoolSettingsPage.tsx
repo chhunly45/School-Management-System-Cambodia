@@ -40,6 +40,12 @@ const defaultSettings: SchoolSettingsPayload = {
   attendanceSchoolLatitude: null,
   attendanceSchoolLongitude: null,
   attendanceAllowedRadius: 100,
+  morningCheckInStart: null,
+  morningCheckInEnd: null,
+  afternoonCheckInStart: null,
+  afternoonCheckInEnd: null,
+  eveningCheckInStart: null,
+  eveningCheckInEnd: null,
   attendanceStart: '06:00',
   attendanceEnd: '18:00'
 };
@@ -116,6 +122,12 @@ const SchoolSettingsPage = () => {
         attendanceSchoolLatitude: data.attendanceSchoolLatitude ?? null,
         attendanceSchoolLongitude: data.attendanceSchoolLongitude ?? null,
         attendanceAllowedRadius: Number(data.attendanceAllowedRadius ?? 100),
+        morningCheckInStart: data.morningCheckInStart ?? null,
+        morningCheckInEnd: data.morningCheckInEnd ?? null,
+        afternoonCheckInStart: data.afternoonCheckInStart ?? null,
+        afternoonCheckInEnd: data.afternoonCheckInEnd ?? null,
+        eveningCheckInStart: data.eveningCheckInStart ?? null,
+        eveningCheckInEnd: data.eveningCheckInEnd ?? null,
         attendanceStart: data.attendanceStart || '06:00',
         attendanceEnd: data.attendanceEnd || '18:00'
       };
@@ -176,6 +188,12 @@ const SchoolSettingsPage = () => {
       nextErrors.attendanceSchoolLongitude = 'Longitude must be between -180 and 180.';
     }
     if (formValues.attendanceAllowedRadius < 1) nextErrors.attendanceAllowedRadius = 'Allowed radius must be at least 1 meter.';
+    for (const field of ['morningCheckInStart', 'morningCheckInEnd', 'afternoonCheckInStart', 'afternoonCheckInEnd', 'eveningCheckInStart', 'eveningCheckInEnd'] as const) {
+      const value = formValues[field];
+      if (value !== null && value !== undefined && value !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+        nextErrors[field] = 'Use 24-hour HH:mm format.';
+      }
+    }
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(formValues.attendanceStart)) nextErrors.attendanceStart = 'Use 24-hour HH:mm format.';
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(formValues.attendanceEnd)) nextErrors.attendanceEnd = 'Use 24-hour HH:mm format.';
 
@@ -249,6 +267,12 @@ const SchoolSettingsPage = () => {
         attendanceSchoolLatitude: response.data?.attendanceSchoolLatitude ?? payload.attendanceSchoolLatitude,
         attendanceSchoolLongitude: response.data?.attendanceSchoolLongitude ?? payload.attendanceSchoolLongitude,
         attendanceAllowedRadius: Number(response.data?.attendanceAllowedRadius ?? payload.attendanceAllowedRadius),
+        morningCheckInStart: response.data?.morningCheckInStart ?? payload.morningCheckInStart,
+        morningCheckInEnd: response.data?.morningCheckInEnd ?? payload.morningCheckInEnd,
+        afternoonCheckInStart: response.data?.afternoonCheckInStart ?? payload.afternoonCheckInStart,
+        afternoonCheckInEnd: response.data?.afternoonCheckInEnd ?? payload.afternoonCheckInEnd,
+        eveningCheckInStart: response.data?.eveningCheckInStart ?? payload.eveningCheckInStart,
+        eveningCheckInEnd: response.data?.eveningCheckInEnd ?? payload.eveningCheckInEnd,
         attendanceStart: response.data?.attendanceStart || payload.attendanceStart,
         attendanceEnd: response.data?.attendanceEnd || payload.attendanceEnd
       });
@@ -416,6 +440,36 @@ const SchoolSettingsPage = () => {
                 <span className="font-medium text-slate-700">Allowed Radius (meters)</span>
                 <input id="attendance-allowed-radius" type="number" min="1" step="1" value={formValues.attendanceAllowedRadius} onChange={(e) => handleChange('attendanceAllowedRadius', Number(e.target.value || 0))} className={`w-full rounded-xl border px-3 py-2 ${errors.attendanceAllowedRadius ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
                 {errors.attendanceAllowedRadius ? <p className="text-xs text-rose-600">{errors.attendanceAllowedRadius}</p> : <p className="text-xs text-slate-500">Must be at least 1 meter.</p>}
+              </label>
+              <label htmlFor="morning-checkin-start" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Morning Check-in Start</span>
+                <input id="morning-checkin-start" type="time" value={formValues.morningCheckInStart ?? ''} onChange={(e) => handleChange('morningCheckInStart', e.target.value === '' ? null : e.target.value)} className={`w-full rounded-xl border px-3 py-2 ${errors.morningCheckInStart ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.morningCheckInStart && <p className="text-xs text-rose-600">{errors.morningCheckInStart}</p>}
+              </label>
+              <label htmlFor="morning-checkin-end" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Morning Check-in End</span>
+                <input id="morning-checkin-end" type="time" value={formValues.morningCheckInEnd ?? ''} onChange={(e) => handleChange('morningCheckInEnd', e.target.value === '' ? null : e.target.value)} className={`w-full rounded-xl border px-3 py-2 ${errors.morningCheckInEnd ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.morningCheckInEnd && <p className="text-xs text-rose-600">{errors.morningCheckInEnd}</p>}
+              </label>
+              <label htmlFor="afternoon-checkin-start" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Afternoon Check-in Start</span>
+                <input id="afternoon-checkin-start" type="time" value={formValues.afternoonCheckInStart ?? ''} onChange={(e) => handleChange('afternoonCheckInStart', e.target.value === '' ? null : e.target.value)} className={`w-full rounded-xl border px-3 py-2 ${errors.afternoonCheckInStart ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.afternoonCheckInStart && <p className="text-xs text-rose-600">{errors.afternoonCheckInStart}</p>}
+              </label>
+              <label htmlFor="afternoon-checkin-end" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Afternoon Check-in End</span>
+                <input id="afternoon-checkin-end" type="time" value={formValues.afternoonCheckInEnd ?? ''} onChange={(e) => handleChange('afternoonCheckInEnd', e.target.value === '' ? null : e.target.value)} className={`w-full rounded-xl border px-3 py-2 ${errors.afternoonCheckInEnd ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.afternoonCheckInEnd && <p className="text-xs text-rose-600">{errors.afternoonCheckInEnd}</p>}
+              </label>
+              <label htmlFor="evening-checkin-start" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Evening Check-in Start</span>
+                <input id="evening-checkin-start" type="time" value={formValues.eveningCheckInStart ?? ''} onChange={(e) => handleChange('eveningCheckInStart', e.target.value === '' ? null : e.target.value)} className={`w-full rounded-xl border px-3 py-2 ${errors.eveningCheckInStart ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.eveningCheckInStart && <p className="text-xs text-rose-600">{errors.eveningCheckInStart}</p>}
+              </label>
+              <label htmlFor="evening-checkin-end" className="space-y-1 text-sm">
+                <span className="font-medium text-slate-700">Evening Check-in End</span>
+                <input id="evening-checkin-end" type="time" value={formValues.eveningCheckInEnd ?? ''} onChange={(e) => handleChange('eveningCheckInEnd', e.target.value === '' ? null : e.target.value)} className={`w-full rounded-xl border px-3 py-2 ${errors.eveningCheckInEnd ? 'border-rose-400 bg-rose-50' : 'border-slate-300'}`} />
+                {errors.eveningCheckInEnd && <p className="text-xs text-rose-600">{errors.eveningCheckInEnd}</p>}
               </label>
               <label htmlFor="attendance-start" className="space-y-1 text-sm">
                 <span className="font-medium text-slate-700">Attendance Start</span>

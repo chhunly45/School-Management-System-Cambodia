@@ -19,6 +19,8 @@ const employeeRolesValidator = body('employeeRoles').optional().custom((value) =
     .filter(Boolean)
     .length > 0;
 });
+const nullableTimeValidator = (fieldName) =>
+  body(fieldName).optional({ nullable: true }).matches(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 const baseValidators = [
   body('schoolName').optional().trim().isString(),
@@ -44,6 +46,12 @@ const baseValidators = [
   body('attendanceSchoolLatitude').optional({ nullable: true }).isFloat({ min: -90, max: 90 }).toFloat(),
   body('attendanceSchoolLongitude').optional({ nullable: true }).isFloat({ min: -180, max: 180 }).toFloat(),
   body('attendanceAllowedRadius').optional().isFloat({ min: 1 }).toFloat(),
+  nullableTimeValidator('morningCheckInStart'),
+  nullableTimeValidator('morningCheckInEnd'),
+  nullableTimeValidator('afternoonCheckInStart'),
+  nullableTimeValidator('afternoonCheckInEnd'),
+  nullableTimeValidator('eveningCheckInStart'),
+  nullableTimeValidator('eveningCheckInEnd'),
   body('attendanceStart').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/),
   body('attendanceEnd').optional().matches(/^([01]\d|2[0-3]):[0-5]\d$/)
 ];

@@ -26,6 +26,12 @@ export interface SchoolSettings {
   attendanceSchoolLatitude: number | null;
   attendanceSchoolLongitude: number | null;
   attendanceAllowedRadius: number;
+  morningCheckInStart: string | null;
+  morningCheckInEnd: string | null;
+  afternoonCheckInStart: string | null;
+  afternoonCheckInEnd: string | null;
+  eveningCheckInStart: string | null;
+  eveningCheckInEnd: string | null;
   attendanceStart: string;
   attendanceEnd: string;
   createdAt?: string;
@@ -56,6 +62,12 @@ export interface SchoolSettingsPayload {
   attendanceSchoolLatitude: number | null;
   attendanceSchoolLongitude: number | null;
   attendanceAllowedRadius: number;
+  morningCheckInStart: string | null;
+  morningCheckInEnd: string | null;
+  afternoonCheckInStart: string | null;
+  afternoonCheckInEnd: string | null;
+  eveningCheckInStart: string | null;
+  eveningCheckInEnd: string | null;
   attendanceStart: string;
   attendanceEnd: string;
 }
