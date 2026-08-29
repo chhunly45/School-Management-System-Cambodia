@@ -41,7 +41,7 @@ describe('teacherAttendance.api', () => {
 
     const result = await getTodayTeacherAttendance();
 
-    expect(mockedApi.get).toHaveBeenCalledWith('/teacher-attendance/today');
+    expect(mockedApi.get).toHaveBeenCalledWith('/teacher-attendance/today', { params: undefined });
     expect(result).toEqual({ attendance: null });
   });
 

@@ -34,7 +34,13 @@ router.post(
   teacherAttendanceController.checkOut
 );
 
-router.get('/today', authMiddleware, validate, teacherAttendanceController.getTodayAttendance);
+router.get(
+  '/today',
+  authMiddleware,
+  query('sessionType').optional().isIn(['morning', 'afternoon', 'evening']),
+  validate,
+  teacherAttendanceController.getTodayAttendance
+);
 
 router.get(
   '/history',

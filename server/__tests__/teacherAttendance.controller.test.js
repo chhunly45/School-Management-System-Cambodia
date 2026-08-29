@@ -65,14 +65,17 @@ describe('teacherAttendance.controller', () => {
     assert.deepEqual(res.payload, { success: true, data: expected });
   });
 
-  it('getTodayAttendance delegates to service', async () => {
+  it('getTodayAttendance delegates to service with sessionType', async () => {
     const expected = { attendance: null, canCheckIn: true, canCheckOut: false };
     const service = {
-      getTodayAttendance: async () => expected
+      getTodayAttendance: async ({ sessionType }) => {
+        assert.equal(sessionType, 'afternoon');
+        return expected;
+      }
     };
 
     const controller = createTeacherAttendanceController({ teacherAttendanceService: service });
-    const req = { user: { _id: 'u1' } };
+    const req = { user: { _id: 'u1' }, query: { sessionType: 'afternoon' } };
     const res = createRes();
 
     await controller.getTodayAttendance(req, res, (err) => { throw err; });

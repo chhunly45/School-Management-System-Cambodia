@@ -84,8 +84,8 @@ export const checkInTeacherAttendance = (payload: CheckInPayload) =>
 export const checkOutTeacherAttendance = (payload: CheckOutPayload) =>
   api.post('/teacher-attendance/check-out', payload).then((response) => response.data);
 
-export const getTodayTeacherAttendance = () =>
-  api.get('/teacher-attendance/today').then((response) => response.data);
+export const getTodayTeacherAttendance = (sessionType?: AttendanceSessionType) =>
+  api.get('/teacher-attendance/today', { params: sessionType ? { sessionType } : undefined }).then((response) => response.data);
 
 export const getTeacherAttendanceHistory = (query: AttendanceHistoryQuery = {}) =>
   api.get('/teacher-attendance/history', { params: query }).then((response) => response.data);

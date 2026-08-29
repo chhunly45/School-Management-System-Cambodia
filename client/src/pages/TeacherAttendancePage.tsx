@@ -116,7 +116,7 @@ const TeacherAttendancePage = () => {
   const loadTodayState = async () => {
     setLoadingToday(true);
     try {
-      const response = await getTodayTeacherAttendance();
+      const response = await getTodayTeacherAttendance(sessionType);
       setTodayState(response.data || emptyTodayState);
       setMessage('');
     } catch (error: any) {

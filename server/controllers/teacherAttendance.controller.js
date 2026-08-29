@@ -49,7 +49,10 @@ const createTeacherAttendanceController = ({
 
   const getTodayAttendance = async (req, res, next) => {
     try {
-      const data = await teacherAttendanceService.getTodayAttendance({ user: req.user });
+      const data = await teacherAttendanceService.getTodayAttendance({
+        user: req.user,
+        sessionType: req.query?.sessionType
+      });
       res.json({ success: true, data });
     } catch (error) {
       next(error);

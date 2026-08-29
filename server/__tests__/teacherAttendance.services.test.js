@@ -2,10 +2,10 @@ const { strict: assert } = require('node:assert');
 const { describe, it, before, beforeEach, after } = require('node:test');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
-
 let mongod;
 let models;
 let services;
+let createTeacherAttendanceService;
 
 const FIXED_NOW = new Date('2026-08-07T07:30:00');
 const SCHOOL_LAT = 11.5564;
@@ -36,6 +36,8 @@ before(async () => {
 
   models = require('../models');
   services = require('../services/teacherAttendance');
+  // require after MONGODB_URI is set so config/index.js snapshots the in-memory test URI
+  ({ createTeacherAttendanceService } = require('../services/teacherAttendance.service'));
 
   await Promise.all([
     models.SchoolSetting.init(),
@@ -207,6 +209,65 @@ describe('Teacher Attendance business services', () => {
       },
       (error) => error && error.code === 'ALREADY_CHECKED_IN'
     );
+  });
+
+  it('returns session-aware today state and keeps morning separate from afternoon', async () => {
+    const teacherId = new mongoose.Types.ObjectId();
+    const userId = new mongoose.Types.ObjectId();
+    const user = { _id: userId, email: 'tolan@example.com', phoneNumber: '012345678' };
+
+    await models.TeacherAttendance.create({
+      teacherId,
+      userId,
+      attendanceDate: new Date('2026-08-07T00:00:00'),
+      sessionType: 'morning',
+      checkInTime: new Date('2026-08-07T07:00:00'),
+      attendanceMethod: 'MANUAL',
+      status: 'PRESENT'
+    });
+
+    const teacherAttendanceService = createTeacherAttendanceService({
+      TeacherModel: {
+        findOne: () => ({ lean: async () => ({ _id: teacherId, status: 'active', email: 'tolan@example.com', phone: '012345678' }) })
+      },
+      nowProvider: () => new Date('2026-08-07T12:30:00')
+    });
+
+    const afternoonState = await teacherAttendanceService.getTodayAttendance({ user, sessionType: 'afternoon' });
+    assert.equal(afternoonState.canCheckIn, true);
+    assert.equal(afternoonState.attendance, null);
+    assert.equal(afternoonState.canCheckOut, false);
+  });
+
+  it('keeps afternoon separate from evening and same-session duplicate check-in remains blocked', async () => {
+    const teacherId = new mongoose.Types.ObjectId();
+    const userId = new mongoose.Types.ObjectId();
+    const user = { _id: userId, email: 'tolan@example.com', phoneNumber: '012345678' };
+
+    await models.TeacherAttendance.create({
+      teacherId,
+      userId,
+      attendanceDate: new Date('2026-08-07T00:00:00'),
+      sessionType: 'afternoon',
+      checkInTime: new Date('2026-08-07T12:35:00'),
+      attendanceMethod: 'MANUAL',
+      status: 'PRESENT'
+    });
+
+    const teacherAttendanceService = createTeacherAttendanceService({
+      TeacherModel: {
+        findOne: () => ({ lean: async () => ({ _id: teacherId, status: 'active', email: 'tolan@example.com', phone: '012345678' }) })
+      },
+      nowProvider: () => new Date('2026-08-07T18:00:00')
+    });
+
+    const eveningState = await teacherAttendanceService.getTodayAttendance({ user, sessionType: 'evening' });
+    assert.equal(eveningState.canCheckIn, true);
+    assert.equal(eveningState.attendance, null);
+
+    const afternoonState = await teacherAttendanceService.getTodayAttendance({ user, sessionType: 'afternoon' });
+    assert.equal(afternoonState.canCheckIn, false);
+    assert.equal(afternoonState.canCheckOut, true);
   });
 
   it('rejects duplicate check-in when teacher already checked in', async () => {

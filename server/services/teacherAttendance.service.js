@@ -258,13 +258,17 @@ const createTeacherAttendanceService = ({
     }
   };
 
-  const getTodayAttendance = async ({ user }) => {
+  const getTodayAttendance = async ({ user, sessionType = 'morning' }) => {
     const actor = await resolveActorFromUser(user);
     const today = normalizeToDayStart(nowProvider());
+    const normalizedSessionType = ['morning', 'afternoon', 'evening'].includes(String(sessionType || '').trim().toLowerCase())
+      ? String(sessionType).trim().toLowerCase()
+      : 'morning';
 
-    const attendance = await businessServices.duplicatePreventionService.findExistingDailyAttendance({
+    const attendance = await businessServices.duplicatePreventionService.findExistingSessionAttendance({
       teacherId: actor.teacherId,
-      attendanceDate: today
+      attendanceDate: today,
+      sessionType: normalizedSessionType
     });
 
     if (!attendance) {
