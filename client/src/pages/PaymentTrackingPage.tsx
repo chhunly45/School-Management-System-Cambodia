@@ -22,8 +22,8 @@ interface TrackingRow {
   discount: number;
   totalAmount: number;
   daysLeft: number;
-  status: 'Paid' | 'Warning' | 'Expired';
-  statusCode: 'paid' | 'warning' | 'expired';
+  status: 'Paid' | 'Warning' | 'Expired' | 'Unclassified';
+  statusCode: 'paid' | 'warning' | 'expired' | 'unclassified';
   room: string;
   session: string;
   className: string;
@@ -63,7 +63,8 @@ const formatDate = (value?: string) => {
 const statusStyles: Record<string, string> = {
   Paid: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
   Warning: 'bg-amber-100 text-amber-700 border border-amber-200',
-  Expired: 'bg-rose-100 text-rose-700 border border-rose-200'
+  Expired: 'bg-rose-100 text-rose-700 border border-rose-200',
+  Unclassified: 'bg-slate-100 text-slate-700 border border-slate-200'
 };
 
 const PaymentTrackingPage = () => {

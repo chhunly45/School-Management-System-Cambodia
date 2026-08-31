@@ -57,6 +57,10 @@ const calculateDaysLeft = (dueDate, today = new Date()) => {
 };
 
 const buildTrackingStatus = ({ dueDate, remainingBalance = 0, today = new Date() } = {}) => {
+  if (!dueDate) {
+    return { code: 'unclassified', status: 'Unclassified', daysLeft: 0 };
+  }
+
   const daysLeft = calculateDaysLeft(dueDate, today);
   const numericRemaining = Number(remainingBalance || 0);
 
@@ -174,6 +178,9 @@ const summarizeTrackingRows = (rows = []) => {
     if (statusLabel === 'Paid') summary.paid += 1;
     if (statusLabel === 'Warning') summary.warning += 1;
     if (statusLabel === 'Expired') summary.expired += 1;
+    if (statusLabel === 'Unclassified') {
+      // keep the row visible without letting missing-payment rows count as Expired
+    }
 
     const session = row.session || 'Unknown';
     summary.sessions[session] = (summary.sessions[session] || 0) + 1;

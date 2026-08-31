@@ -9,6 +9,116 @@ describe('paymentTracking.service', () => {
     assert.equal(buildTrackingStatus({ dueDate: '2025-01-10', remainingBalance: 200, today: '2025-01-01' }).status, 'Paid');
   });
 
+  it('keeps valid payment rows on the existing payment status logic', () => {
+    const rows = buildPaymentTrackingRows({
+      students: [{ _id: 'student-valid', studentId: 'S-VALID', fullName: 'Valid Student', monthlyTuition: 120 }],
+      payments: [{
+        studentId: 'S-VALID',
+        tuitionAmount: 120,
+        amount: 120,
+        remainingBalance: 60,
+        discount: 0,
+        dueDate: '2025-01-10',
+        paymentDate: '2025-01-01',
+        paymentPlan: 'monthly'
+      }],
+      today: '2025-01-05'
+    });
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].status, 'Warning');
+    assert.equal(rows[0].daysLeft, 5);
+    assert.equal(rows[0].tuitionAmount, 120);
+    assert.equal(rows[0].totalAmount, 120);
+    assert.equal(rows[0].remainingBalance, 60);
+  });
+
+  it('preserves the existing expired-payment logic', () => {
+    const rows = buildPaymentTrackingRows({
+      students: [{ _id: 'student-expired', studentId: 'S-EXPIRED', fullName: 'Expired Student', monthlyTuition: 120 }],
+      payments: [{
+        studentId: 'S-EXPIRED',
+        tuitionAmount: 120,
+        amount: 120,
+        remainingBalance: 20,
+        discount: 0,
+        dueDate: '2025-01-01',
+        paymentDate: '2025-01-01',
+        paymentPlan: 'monthly'
+      }],
+      today: '2025-01-05'
+    });
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].status, 'Expired');
+    assert.equal(rows[0].daysLeft, -4);
+  });
+
+  it('preserves the existing warning/grace payment logic', () => {
+    const rows = buildPaymentTrackingRows({
+      students: [{ _id: 'student-warning', studentId: 'S-WARN', fullName: 'Warning Student', monthlyTuition: 120 }],
+      payments: [{
+        studentId: 'S-WARN',
+        tuitionAmount: 120,
+        amount: 120,
+        remainingBalance: 40,
+        discount: 5,
+        dueDate: '2025-01-06',
+        paymentDate: '2025-01-01',
+        paymentPlan: 'monthly'
+      }],
+      today: '2025-01-01'
+    });
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].status, 'Warning');
+    assert.equal(rows[0].daysLeft, 5);
+    assert.equal(rows[0].discount, 5);
+    assert.equal(rows[0].totalAmount, 120);
+  });
+
+  it('does not classify students with no payment as Expired just because dueDate is missing', () => {
+    const rows = buildPaymentTrackingRows({
+      students: [{ _id: 'student-no-payment', studentId: 'S-NO-PAY', fullName: 'No Payment Student', monthlyTuition: 100 }],
+      payments: [],
+      transportRecords: [],
+      today: '2025-01-05'
+    });
+
+    assert.equal(rows.length, 1);
+    assert.notEqual(rows[0].status, 'Expired');
+    assert.equal(rows[0].status, 'Unclassified');
+    assert.equal(rows[0].statusCode, 'unclassified');
+    assert.equal(rows[0].tuitionAmount, 100);
+  });
+
+  it('keeps students visible in tracking even when no payment record exists', () => {
+    const rows = buildPaymentTrackingRows({
+      students: [{ _id: 'student-visible', studentId: 'S-VISIBLE', fullName: 'Visible Student', monthlyTuition: 90 }],
+      payments: [],
+      transportRecords: [],
+      today: '2025-01-05'
+    });
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].studentId, 'S-VISIBLE');
+    assert.equal(rows[0].fullName, 'Visible Student');
+  });
+
+  it('keeps transport optional and still works with zero transport records', () => {
+    const rows = buildPaymentTrackingRows({
+      students: [{ _id: 'student-transport-zero', studentId: 'S-TRANS-ZERO', fullName: 'Zero Transport', monthlyTuition: 75 }],
+      payments: [],
+      transportRecords: [],
+      today: '2025-01-05'
+    });
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].route, '');
+    assert.equal(rows[0].monthlyRouteFee, 0);
+    assert.equal(rows[0].status, 'Unclassified');
+  });
+
   it('calculates days left from the expiry date', () => {
     assert.equal(calculateDaysLeft('2025-01-10', '2025-01-01'), 9);
     assert.equal(calculateDaysLeft('2025-01-01', '2025-01-02'), -1);
