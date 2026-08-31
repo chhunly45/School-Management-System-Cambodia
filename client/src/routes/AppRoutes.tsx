@@ -51,6 +51,7 @@ import SchoolSettingsPage from '../pages/SchoolSettingsPage';
 import TeacherAttendancePage from '../pages/TeacherAttendancePage';
 import AdminAttendanceQrPage from '../pages/AdminAttendanceQrPage';
 import AdminTeacherAttendancePage from '../pages/AdminTeacherAttendancePage';
+import PaymentTrackingPage from '../pages/PaymentTrackingPage';
 
 const AppRoutes = () => (
   <Routes>
@@ -106,6 +107,7 @@ const AppRoutes = () => (
         <Route path="classes" element={<ClassPage />} />
         <Route path="certificates" element={<CertificatesPage />} />
         <Route path="finance" element={<PaymentsPage />} />
+        <Route path="finance/payment-tracking" element={<PaymentTrackingPage />} />
         <Route path="transport" element={<TransportPage />} />
         <Route path="vehicles" element={<VehiclesPage />} />
         <Route path="routes" element={<RoutesPage />} />

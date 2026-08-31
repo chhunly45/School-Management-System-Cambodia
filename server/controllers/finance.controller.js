@@ -1,4 +1,5 @@
 const { Payment } = require('../models');
+const { getPaymentTrackingReport } = require('../services/paymentTracking.service');
 
 const getMonthStart = (date = new Date()) => new Date(date.getFullYear(), date.getMonth(), 1);
 
@@ -172,7 +173,17 @@ const getPaymentsReport = async (req, res, next) => {
   }
 };
 
+const getPaymentTracking = async (req, res, next) => {
+  try {
+    const result = await getPaymentTrackingReport(req.query);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getSummary,
-  getPaymentsReport
+  getPaymentsReport,
+  getPaymentTracking
 };

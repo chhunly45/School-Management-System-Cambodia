@@ -23,4 +23,20 @@ router.get(
   financeController.getPaymentsReport
 );
 
+router.get(
+  '/payment-tracking',
+  adminOnly,
+  query('search').optional().trim().isString(),
+  query('session').optional().trim().isString(),
+  query('room').optional().trim().isString(),
+  query('status').optional().trim().isString(),
+  query('plan').optional().trim().isString(),
+  query('from').optional().isISO8601(),
+  query('to').optional().isISO8601(),
+  query('page').optional().isInt({ min: 1 }),
+  query('perPage').optional().isInt({ min: 1, max: 100 }),
+  validate,
+  financeController.getPaymentTracking
+);
+
 module.exports = router;

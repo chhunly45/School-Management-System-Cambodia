@@ -18,6 +18,7 @@ const navItems = [
   { label: 'Classes', to: '/admin/classes', icon: Building2 },
   { label: 'Certificates', to: '/admin/certificates', icon: Award },
   { label: 'Finance', to: '/admin/finance', icon: TrendingUp },
+  { label: 'Payment Tracking', to: '/admin/finance/payment-tracking', icon: TrendingUp },
   { label: 'Transport', to: '/admin/transport', icon: Bus },
   { label: 'Vehicles', to: '/admin/vehicles', icon: Bus },
   { label: 'Routes', to: '/admin/routes', icon: Bus },
