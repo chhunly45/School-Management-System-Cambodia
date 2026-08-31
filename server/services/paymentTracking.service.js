@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { Student, Payment, Transport } = require('../models');
 
 const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -225,7 +226,9 @@ const getPaymentTrackingReport = async (filters = {}) => {
   ]);
 
   const studentIds = students.map((student) => String(student.studentId || student._id || '').trim()).filter(Boolean);
-  const studentObjectIds = students.map((student) => (student._id ? String(student._id) : '')).filter(Boolean);
+  const studentObjectIds = students
+    .map((student) => student._id)
+    .filter((studentId) => mongoose.Types.ObjectId.isValid(studentId));
 
   const paymentQuery = {};
   if (studentIds.length > 0) {
@@ -244,13 +247,8 @@ const getPaymentTrackingReport = async (filters = {}) => {
 
   const payments = await Payment.find(paymentQuery).sort({ paymentDate: -1 }).lean();
 
-  const transportRecords = studentObjectIds.length > 0 || studentIds.length > 0
-    ? await Transport.find({
-        $or: [
-          { studentId: { $in: studentObjectIds } },
-          { studentId: { $in: studentIds } }
-        ]
-      }).lean()
+  const transportRecords = studentObjectIds.length > 0
+    ? await Transport.find({ studentId: { $in: studentObjectIds } }).lean()
     : [];
 
   let rows = buildPaymentTrackingRows({ students, payments, transportRecords, today: new Date() });

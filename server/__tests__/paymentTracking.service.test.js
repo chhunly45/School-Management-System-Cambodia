@@ -63,4 +63,37 @@ describe('paymentTracking.service', () => {
     assert.equal(rows[0].monthlyRouteFee, 25);
     assert.equal(rows[0].transportCharge, 25);
   });
+
+  it('keeps the student row when transport data is missing', () => {
+    const rows = buildPaymentTrackingRows({
+      students: [{ _id: 'student-2', studentId: 'S-002', fullName: 'Bob', monthlyTuition: 100 }],
+      payments: [{
+        studentId: 'S-002',
+        paymentDate: '2025-01-01',
+        dueDate: '2025-01-10',
+        amount: 100,
+        remainingBalance: 0
+      }],
+      transportRecords: [],
+      today: '2025-01-05'
+    });
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].route, '');
+    assert.equal(rows[0].vehicle, '');
+    assert.equal(rows[0].monthlyRouteFee, 0);
+    assert.equal(rows[0].transportCharge, 0);
+  });
+
+  it('ignores a transport record with a missing relation without affecting the row', () => {
+    const rows = buildPaymentTrackingRows({
+      students: [{ _id: 'student-3', studentId: 'S-003', fullName: 'Cara', monthlyTuition: 100 }],
+      payments: [],
+      transportRecords: [{ routeName: 'Unrelated Route', vehicleNumber: 'CAR-3', monthlyFee: 30 }]
+    });
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].route, '');
+    assert.equal(rows[0].monthlyRouteFee, 0);
+  });
 });
