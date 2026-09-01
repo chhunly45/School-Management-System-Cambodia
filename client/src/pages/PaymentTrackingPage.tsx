@@ -302,7 +302,7 @@ const PaymentTrackingPage = () => {
                 <td className="px-3 py-3">{row.rowNumber}</td>
                 <td className="px-3 py-3 text-text-secondary">{row.studentId || '—'}</td>
                 <td className="px-3 py-3">
-                  <div className="font-medium text-text-primary">{row.fullName || '—'}</div>
+                  <div className="font-medium text-text-primary">{row.khmerName || row.fullName || '—'}</div>
                 </td>
                 <td className="px-3 py-3">{row.englishName || '—'}</td>
                 <td className="px-3 py-3">{row.khmerName || '—'}</td>

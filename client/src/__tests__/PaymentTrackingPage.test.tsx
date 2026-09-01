@@ -66,7 +66,9 @@ describe('PaymentTrackingPage', () => {
     expect(screen.getAllByText(/Warning/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/S-001/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Morning/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Alice/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('សាលី').length).toBeGreaterThan(1);
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.queryByText('Alice / សាលី')).not.toBeInTheDocument();
     expect(screen.getAllByText(/Route A/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/ABC-123/i).length).toBeGreaterThan(0);
   });
