@@ -26,8 +26,8 @@ export interface AttendanceQrAdminState {
   };
 }
 
-export const getAttendanceQrState = () =>
-  api.get('/admin/attendance/qr').then((response) => response.data);
+export const getAttendanceQrState = (sessionType?: AttendanceSessionType) =>
+  api.get('/admin/attendance/qr', { params: sessionType ? { sessionType } : undefined }).then((response) => response.data);
 
 export const generateAttendanceQrToken = (payload: { expiresInSeconds?: number; sessionType?: AttendanceSessionType } = {}) =>
   api.post('/admin/attendance/qr/generate', payload).then((response) => response.data);
@@ -35,5 +35,5 @@ export const generateAttendanceQrToken = (payload: { expiresInSeconds?: number; 
 export const rotateAttendanceQrToken = (payload: { expiresInSeconds?: number; sessionType?: AttendanceSessionType } = {}) =>
   api.post('/admin/attendance/qr/rotate', payload).then((response) => response.data);
 
-export const revokeAttendanceQrToken = () =>
-  api.post('/admin/attendance/qr/revoke').then((response) => response.data);
+export const revokeAttendanceQrToken = (sessionType?: AttendanceSessionType) =>
+  api.post('/admin/attendance/qr/revoke', sessionType ? { sessionType } : {}).then((response) => response.data);

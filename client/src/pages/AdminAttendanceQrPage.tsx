@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { QrCode, RefreshCw, ShieldAlert, Printer } from 'lucide-react';
+import { Download, QrCode, RefreshCw, ShieldAlert, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -17,7 +17,7 @@ const defaultState: AttendanceQrAdminState = {
   current: null,
   recent: [],
   policy: {
-    defaultExpiresInSeconds: 30
+    defaultExpiresInSeconds: 21600
   }
 };
 
@@ -26,12 +26,6 @@ const formatDateTime = (value?: string | null) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleString();
-};
-
-const toDurationLabel = (seconds: number) => {
-  if (seconds % 3600 === 0) return `${seconds / 3600} hour${seconds === 3600 ? '' : 's'}`;
-  if (seconds % 60 === 0) return `${seconds / 60} minute${seconds === 60 ? '' : 's'}`;
-  return `${seconds} seconds`;
 };
 
 const statusClasses: Record<AttendanceQrTokenView['status'], string> = {
@@ -49,7 +43,6 @@ const AdminAttendanceQrPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState('');
-  const [expiresInSeconds, setExpiresInSeconds] = useState('30');
   const [sessionType, setSessionType] = useState<AttendanceSessionType>('morning');
 
   useEffect(() => {
@@ -62,14 +55,9 @@ const AdminAttendanceQrPage = () => {
       return;
     }
 
-    void loadState();
+    void loadState(sessionType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  useEffect(() => {
-    const nextDefault = String(state.policy.defaultExpiresInSeconds || 30);
-    setExpiresInSeconds((current) => current || nextDefault);
-  }, [state.policy.defaultExpiresInSeconds]);
+  }, [user, sessionType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,15 +95,10 @@ const AdminAttendanceQrPage = () => {
     };
   }, [state.current?.qrPayload]);
 
-  const durationValue = useMemo(() => {
-    const value = Number(expiresInSeconds);
-    return Number.isFinite(value) ? value : state.policy.defaultExpiresInSeconds;
-  }, [expiresInSeconds, state.policy.defaultExpiresInSeconds]);
-
-  const loadState = async () => {
+  const loadState = async (requestedSessionType = sessionType) => {
     setLoading(true);
     try {
-      const response = await getAttendanceQrState();
+      const response = await getAttendanceQrState(requestedSessionType);
       setState(response.data || defaultState);
       setMessage('');
     } catch (error: any) {
@@ -125,24 +108,16 @@ const AdminAttendanceQrPage = () => {
     }
   };
 
-  const parseExpiryPayload = () => {
-    const parsed = Number(expiresInSeconds);
-    if (!Number.isInteger(parsed)) {
-      return undefined;
-    }
-    return parsed;
-  };
-
   const runMutation = async (action: 'generate' | 'rotate' | 'revoke') => {
     setSubmitting(true);
     try {
-      const payload = { expiresInSeconds: parseExpiryPayload(), sessionType };
+      const payload = { sessionType };
       const response =
         action === 'generate'
           ? await generateAttendanceQrToken(payload)
           : action === 'rotate'
             ? await rotateAttendanceQrToken(payload)
-            : await revokeAttendanceQrToken();
+            : await revokeAttendanceQrToken(sessionType);
 
       if (action === 'revoke') {
         setMessage('Attendance QR token revoked.');
@@ -185,8 +160,8 @@ const AdminAttendanceQrPage = () => {
             </p>
           </div>
           <div className="rounded-3xl bg-background px-5 py-4 ring-1 ring-border">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-secondary">Default Validity</p>
-            <p className="mt-1 text-lg font-semibold text-text-primary">{toDurationLabel(state.policy.defaultExpiresInSeconds)}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-secondary">Validity</p>
+            <p className="mt-1 text-lg font-semibold text-text-primary">Daily session</p>
           </div>
         </div>
       </header>
@@ -261,19 +236,9 @@ const AdminAttendanceQrPage = () => {
             <h2 className="mt-2 text-2xl font-semibold text-text-primary">Manage Token Lifecycle</h2>
           </div>
 
-          <label className="block space-y-2 text-sm text-text-secondary">
-            <span>Validity in seconds</span>
-            <input
-              type="number"
-              min={30}
-              max={86400}
-              step={30}
-              value={expiresInSeconds}
-              onChange={(event) => setExpiresInSeconds(event.target.value)}
-              className="w-full rounded-2xl border border-muted px-4 py-3 text-text-primary"
-            />
-            <span className="block text-xs text-text-secondary">Current selection: {toDurationLabel(durationValue)}</span>
-          </label>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+            Daily QR validity follows the selected session window and expires at the session boundary or midnight.
+          </div>
 
           <label className="block space-y-2 text-sm text-text-secondary">
             <span>Attendance session</span>
@@ -327,6 +292,15 @@ const AdminAttendanceQrPage = () => {
               <Printer className="h-4 w-4" />
               Print QR
             </button>
+            <a
+              href={qrDataUrl || undefined}
+              download={`smscam-teacher-attendance-${sessionType}-daily.png`}
+              aria-disabled={!currentToken || !qrDataUrl}
+              className={`inline-flex items-center justify-center gap-2 rounded-full border border-muted bg-white px-5 py-3 text-sm font-semibold text-text-primary hover:bg-background ${!currentToken || !qrDataUrl ? 'pointer-events-none opacity-60' : ''}`}
+            >
+              <Download className="h-4 w-4" />
+              Download QR Image
+            </a>
           </div>
 
           <div className="rounded-[1.5rem] bg-background p-5 ring-1 ring-border">

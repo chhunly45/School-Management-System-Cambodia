@@ -90,6 +90,8 @@ describe('Attendance QR admin integration', () => {
   before(async () => {
     process.env.NODE_ENV = 'test';
     process.env.LOGIN_OTP_ENABLED = 'false';
+    process.env.AUTH_RATE_LIMIT_MAX = '1000';
+    process.env.RATE_LIMIT_MAX = '1000';
 
     mongod = await MongoMemoryServer.create();
     process.env.MONGODB_URI = mongod.getUri();
@@ -146,9 +148,57 @@ describe('Attendance QR admin integration', () => {
     assert.ok(generated.data.data.current.token);
     assert.equal(generated.data.data.current.qrPayload, JSON.stringify({ token: generated.data.data.current.token }));
 
-    const current = await axios.get(`${base}/admin/attendance/qr`, { headers: authHeaders(adminSession) });
+    const current = await axios.get(`${base}/admin/attendance/qr`, { params: { sessionType: 'morning' }, headers: authHeaders(adminSession) });
     assert.equal(current.status, 200);
     assert.equal(current.data.data.current.token, generated.data.data.current.token);
+  });
+
+  it('generates a daily QR that expires at the configured session boundary', async () => {
+    await createUser({
+      email: 'admin-daily-expiry@example.com',
+      password: 'Password123!',
+      displayName: 'Daily Expiry Admin',
+      role: 'admin'
+    });
+
+    const adminSession = await login('admin-daily-expiry@example.com', 'Password123!');
+    const generated = await axios.post(
+      `${base}/admin/attendance/qr/generate`,
+      { sessionType: 'morning', expiresInSeconds: 30 },
+      { headers: authHeaders(adminSession) }
+    );
+
+    const expiresAt = new Date(generated.data.data.current.expiresAt);
+    assert.equal(expiresAt.getHours(), 23);
+    assert.equal(expiresAt.getMinutes(), 59);
+    assert.equal(expiresAt.getSeconds(), 0);
+    assert.ok(expiresAt.getTime() - Date.now() > 60 * 60 * 10);
+  });
+
+  it('scopes current and revoke operations to the requested daily session', async () => {
+    await createUser({ email: 'admin-session-scope@example.com', password: 'Password123!', displayName: 'Session Scope Admin', role: 'admin' });
+    const adminSession = await login('admin-session-scope@example.com', 'Password123!');
+    const yesterday = await AttendanceQrToken.create({
+      token: 'attqr-yesterday-session-scope-0001',
+      sessionType: 'morning',
+      rotationNumber: 100,
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      isRevoked: false
+    });
+    const morning = await axios.post(`${base}/admin/attendance/qr/generate`, { sessionType: 'morning' }, { headers: authHeaders(adminSession) });
+    const afternoon = await axios.post(`${base}/admin/attendance/qr/generate`, { sessionType: 'afternoon' }, { headers: authHeaders(adminSession) });
+
+    const morningCurrent = await axios.get(`${base}/admin/attendance/qr`, { params: { sessionType: 'morning' }, headers: authHeaders(adminSession) });
+    const afternoonCurrent = await axios.get(`${base}/admin/attendance/qr`, { params: { sessionType: 'afternoon' }, headers: authHeaders(adminSession) });
+    assert.equal(morningCurrent.data.data.current.token, morning.data.data.current.token);
+    assert.equal(afternoonCurrent.data.data.current.token, afternoon.data.data.current.token);
+
+    await axios.post(`${base}/admin/attendance/qr/revoke`, { sessionType: 'morning' }, { headers: authHeaders(adminSession) });
+    const yesterdayAfterRevoke = await AttendanceQrToken.findById(yesterday._id).lean();
+    assert.equal(yesterdayAfterRevoke.isRevoked, false);
+    const afternoonAfterRevoke = await axios.get(`${base}/admin/attendance/qr`, { params: { sessionType: 'afternoon' }, headers: authHeaders(adminSession) });
+    assert.equal(afternoonAfterRevoke.data.data.current.token, afternoon.data.data.current.token);
   });
 
   it('non-admin cannot generate a QR token', async () => {
@@ -245,6 +295,35 @@ describe('Attendance QR admin integration', () => {
     assert.equal(checkIn.data.data.attendanceMethod, 'QR');
   });
 
+  it('allows the same daily QR token for different authorized teachers', async () => {
+    await createUser({ email: 'admin-shared-daily@example.com', password: 'Password123!', displayName: 'Shared Daily Admin', role: 'admin' });
+    await createUserWithTeacher({ email: 'teacher-shared-one@example.com', password: 'Password123!', displayName: 'Shared Teacher One', teacherCode: 'T-QR-SHARED-1' });
+    await createUserWithTeacher({ email: 'teacher-shared-two@example.com', password: 'Password123!', displayName: 'Shared Teacher Two', teacherCode: 'T-QR-SHARED-2' });
+
+    const adminSession = await login('admin-shared-daily@example.com', 'Password123!');
+    const firstTeacherSession = await login('teacher-shared-one@example.com', 'Password123!');
+    const secondTeacherSession = await login('teacher-shared-two@example.com', 'Password123!');
+    const generated = await axios.post(
+      `${base}/admin/attendance/qr/generate`,
+      { sessionType: 'morning' },
+      { headers: authHeaders(adminSession) }
+    );
+
+    const payload = {
+      attendanceMethod: 'QR',
+      qrToken: generated.data.data.current.qrPayload,
+      latitude: SCHOOL_LAT,
+      longitude: SCHOOL_LNG,
+      gpsAccuracy: 5,
+      device: 'web'
+    };
+    const firstCheckIn = await axios.post(`${base}/teacher-attendance/check-in`, payload, { headers: authHeaders(firstTeacherSession) });
+    const secondCheckIn = await axios.post(`${base}/teacher-attendance/check-in`, payload, { headers: authHeaders(secondTeacherSession) });
+
+    assert.equal(firstCheckIn.status, 201);
+    assert.equal(secondCheckIn.status, 201);
+  });
+
   it('propagates the QR session into the teacher attendance record', async () => {
     await createUser({ email: 'admin-session@example.com', password: 'Password123!', displayName: 'Session Admin', role: 'admin' });
     await createUserWithTeacher({ email: 'teacher-session@example.com', password: 'Password123!', displayName: 'Session Teacher', teacherCode: 'T-QR-SESSION' });
@@ -309,7 +388,7 @@ describe('Attendance QR admin integration', () => {
     );
 
     const revokedToken = generated.data.data.current.token;
-    await axios.post(`${base}/admin/attendance/qr/revoke`, {}, { headers: authHeaders(adminSession) });
+    await axios.post(`${base}/admin/attendance/qr/revoke`, { sessionType: 'morning' }, { headers: authHeaders(adminSession) });
 
     await assert.rejects(
       async () => {

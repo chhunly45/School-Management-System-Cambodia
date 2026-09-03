@@ -1,6 +1,6 @@
 const { SchoolSetting } = require('../../models');
 const { createAttendanceError } = require('./errors');
-const { parseTimeToMinutes, getLocalMinutes } = require('./time.utils');
+const { parseTimeToMinutes, getLocalMinutes, getSchoolTimezone } = require('./time.utils');
 
 const SCHOOL_SETTINGS_KEY = 'school-settings';
 
@@ -46,16 +46,19 @@ const getSessionPolicy = (policy, sessionType = 'morning') => {
   const configMap = {
     morning: {
       checkInStart: policy.morningCheckInStart || policy.attendanceStart || '06:00',
+      checkInEnd: policy.morningCheckInEnd || policy.attendanceEnd || '18:00',
       lateAfter: policy.morningLateAfter || policy.attendanceLateAfter || '08:00',
       checkoutTime: policy.morningCheckoutTime || policy.attendanceEnd || '18:00'
     },
     afternoon: {
       checkInStart: policy.afternoonCheckInStart || policy.attendanceStart || '06:00',
+      checkInEnd: policy.afternoonCheckInEnd || policy.attendanceEnd || '18:00',
       lateAfter: policy.afternoonLateAfter || policy.attendanceLateAfter || '08:00',
       checkoutTime: policy.afternoonCheckoutTime || policy.attendanceEnd || '18:00'
     },
     evening: {
       checkInStart: policy.eveningCheckInStart || policy.attendanceStart || '06:00',
+      checkInEnd: policy.eveningCheckInEnd || policy.attendanceEnd || '18:00',
       lateAfter: policy.eveningLateAfter || policy.attendanceLateAfter || '08:00',
       checkoutTime: policy.eveningCheckoutTime || policy.attendanceEnd || '18:00'
     }
@@ -101,15 +104,19 @@ const createAttendancePolicyService = ({
     }
   };
 
-  const ensureWithinAttendanceWindow = (policy, referenceTime = nowProvider(), sessionType = 'morning') => {
+  const ensureWithinAttendanceWindow = (policy, referenceTime = nowProvider(), sessionType = 'morning', enforceEnd = true) => {
     const sessionPolicy = getSessionPolicy(policy, sessionType);
     const startMinutes = parseTimeToMinutes(sessionPolicy.checkInStart);
-    if (startMinutes === null) {
+    const endMinutes = parseTimeToMinutes(sessionPolicy.checkInEnd);
+    if (startMinutes === null || endMinutes === null) {
       throw createAttendanceError('INVALID_POLICY', 'Attendance policy time format is invalid', 500);
     }
 
-    const currentMinutes = getLocalMinutes(referenceTime);
+    const currentMinutes = getLocalMinutes(referenceTime, policy.attendanceTimezone || getSchoolTimezone());
     if (currentMinutes < startMinutes) {
+      throw createAttendanceError('OUTSIDE_ATTENDANCE_WINDOW', 'Current time is outside attendance window', 422);
+    }
+    if (enforceEnd && currentMinutes >= endMinutes) {
       throw createAttendanceError('OUTSIDE_ATTENDANCE_WINDOW', 'Current time is outside attendance window', 422);
     }
   };

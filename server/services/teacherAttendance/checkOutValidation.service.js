@@ -26,7 +26,7 @@ const createCheckOutValidationService = ({
     const normalizedSessionType = policyService.normalizeSessionType ? policyService.normalizeSessionType(sessionType) : sessionType;
 
     policyService.ensureAttendanceEnabled(policy);
-    policyService.ensureWithinAttendanceWindow(policy, now, normalizedSessionType);
+    policyService.ensureWithinAttendanceWindow(policy, now, normalizedSessionType, false);
 
     const attendanceDate = normalizeToDayStart(now);
     const attendance = await duplicatePreventionService.ensureCanCheckOut({

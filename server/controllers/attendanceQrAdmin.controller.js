@@ -3,7 +3,7 @@ const defaultService = require('../services/attendanceQrAdmin.service');
 const createAttendanceQrAdminController = ({ service = defaultService } = {}) => {
   const getCurrent = async (req, res, next) => {
     try {
-      const data = await service.getCurrentToken();
+      const data = await service.getCurrentToken(req.query.sessionType);
       res.json({ success: true, data });
     } catch (error) {
       next(error);
@@ -38,7 +38,7 @@ const createAttendanceQrAdminController = ({ service = defaultService } = {}) =>
 
   const revoke = async (req, res, next) => {
     try {
-      const data = await service.revokeCurrentToken();
+      const data = await service.revokeCurrentToken(req.body.sessionType);
       res.json({ success: true, data });
     } catch (error) {
       next(error);

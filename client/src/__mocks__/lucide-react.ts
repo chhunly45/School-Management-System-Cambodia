@@ -52,6 +52,7 @@ export const PackageOpen = createIcon('PackageOpen');
 export const Palette = createIcon('Palette');
 export const Phone = createIcon('Phone');
 export const PlusCircle = createIcon('PlusCircle');
+export const QrCode = createIcon('QrCode');
 export const Search = createIcon('Search');
 export const Send = createIcon('Send');
 export const Settings2 = createIcon('Settings2');
@@ -121,6 +122,7 @@ const MockedIcons = {
   Palette,
   Phone,
   PlusCircle,
+  QrCode,
   Search,
   Send,
   Settings2,

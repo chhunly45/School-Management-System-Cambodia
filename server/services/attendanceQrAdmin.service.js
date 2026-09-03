@@ -1,9 +1,8 @@
 const crypto = require('crypto');
 const { AttendanceQrToken, SchoolSetting } = require('../models');
-const { getDefaultPolicy, SCHOOL_SETTINGS_KEY } = require('./teacherAttendance/attendancePolicy.service');
+const { getDefaultPolicy, getSessionPolicy, SCHOOL_SETTINGS_KEY } = require('./teacherAttendance/attendancePolicy.service');
+const { parseTimeToMinutes, getSchoolDayBounds, getSchoolTimezone, getZonedParts, zonedDateTimeToUtc } = require('./teacherAttendance/time.utils');
 
-const MIN_EXPIRY_SECONDS = 30;
-const MAX_EXPIRY_SECONDS = 60 * 60 * 24;
 const ATTENDANCE_SESSIONS = ['morning', 'afternoon', 'evening'];
 
 const createValidationError = (message, statusCode = 400) => {
@@ -25,28 +24,30 @@ const createAttendanceQrAdminService = ({
     return ATTENDANCE_SESSIONS.includes(value) ? value : null;
   };
 
-  const getDefaultExpirySeconds = async () => {
+  const getPolicy = async () => {
     const settings = await SchoolSettingModel.findOne({ singletonKey: settingsKey })
-      .select('attendanceQrRotationSeconds')
+      .select('attendanceStart attendanceEnd attendanceTimezone morningCheckInEnd afternoonCheckInEnd eveningCheckInEnd morningCheckoutTime afternoonCheckoutTime eveningCheckoutTime')
       .lean();
-
-    return Number(settings?.attendanceQrRotationSeconds || getDefaultPolicy().attendanceQrRotationSeconds);
+    return { ...getDefaultPolicy(), ...(settings || {}) };
   };
 
-  const resolveExpirySeconds = async (expiresInSeconds) => {
-    if (expiresInSeconds === undefined || expiresInSeconds === null || expiresInSeconds === '') {
-      return getDefaultExpirySeconds();
+  const getDailyExpiry = async (sessionType, referenceTime) => {
+    const policy = await getPolicy();
+    const sessionPolicy = getSessionPolicy(policy, sessionType || 'morning');
+    const endMinutes = parseTimeToMinutes(sessionPolicy.checkInEnd || sessionPolicy.checkoutTime);
+    if (endMinutes === null) {
+      throw createValidationError('Attendance policy time format is invalid.', 500);
     }
-
-    const value = Number(expiresInSeconds);
-    if (!Number.isInteger(value) || value < MIN_EXPIRY_SECONDS || value > MAX_EXPIRY_SECONDS) {
-      throw createValidationError(
-        `expiresInSeconds must be an integer between ${MIN_EXPIRY_SECONDS} and ${MAX_EXPIRY_SECONDS}`,
-        422
-      );
-    }
-
-    return value;
+    const timezone = policy.attendanceTimezone || getSchoolTimezone();
+    const localDate = getZonedParts(referenceTime, timezone);
+    const sessionEnd = zonedDateTimeToUtc({ ...localDate, hour: Math.floor(endMinutes / 60), minute: endMinutes % 60, second: 0 }, timezone);
+    const midnightParts = new Date(Date.UTC(localDate.year, localDate.month - 1, localDate.day + 1));
+    const midnight = zonedDateTimeToUtc({ year: midnightParts.getUTCFullYear(), month: midnightParts.getUTCMonth() + 1, day: midnightParts.getUTCDate() }, timezone);
+    const expiresAt = sessionEnd < midnight ? sessionEnd : midnight;
+    return {
+      expiresAt,
+      ttlSeconds: Math.max(0, Math.floor((expiresAt.getTime() - referenceTime.getTime()) / 1000))
+    };
   };
 
   const formatToken = (doc, referenceTime = nowProvider()) => {
@@ -76,13 +77,16 @@ const createAttendanceQrAdminService = ({
     };
   };
 
-  const getActiveFilter = (referenceTime = nowProvider()) => ({
+  const getActiveFilter = (referenceTime = nowProvider(), sessionType, schoolDay) => ({
     isRevoked: false,
-    expiresAt: { $gt: referenceTime }
+    expiresAt: { $gt: referenceTime },
+    ...(sessionType ? { sessionType: normalizeSessionType(sessionType) } : {}),
+    ...(schoolDay ? { createdAt: { $gte: schoolDay.start, $lt: schoolDay.end } } : {})
   });
 
-  const getCurrentActiveDoc = async (referenceTime = nowProvider()) => {
-    return AttendanceQrTokenModel.findOne(getActiveFilter(referenceTime))
+  const getCurrentActiveDoc = async (referenceTime = nowProvider(), sessionType) => {
+    const schoolDay = getSchoolDayBounds(referenceTime, getSchoolTimezone());
+    return AttendanceQrTokenModel.findOne(getActiveFilter(referenceTime, sessionType, schoolDay))
       .sort({ createdAt: -1, rotationNumber: -1 });
   };
 
@@ -106,17 +110,18 @@ const createAttendanceQrAdminService = ({
     );
   };
 
-  const createTokenDoc = async ({ createdBy, expiresInSeconds, sessionType, referenceTime = nowProvider() }) => {
-    const ttlSeconds = await resolveExpirySeconds(expiresInSeconds);
+  const createTokenDoc = async ({ createdBy, sessionType, referenceTime = nowProvider() }) => {
+    const normalizedSessionType = normalizeSessionType(sessionType);
+    const { expiresAt, ttlSeconds } = await getDailyExpiry(normalizedSessionType, referenceTime);
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const rotationNumber = await getNextRotationNumber();
       try {
         const created = await AttendanceQrTokenModel.create({
           token: createTokenValue(),
-          sessionType: normalizeSessionType(sessionType),
+          sessionType: normalizedSessionType,
           rotationNumber,
-          expiresAt: new Date(referenceTime.getTime() + ttlSeconds * 1000),
+          expiresAt,
           createdBy: createdBy || null,
           isRevoked: false,
           revokedAt: null
@@ -133,31 +138,31 @@ const createAttendanceQrAdminService = ({
     throw createValidationError('Unable to create a unique attendance QR token. Please try again.', 500);
   };
 
-  const getCurrentToken = async () => {
+  const getCurrentToken = async (sessionType) => {
     const now = nowProvider();
     const [current, recent, defaultExpiresInSeconds] = await Promise.all([
-      getCurrentActiveDoc(now),
+      getCurrentActiveDoc(now, sessionType),
       AttendanceQrTokenModel.find({}).sort({ createdAt: -1, rotationNumber: -1 }).limit(5).lean(),
-      getDefaultExpirySeconds()
+      getPolicy()
     ]);
 
     return {
       current: formatToken(current, now),
       recent: recent.map((item) => formatToken(item, now)),
       policy: {
-        defaultExpiresInSeconds
+        defaultExpiresInSeconds: 21600
       }
     };
   };
 
-  const generateToken = async ({ createdBy, expiresInSeconds, sessionType } = {}) => {
+  const generateToken = async ({ createdBy, sessionType } = {}) => {
     const now = nowProvider();
-    const existing = await getCurrentActiveDoc(now);
+    const existing = await getCurrentActiveDoc(now, sessionType);
     if (existing) {
       throw createValidationError('An active attendance QR token already exists. Rotate or revoke it first.', 409);
     }
 
-    const { created, ttlSeconds } = await createTokenDoc({ createdBy, expiresInSeconds, sessionType, referenceTime: now });
+    const { created, ttlSeconds } = await createTokenDoc({ createdBy, sessionType, referenceTime: now });
     return {
       current: formatToken(created, now),
       policy: {
@@ -166,12 +171,12 @@ const createAttendanceQrAdminService = ({
     };
   };
 
-  const rotateToken = async ({ createdBy, expiresInSeconds, sessionType } = {}) => {
+  const rotateToken = async ({ createdBy, sessionType } = {}) => {
     const now = nowProvider();
-    const activeDocs = await AttendanceQrTokenModel.find(getActiveFilter(now)).sort({ createdAt: -1, rotationNumber: -1 });
+    const activeDocs = await AttendanceQrTokenModel.find(getActiveFilter(now, sessionType)).sort({ createdAt: -1, rotationNumber: -1 });
     await revokeDocs(activeDocs, now);
 
-    const { created, ttlSeconds } = await createTokenDoc({ createdBy, expiresInSeconds, sessionType, referenceTime: now });
+    const { created, ttlSeconds } = await createTokenDoc({ createdBy, sessionType, referenceTime: now });
     return {
       previous: activeDocs.map((item) => formatToken(item, now)),
       current: formatToken(created, now),
@@ -181,9 +186,9 @@ const createAttendanceQrAdminService = ({
     };
   };
 
-  const revokeCurrentToken = async () => {
+  const revokeCurrentToken = async (sessionType) => {
     const now = nowProvider();
-    const current = await getCurrentActiveDoc(now);
+    const current = await getCurrentActiveDoc(now, sessionType);
     if (!current) {
       throw createValidationError('No active attendance QR token found.', 404);
     }
@@ -208,5 +213,3 @@ const createAttendanceQrAdminService = ({
 
 module.exports = createAttendanceQrAdminService();
 module.exports.createAttendanceQrAdminService = createAttendanceQrAdminService;
-module.exports.MIN_EXPIRY_SECONDS = MIN_EXPIRY_SECONDS;
-module.exports.MAX_EXPIRY_SECONDS = MAX_EXPIRY_SECONDS;

@@ -20,7 +20,7 @@ jest.mock('../hooks/useAuth', () => ({
 }));
 
 jest.mock('../services/attendanceQrAdmin.api', () => ({
-  getAttendanceQrState: () => getAttendanceQrStateMock(),
+  getAttendanceQrState: (sessionType?: string) => getAttendanceQrStateMock(sessionType),
   generateAttendanceQrToken: (payload: any) => generateAttendanceQrTokenMock(payload),
   rotateAttendanceQrToken: (payload: any) => rotateAttendanceQrTokenMock(payload),
   revokeAttendanceQrToken: () => revokeAttendanceQrTokenMock()
@@ -31,6 +31,7 @@ jest.mock('qrcode', () => ({
 }));
 
 jest.mock('lucide-react', () => ({
+  Download: () => <svg aria-label="download-icon" />,
   QrCode: () => <svg aria-label="qr-icon" />,
   RefreshCw: () => <svg aria-label="refresh-icon" />,
   ShieldAlert: () => <svg aria-label="shield-icon" />,
@@ -82,9 +83,10 @@ describe('AdminAttendanceQrPage', () => {
     expect(await screen.findByRole('heading', { name: /attendance qr control/i })).toBeInTheDocument();
     expect(await screen.findByAltText(/attendance qr code/i)).toBeInTheDocument();
     expect(screen.getAllByText(/attqr_active_token_123/i)).toHaveLength(2);
+    expect(getAttendanceQrStateMock).toHaveBeenCalledWith('morning');
   });
 
-  it('rotates the token using the selected validity', async () => {
+  it('rotates the selected daily attendance session', async () => {
     render(
       <MemoryRouter>
         <AdminAttendanceQrPage />
@@ -96,11 +98,22 @@ describe('AdminAttendanceQrPage', () => {
       expect(screen.getByRole('button', { name: /rotate qr/i })).not.toBeDisabled();
     });
 
-    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '600' } });
     fireEvent.click(screen.getByRole('button', { name: /rotate qr/i }));
 
     await waitFor(() => {
-      expect(rotateAttendanceQrTokenMock).toHaveBeenCalledWith({ expiresInSeconds: 600, sessionType: 'morning' });
+      expect(rotateAttendanceQrTokenMock).toHaveBeenCalledWith({ sessionType: 'morning' });
     });
+  });
+
+  it('exposes the rendered QR as a downloadable PNG', async () => {
+    render(
+      <MemoryRouter>
+        <AdminAttendanceQrPage />
+      </MemoryRouter>
+    );
+
+    const download = await screen.findByRole('link', { name: /download qr image/i });
+    expect(download).toHaveAttribute('download', 'smscam-teacher-attendance-morning-daily.png');
+    expect(download).toHaveAttribute('href', 'data:image/png;base64,qr');
   });
 });
