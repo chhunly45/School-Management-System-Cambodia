@@ -8,14 +8,15 @@ const generateAttendanceQrTokenMock = jest.fn();
 const rotateAttendanceQrTokenMock = jest.fn();
 const revokeAttendanceQrTokenMock = jest.fn();
 const toDataUrlMock = jest.fn();
+const adminUser = {
+  id: 'admin-1',
+  email: 'admin@example.com',
+  role: 'admin'
+};
 
 jest.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
-    user: {
-      id: 'admin-1',
-      email: 'admin@example.com',
-      role: 'admin'
-    }
+    user: adminUser
   })
 }));
 
@@ -115,5 +116,59 @@ describe('AdminAttendanceQrPage', () => {
     const download = await screen.findByRole('link', { name: /download qr image/i });
     expect(download).toHaveAttribute('download', 'smscam-teacher-attendance-morning-daily.png');
     expect(download).toHaveAttribute('href', 'data:image/png;base64,qr');
+  });
+
+  it('ignores a stale current-QR response after a newer QR is generated', async () => {
+    let resolveInitialLoad: ((value: any) => void) | undefined;
+    let loadCallCount = 0;
+    const generatedToken = {
+      ...activeToken,
+      token: 'attqr_generated_token_456',
+      qrPayload: '{"token":"attqr_generated_token_456"}'
+    };
+    getAttendanceQrStateMock.mockImplementation(() => {
+      loadCallCount += 1;
+      if (loadCallCount === 1) {
+        return new Promise((resolve) => {
+        resolveInitialLoad = resolve;
+        });
+      }
+      return Promise.resolve({
+        success: true,
+        data: {
+          current: generatedToken,
+          recent: [generatedToken],
+          policy: { defaultExpiresInSeconds: 21600 }
+        }
+      });
+    });
+    generateAttendanceQrTokenMock.mockResolvedValue({
+      success: true,
+      data: { current: generatedToken, policy: { defaultExpiresInSeconds: 21600 } }
+    });
+
+    render(
+      <MemoryRouter>
+        <AdminAttendanceQrPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(getAttendanceQrStateMock).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate qr/i }));
+
+    expect(await screen.findByAltText(/attendance qr code/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/attqr_generated_token_456/i).length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(getAttendanceQrStateMock).toHaveBeenCalledTimes(2);
+    });
+
+    resolveInitialLoad?.({ success: true, data: { current: null, recent: [], policy: { defaultExpiresInSeconds: 21600 } } });
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/attqr_generated_token_456/i).length).toBeGreaterThan(0);
+      expect(screen.queryByText(/no active attendance qr token yet/i)).not.toBeInTheDocument();
+    });
   });
 });

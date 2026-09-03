@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Download, QrCode, RefreshCw, ShieldAlert, Printer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -44,6 +44,7 @@ const AdminAttendanceQrPage = () => {
   const [message, setMessage] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [sessionType, setSessionType] = useState<AttendanceSessionType>('morning');
+  const loadGeneration = useRef(0);
 
   useEffect(() => {
     if (!user) {
@@ -96,9 +97,11 @@ const AdminAttendanceQrPage = () => {
   }, [state.current?.qrPayload]);
 
   const loadState = async (requestedSessionType = sessionType) => {
+    const requestGeneration = ++loadGeneration.current;
     setLoading(true);
     try {
       const response = await getAttendanceQrState(requestedSessionType);
+      if (requestGeneration !== loadGeneration.current) return;
       setState(response.data || defaultState);
       setMessage('');
     } catch (error: any) {

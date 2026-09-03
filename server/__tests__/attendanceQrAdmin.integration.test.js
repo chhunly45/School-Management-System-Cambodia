@@ -137,16 +137,16 @@ describe('Attendance QR admin integration', () => {
 
     const generated = await axios.post(
       `${base}/admin/attendance/qr/generate`,
-      { expiresInSeconds: 300 },
+      { expiresInSeconds: 300, sessionType: 'morning' },
       { headers: authHeaders(adminSession) }
     );
 
     assert.equal(generated.status, 201);
     assert.equal(generated.data.success, true);
     assert.equal(generated.data.data.current.status, 'ACTIVE');
-    assert.equal(generated.data.data.current.qrPayloadFormat, 'json-token-v1');
+    assert.equal(generated.data.data.current.qrPayloadFormat, 'json-token-session-v1');
     assert.ok(generated.data.data.current.token);
-    assert.equal(generated.data.data.current.qrPayload, JSON.stringify({ token: generated.data.data.current.token }));
+    assert.equal(generated.data.data.current.qrPayload, JSON.stringify({ token: generated.data.data.current.token, sessionType: 'morning' }));
 
     const current = await axios.get(`${base}/admin/attendance/qr`, { params: { sessionType: 'morning' }, headers: authHeaders(adminSession) });
     assert.equal(current.status, 200);
@@ -274,7 +274,7 @@ describe('Attendance QR admin integration', () => {
 
     const generated = await axios.post(
       `${base}/admin/attendance/qr/generate`,
-      { expiresInSeconds: 300 },
+      { expiresInSeconds: 300, sessionType: 'morning' },
       { headers: authHeaders(adminSession) }
     );
 
@@ -383,7 +383,7 @@ describe('Attendance QR admin integration', () => {
 
     const generated = await axios.post(
       `${base}/admin/attendance/qr/generate`,
-      { expiresInSeconds: 300 },
+      { expiresInSeconds: 300, sessionType: 'morning' },
       { headers: authHeaders(adminSession) }
     );
 
