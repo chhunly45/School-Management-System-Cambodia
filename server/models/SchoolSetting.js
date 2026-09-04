@@ -37,7 +37,7 @@ const SchoolSettingSchema = new Schema(
     morningCheckInStart: {
       type: String,
       trim: true,
-      default: null,
+      default: '06:45',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'morningCheckInStart must use HH:mm format'
@@ -46,7 +46,7 @@ const SchoolSettingSchema = new Schema(
     morningCheckInEnd: {
       type: String,
       trim: true,
-      default: null,
+      default: '10:45',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'morningCheckInEnd must use HH:mm format'
@@ -55,7 +55,7 @@ const SchoolSettingSchema = new Schema(
     morningLateAfter: {
       type: String,
       trim: true,
-      default: null,
+      default: '06:50',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'morningLateAfter must use HH:mm format'
@@ -64,7 +64,7 @@ const SchoolSettingSchema = new Schema(
     morningCheckoutTime: {
       type: String,
       trim: true,
-      default: null,
+      default: '10:45',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'morningCheckoutTime must use HH:mm format'
@@ -73,7 +73,7 @@ const SchoolSettingSchema = new Schema(
     afternoonCheckInStart: {
       type: String,
       trim: true,
-      default: null,
+      default: '12:30',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'afternoonCheckInStart must use HH:mm format'
@@ -82,7 +82,7 @@ const SchoolSettingSchema = new Schema(
     afternoonCheckInEnd: {
       type: String,
       trim: true,
-      default: null,
+      default: '16:00',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'afternoonCheckInEnd must use HH:mm format'
@@ -91,7 +91,7 @@ const SchoolSettingSchema = new Schema(
     afternoonLateAfter: {
       type: String,
       trim: true,
-      default: null,
+      default: '12:35',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'afternoonLateAfter must use HH:mm format'
@@ -100,7 +100,7 @@ const SchoolSettingSchema = new Schema(
     afternoonCheckoutTime: {
       type: String,
       trim: true,
-      default: null,
+      default: '16:00',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'afternoonCheckoutTime must use HH:mm format'
@@ -109,7 +109,7 @@ const SchoolSettingSchema = new Schema(
     eveningCheckInStart: {
       type: String,
       trim: true,
-      default: null,
+      default: '18:00',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'eveningCheckInStart must use HH:mm format'
@@ -118,7 +118,7 @@ const SchoolSettingSchema = new Schema(
     eveningCheckInEnd: {
       type: String,
       trim: true,
-      default: null,
+      default: '20:00',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'eveningCheckInEnd must use HH:mm format'
@@ -127,7 +127,7 @@ const SchoolSettingSchema = new Schema(
     eveningLateAfter: {
       type: String,
       trim: true,
-      default: null,
+      default: '18:05',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'eveningLateAfter must use HH:mm format'
@@ -136,7 +136,7 @@ const SchoolSettingSchema = new Schema(
     eveningCheckoutTime: {
       type: String,
       trim: true,
-      default: null,
+      default: '20:00',
       validate: {
         validator: (value) => value === null || value === undefined || TIME_TEXT_REGEX.test(String(value)),
         message: 'eveningCheckoutTime must use HH:mm format'

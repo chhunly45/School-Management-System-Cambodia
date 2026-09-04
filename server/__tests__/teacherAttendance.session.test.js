@@ -10,13 +10,16 @@ const policy = {
   attendanceLateAfter: '08:00',
   attendanceEnd: '18:00',
   morningCheckInStart: '06:45',
-  morningLateAfter: '06:55',
-  morningCheckoutTime: '10:40',
+  morningCheckInEnd: '10:45',
+  morningLateAfter: '06:50',
+  morningCheckoutTime: '10:45',
   afternoonCheckInStart: '12:30',
-  afternoonLateAfter: '12:40',
+  afternoonCheckInEnd: '16:00',
+  afternoonLateAfter: '12:35',
   afternoonCheckoutTime: '16:00',
   eveningCheckInStart: '18:00',
-  eveningLateAfter: '18:10',
+  eveningCheckInEnd: '20:00',
+  eveningLateAfter: '18:05',
   eveningCheckoutTime: '20:00'
 };
 
@@ -26,8 +29,11 @@ describe('session-aware teacher attendance policy', () => {
 
   it('classifies Morning Present/Late and rejects check-in at the session boundary', () => {
     const session = service.getSessionPolicy(policy, 'morning');
-    assert.equal(statusService.calculateCheckInStatus({ checkInTime: makeTime('06:54'), lateAfter: session.lateAfter }), 'PRESENT');
-    assert.equal(statusService.calculateCheckInStatus({ checkInTime: makeTime('06:55'), lateAfter: session.lateAfter }), 'LATE');
+    assert.equal(session.checkInStart, '06:45');
+    assert.equal(session.checkInEnd, '10:45');
+    assert.equal(session.lateAfter, '06:50');
+    assert.equal(statusService.calculateCheckInStatus({ checkInTime: makeTime('06:49'), lateAfter: session.lateAfter }), 'PRESENT');
+    assert.equal(statusService.calculateCheckInStatus({ checkInTime: makeTime('06:50'), lateAfter: session.lateAfter }), 'LATE');
     assert.throws(
       () => service.ensureWithinAttendanceWindow(policy, makeTime('18:00'), 'morning'),
       (error) => error && error.code === 'OUTSIDE_ATTENDANCE_WINDOW'
@@ -35,13 +41,20 @@ describe('session-aware teacher attendance policy', () => {
   });
 
   it('classifies Afternoon and Evening Present/Late boundaries', () => {
-    for (const [sessionType, presentTime, lateTime] of [
-      ['afternoon', '12:39', '12:40'],
-      ['evening', '18:09', '18:10']
+    for (const [sessionType, expectedStart, expectedEnd, presentTime, lateTime] of [
+      ['afternoon', '12:30', '16:00', '12:34', '12:35'],
+      ['evening', '18:00', '20:00', '18:04', '18:05']
     ]) {
       const session = service.getSessionPolicy(policy, sessionType);
+      assert.equal(session.checkInStart, expectedStart);
+      assert.equal(session.checkInEnd, expectedEnd);
+      assert.equal(session.lateAfter, lateTime);
       assert.equal(statusService.calculateCheckInStatus({ checkInTime: makeTime(presentTime), lateAfter: session.lateAfter }), 'PRESENT');
       assert.equal(statusService.calculateCheckInStatus({ checkInTime: makeTime(lateTime), lateAfter: session.lateAfter }), 'LATE');
+      assert.throws(
+        () => service.ensureWithinAttendanceWindow(policy, makeTime(expectedEnd), sessionType),
+        (error) => error && error.code === 'OUTSIDE_ATTENDANCE_WINDOW'
+      );
     }
   });
 

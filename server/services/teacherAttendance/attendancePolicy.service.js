@@ -4,10 +4,15 @@ const { parseTimeToMinutes, getLocalMinutes, getSchoolTimezone } = require('./ti
 
 const SCHOOL_SETTINGS_KEY = 'school-settings';
 
+const SESSION_DEFAULTS = {
+  morning: { checkInStart: '06:45', checkInEnd: '10:45', lateAfter: '06:50' },
+  afternoon: { checkInStart: '12:30', checkInEnd: '16:00', lateAfter: '12:35' },
+  evening: { checkInStart: '18:00', checkInEnd: '20:00', lateAfter: '18:05' }
+};
+
 const getDefaultSessionPolicy = () => ({
-  checkInStart: '06:00',
-  lateAfter: '08:00',
-  checkoutTime: '18:00'
+  ...SESSION_DEFAULTS.morning,
+  checkoutTime: '10:45'
 });
 
 const getDefaultPolicy = () => ({
@@ -22,15 +27,18 @@ const getDefaultPolicy = () => ({
   attendanceStart: '06:00',
   attendanceEnd: '18:00',
   attendanceQrRotationSeconds: 30,
-  morningCheckInStart: null,
-  morningLateAfter: null,
-  morningCheckoutTime: null,
-  afternoonCheckInStart: null,
-  afternoonLateAfter: null,
-  afternoonCheckoutTime: null,
-  eveningCheckInStart: null,
-  eveningLateAfter: null,
-  eveningCheckoutTime: null
+  morningCheckInStart: '06:45',
+  morningCheckInEnd: '10:45',
+  morningLateAfter: '06:50',
+  morningCheckoutTime: '10:45',
+  afternoonCheckInStart: '12:30',
+  afternoonCheckInEnd: '16:00',
+  afternoonLateAfter: '12:35',
+  afternoonCheckoutTime: '16:00',
+  eveningCheckInStart: '18:00',
+  eveningCheckInEnd: '20:00',
+  eveningLateAfter: '18:05',
+  eveningCheckoutTime: '20:00'
 });
 
 const normalizeSessionType = (sessionType) => {
@@ -45,22 +53,22 @@ const getSessionPolicy = (policy, sessionType = 'morning') => {
   const normalized = normalizeSessionType(sessionType);
   const configMap = {
     morning: {
-      checkInStart: policy.morningCheckInStart || policy.attendanceStart || '06:00',
-      checkInEnd: policy.morningCheckInEnd || policy.attendanceEnd || '18:00',
-      lateAfter: policy.morningLateAfter || policy.attendanceLateAfter || '08:00',
-      checkoutTime: policy.morningCheckoutTime || policy.attendanceEnd || '18:00'
+      checkInStart: policy.morningCheckInStart || SESSION_DEFAULTS.morning.checkInStart,
+      checkInEnd: policy.morningCheckInEnd || SESSION_DEFAULTS.morning.checkInEnd,
+      lateAfter: policy.morningLateAfter || SESSION_DEFAULTS.morning.lateAfter,
+      checkoutTime: policy.morningCheckoutTime || SESSION_DEFAULTS.morning.checkInEnd
     },
     afternoon: {
-      checkInStart: policy.afternoonCheckInStart || policy.attendanceStart || '06:00',
-      checkInEnd: policy.afternoonCheckInEnd || policy.attendanceEnd || '18:00',
-      lateAfter: policy.afternoonLateAfter || policy.attendanceLateAfter || '08:00',
-      checkoutTime: policy.afternoonCheckoutTime || policy.attendanceEnd || '18:00'
+      checkInStart: policy.afternoonCheckInStart || SESSION_DEFAULTS.afternoon.checkInStart,
+      checkInEnd: policy.afternoonCheckInEnd || SESSION_DEFAULTS.afternoon.checkInEnd,
+      lateAfter: policy.afternoonLateAfter || SESSION_DEFAULTS.afternoon.lateAfter,
+      checkoutTime: policy.afternoonCheckoutTime || SESSION_DEFAULTS.afternoon.checkInEnd
     },
     evening: {
-      checkInStart: policy.eveningCheckInStart || policy.attendanceStart || '06:00',
-      checkInEnd: policy.eveningCheckInEnd || policy.attendanceEnd || '18:00',
-      lateAfter: policy.eveningLateAfter || policy.attendanceLateAfter || '08:00',
-      checkoutTime: policy.eveningCheckoutTime || policy.attendanceEnd || '18:00'
+      checkInStart: policy.eveningCheckInStart || SESSION_DEFAULTS.evening.checkInStart,
+      checkInEnd: policy.eveningCheckInEnd || SESSION_DEFAULTS.evening.checkInEnd,
+      lateAfter: policy.eveningLateAfter || SESSION_DEFAULTS.evening.lateAfter,
+      checkoutTime: policy.eveningCheckoutTime || SESSION_DEFAULTS.evening.checkInEnd
     }
   };
 

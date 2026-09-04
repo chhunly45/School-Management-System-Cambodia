@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const http = require('http');
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
+const { createAttendanceQrAdminService } = require('../services/attendanceQrAdmin.service');
+const { getZonedParts } = require('../services/teacherAttendance/time.utils');
 
 let mongod;
 let server;
@@ -82,6 +84,15 @@ const seedAttendanceSettings = async () => {
     attendanceLateAfter: '23:59',
     attendanceStart: '00:00',
     attendanceEnd: '23:59',
+    morningCheckInStart: '00:00',
+    morningCheckInEnd: '23:59',
+    morningLateAfter: '23:59',
+    afternoonCheckInStart: '00:00',
+    afternoonCheckInEnd: '23:59',
+    afternoonLateAfter: '23:59',
+    eveningCheckInStart: '00:00',
+    eveningCheckInEnd: '23:59',
+    eveningLateAfter: '23:59',
     attendanceQrRotationSeconds: 30
   });
 };
@@ -173,6 +184,52 @@ describe('Attendance QR admin integration', () => {
     assert.equal(expiresAt.getMinutes(), 59);
     assert.equal(expiresAt.getSeconds(), 0);
     assert.ok(expiresAt.getTime() - Date.now() > 60 * 60 * 10);
+  });
+
+  it('uses each selected session end as the QR expiry in the school timezone', async () => {
+    const createdAt = new Date('2026-08-07T00:00:00.000Z');
+    const documents = [];
+    const query = (value) => ({
+      sort() { return this; },
+      select() { return this; },
+      lean: async () => value,
+      then: (resolve, reject) => Promise.resolve(value).then(resolve, reject)
+    });
+    const service = createAttendanceQrAdminService({
+      nowProvider: () => createdAt,
+      AttendanceQrTokenModel: {
+        findOne: () => query(null),
+        find: () => ({ sort: () => ({ limit: async () => [] }) }),
+        create: async (payload) => {
+          const document = { ...payload, _id: `qr-${documents.length + 1}`, createdAt };
+          documents.push(document);
+          return document;
+        }
+      },
+      SchoolSettingModel: {
+        findOne: () => ({
+          select: () => ({
+            lean: async () => ({
+              attendanceTimezone: 'Asia/Phnom_Penh',
+              morningCheckInEnd: '10:45',
+              afternoonCheckInEnd: '16:00',
+              eveningCheckInEnd: '20:00'
+            })
+          })
+        })
+      }
+    });
+
+    for (const [sessionType, expectedHour, expectedMinute] of [
+      ['morning', 10, 45],
+      ['afternoon', 16, 0],
+      ['evening', 20, 0]
+    ]) {
+      const generated = await service.generateToken({ createdBy: 'admin-test', sessionType });
+      const localExpiry = getZonedParts(generated.current.expiresAt, 'Asia/Phnom_Penh');
+      assert.equal(localExpiry.hour, expectedHour);
+      assert.equal(localExpiry.minute, expectedMinute);
+    }
   });
 
   it('scopes current and revoke operations to the requested daily session', async () => {

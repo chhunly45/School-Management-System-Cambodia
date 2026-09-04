@@ -102,7 +102,7 @@ describe('School Settings attendance fields', () => {
     assert.equal(created.attendanceQrEnabled, false);
     assert.equal(created.attendanceAllowedRadius, 120);
     assert.equal(created.morningCheckInStart, '07:00');
-    assert.equal(created.eveningCheckInStart, null);
+    assert.equal(created.eveningCheckInStart, '18:00');
     assert.equal(created.attendanceStart, '06:30');
 
     const updated = await schoolSettingService.updateSchoolSettings({
@@ -116,14 +116,14 @@ describe('School Settings attendance fields', () => {
     assert.equal(updated.attendanceQrEnabled, false);
     assert.equal(updated.attendanceSchoolLatitude, 11.5564);
     assert.equal(updated.morningCheckInStart, '07:00');
-    assert.equal(updated.afternoonCheckInStart, null);
+    assert.equal(updated.afternoonCheckInStart, '12:30');
     assert.equal(updated.attendanceStart, '06:30');
 
     const persisted = await SchoolSetting.findOne({ singletonKey: 'school-settings' }).lean();
     assert.equal(persisted.attendanceEnd, '17:30');
     assert.equal(persisted.attendanceGpsEnabled, true);
     assert.equal(persisted.morningCheckInEnd, '08:00');
-    assert.equal(persisted.eveningCheckInStart, null);
+    assert.equal(persisted.eveningCheckInStart, '18:00');
   });
 
   it('uses the existing model defaults when attendance fields are absent', async () => {
@@ -135,12 +135,12 @@ describe('School Settings attendance fields', () => {
     assert.equal(created.attendanceSchoolLatitude, null);
     assert.equal(created.attendanceSchoolLongitude, null);
     assert.equal(created.attendanceAllowedRadius, 100);
-    assert.equal(created.morningCheckInStart, null);
-    assert.equal(created.morningCheckInEnd, null);
-    assert.equal(created.afternoonCheckInStart, null);
-    assert.equal(created.afternoonCheckInEnd, null);
-    assert.equal(created.eveningCheckInStart, null);
-    assert.equal(created.eveningCheckInEnd, null);
+    assert.equal(created.morningCheckInStart, '06:45');
+    assert.equal(created.morningCheckInEnd, '10:45');
+    assert.equal(created.afternoonCheckInStart, '12:30');
+    assert.equal(created.afternoonCheckInEnd, '16:00');
+    assert.equal(created.eveningCheckInStart, '18:00');
+    assert.equal(created.eveningCheckInEnd, '20:00');
     assert.equal(created.attendanceStart, '06:00');
     assert.equal(created.attendanceEnd, '18:00');
   });
