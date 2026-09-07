@@ -74,6 +74,26 @@ const QrScannerPanel = ({ onDecodedToken, onClose, onStatusChange }: QrScannerPa
     }
   };
 
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setMessage('Please choose a readable image file.');
+      return;
+    }
+
+    try {
+      setMessage('Reading QR image...');
+      const result = await QrScanner.scanImage(file, { returnDetailedScanResult: true });
+      await handleDecode(result);
+    } catch {
+      setMessage('No QR code was found in that image.');
+    }
+  };
+
   const requestAndStart = async () => {
     if (!videoRef.current) return;
 
@@ -137,6 +157,18 @@ const QrScannerPanel = ({ onDecodedToken, onClose, onStatusChange }: QrScannerPa
         >
           {scannerRunning ? 'Scanning...' : 'Start Camera Scan'}
         </button>
+        <label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-muted bg-white px-4 py-2 text-xs font-semibold text-text-primary hover:bg-background">
+          Scan QR from Gallery
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) => {
+              void handleImageSelect(event);
+            }}
+            className="sr-only"
+            aria-label="Choose QR image from gallery"
+          />
+        </label>
         <button
           type="button"
           onClick={() => {
