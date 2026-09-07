@@ -1,4 +1,5 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import ProductDetailPage from '../pages/ProductDetailPage';
@@ -169,5 +170,56 @@ describe('ProductDetailPage', () => {
 
     await waitFor(() => expect(mockedFavoritesApi.checkFavorite).toHaveBeenCalledWith('321'));
     expect(screen.getByText(/Saved/i)).toBeInTheDocument();
+  });
+
+  it('adds and removes a favorite through the Save control', async () => {
+    mockedUseAuth.mockReturnValueOnce({
+      user: { id: 'user-2', email: 'user2@example.com', displayName: 'Test User' },
+      authToken: 'token-456',
+      isAuthenticated: true,
+      register: jest.fn() as any,
+      login: jest.fn() as any,
+      verifyLoginOtp: jest.fn() as any,
+      logout: jest.fn() as any,
+      setUser: jest.fn() as any
+    });
+    mockedProductApi.getProductBySlug.mockResolvedValue({
+      _id: '654',
+      title: 'Favorite Product',
+      description: 'Product for favorite interactions',
+      price: 1000,
+      location: 'Phnom Penh',
+      condition: 'new',
+      category: { name: 'Electronics' },
+      images: [],
+      seller: { displayName: 'Seller Favorite', profileImageUrl: '', location: 'Phnom Penh' },
+      status: 'published'
+    });
+    mockedFavoritesApi.checkFavorite.mockResolvedValueOnce(false);
+    mockedFavoritesApi.addFavorite.mockResolvedValueOnce({} as any);
+    mockedFavoritesApi.removeFavorite.mockResolvedValueOnce({} as any);
+
+    render(
+      <HelmetProvider>
+        <MemoryRouter initialEntries={['/products/654']}>
+          <Routes>
+            <Route path="/products/:slug" element={<ProductDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
+    );
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument());
+    const user = userEvent.setup();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(mockedFavoritesApi.addFavorite).toHaveBeenCalledWith('654'));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: 'Saved' }));
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(mockedFavoritesApi.removeFavorite).toHaveBeenCalledWith('654'));
   });
 });

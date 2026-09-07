@@ -2,6 +2,9 @@ module.exports = {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  transform: {
+    '^.+\\.(ts|tsx)$': '<rootDir>/jest.import-meta-transformer.cjs'
+  },
   globals: {
     'ts-jest': {
       useESM: true,
