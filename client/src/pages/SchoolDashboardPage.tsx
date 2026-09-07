@@ -135,7 +135,7 @@ const SchoolDashboardPage = () => {
               {schoolSettings.logo ? (
                 <img src={schoolSettings.logo} alt="School logo" className="h-full w-full object-cover" />
               ) : (
-                <span className="text-xs font-semibold uppercase text-muted">Logo</span>
+                <img src="/ABc.png" alt="School logo" className="h-full w-full object-cover" />
               )}
             </div>
             <div>
