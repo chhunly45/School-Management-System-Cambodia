@@ -12,7 +12,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="mb-4">
-              <img src="/logo.png" alt="SMS-CAM" className="h-12 w-auto" />
+              <img src="/ABc.png" alt="SMS-CAM" className="h-12 w-auto" />
             </div>
             <p className="text-sm text-white/80 mb-4">
               សេវាកម្មគ្រប់គ្រងសាលារៀនដ៏មានប្រសិទ្ធភាពសម្រាប់គ្រូ អ្នកគ្រប់គ្រង និងឪពុកម្តាយនៅកម្ពុជា។

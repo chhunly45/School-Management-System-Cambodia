@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { getViteEnv } from '../utils/viteEnv';
 
 const defaultSiteUrl = getViteEnv('VITE_SITE_URL', 'https://sms-cam.com');
-const defaultImage = `${defaultSiteUrl}/logo.png`;
+const defaultImage = `${defaultSiteUrl}/ABc.png`;
 
 interface SEOProps {
   title?: string;
