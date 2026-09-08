@@ -10,6 +10,7 @@ let User;
 let teacherService;
 let authService;
 let originalRequestPasswordReset;
+let originalCreateTeacherAccount;
 
 const createTeacher = (overrides = {}) => Teacher.create({
   teacherId: `T-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -30,6 +31,7 @@ before(async () => {
   authService = require('../services/auth.service');
   teacherService = require('../services/teacher.service');
   originalRequestPasswordReset = authService.requestPasswordReset;
+  originalCreateTeacherAccount = teacherService.createTeacherAccount;
 });
 
 after(async () => {
@@ -40,6 +42,7 @@ after(async () => {
 
 beforeEach(async () => {
   authService.requestPasswordReset = async () => ({ expiresIn: 300 });
+  teacherService.createTeacherAccount = originalCreateTeacherAccount;
   await Promise.all([Teacher.deleteMany({}), User.deleteMany({})]);
 });
 
@@ -86,6 +89,85 @@ describe('teacher account provisioning', () => {
       role: 'user'
     });
     await assert.rejects(() => teacherService.createTeacherAccount(existingPhone._id), /already exists for this teacher phone number/);
+  });
+
+  it('automatically provisions an account when creating a teacher with an email', async () => {
+    const accountCalls = [];
+    teacherService.createTeacherAccount = async (teacherId) => {
+      accountCalls.push(String(teacherId));
+      return originalCreateTeacherAccount(teacherId);
+    };
+
+    const teacher = await teacherService.createTeacher({
+      teacherId: 'AUTO-EMAIL-001',
+      fullName: 'Auto Email Teacher',
+      email: 'auto-email@example.com',
+      phone: '012345679',
+      status: 'active'
+    });
+
+    const user = await User.findOne({ email: 'auto-email@example.com' }).lean();
+    assert.ok(teacher._id);
+    assert.ok(user);
+    assert.equal(String(user.teacherId), String(teacher._id));
+    assert.equal(user.role, 'teacher');
+    assert.deepEqual(accountCalls, [String(teacher._id)]);
+  });
+
+  it('creates a teacher without provisioning when email is missing', async () => {
+    const accountCalls = [];
+    teacherService.createTeacherAccount = async (teacherId) => {
+      accountCalls.push(String(teacherId));
+      return originalCreateTeacherAccount(teacherId);
+    };
+
+    const teacher = await teacherService.createTeacher({
+      teacherId: 'AUTO-NO-EMAIL-001',
+      fullName: 'No Email Teacher',
+      phone: '012345680',
+      status: 'active'
+    });
+
+    assert.ok(teacher._id);
+    assert.equal(await User.countDocuments({}), 0);
+    assert.deepEqual(accountCalls, []);
+  });
+
+  it('preserves provisioning failure compensation after teacher creation', async () => {
+    authService.requestPasswordReset = async () => {
+      throw new Error('Invitation unavailable');
+    };
+
+    await assert.rejects(
+      () => teacherService.createTeacher({
+        teacherId: 'AUTO-FAIL-001',
+        fullName: 'Provisioning Failure Teacher',
+        email: 'auto-fail@example.com',
+        phone: '012345681',
+        status: 'active'
+      }),
+      /Invitation unavailable/
+    );
+
+    assert.ok(await Teacher.findOne({ teacherId: 'AUTO-FAIL-001' }));
+    assert.equal(await User.countDocuments({ email: 'auto-fail@example.com' }), 0);
+  });
+
+  it('preserves duplicate Teacher ID rejection', async () => {
+    await teacherService.createTeacher({
+      teacherId: 'AUTO-DUPLICATE-001',
+      fullName: 'First Teacher',
+      status: 'active'
+    });
+
+    await assert.rejects(
+      () => teacherService.createTeacher({
+        teacherId: 'AUTO-DUPLICATE-001',
+        fullName: 'Duplicate Teacher',
+        status: 'active'
+      }),
+      /Teacher ID already exists/
+    );
   });
 
   it('supports authentication and existing attendance actor resolution after provisioning', async () => {

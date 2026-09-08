@@ -6,6 +6,7 @@ const authService = require('./auth.service');
 const { normalizeCambodiaPhone, phoneSearchVariants } = require('../utils/phone');
 
 const MAX_PER_PAGE = 100;
+const isValidTeacherEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -220,6 +221,9 @@ const createTeacher = async (payload) => {
   });
 
   const teacher = await Teacher.create(payload);
+  if (isValidTeacherEmail(teacher.email)) {
+    await module.exports.createTeacherAccount(teacher._id);
+  }
   return teacher;
 };
 
