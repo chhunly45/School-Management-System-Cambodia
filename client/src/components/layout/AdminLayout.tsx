@@ -47,13 +47,13 @@ const AdminLayout = () => {
                     to={item.to}
                     end={item.to === '/admin'}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium transition ${
+                      `flex items-center gap-3 rounded-3xl px-4 py-3.5 text-base font-medium transition lg:py-3 lg:text-sm ${
                         isActive ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:bg-background'
                       }`
                     }
                   >
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background text-text-secondary">
-                      <Icon className="h-4 w-4" />
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-background text-text-secondary">
+                      <Icon className="h-5 w-5" />
                     </span>
                     <span>{item.label}</span>
                   </NavLink>

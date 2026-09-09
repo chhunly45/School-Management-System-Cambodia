@@ -15,5 +15,9 @@ describe('AdminLayout', () => {
     expect(screen.getByText(/Students/i)).toBeInTheDocument();
     expect(screen.getByText(/Teachers/i)).toBeInTheDocument();
     expect(screen.getByText(/Payments/i)).toBeInTheDocument();
+
+    const teachersLink = screen.getByRole('link', { name: 'Teachers' });
+    expect(teachersLink).toHaveClass('text-base', 'py-3.5', 'lg:text-sm', 'lg:py-3');
+    expect(teachersLink.querySelector('svg')).toHaveClass('h-5', 'w-5');
   });
 });
