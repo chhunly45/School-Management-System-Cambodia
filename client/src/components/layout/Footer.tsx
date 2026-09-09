@@ -29,13 +29,6 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Support */}
-          <div>
-            <h4 className="text-sm font-bold text-white mb-4 uppercase tracking-widest">ការគាំទ្រ</h4>
-            <ul className="space-y-3">
-              <li><Link to="/help" className="text-sm text-white/80 hover:text-white transition">Help Center</Link></li>
-            </ul>
-          </div>
         </div>
 
         {/* Divider */}
