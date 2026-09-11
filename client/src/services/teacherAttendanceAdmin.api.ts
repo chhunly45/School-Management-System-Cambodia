@@ -14,6 +14,8 @@ export interface AdminTeacherAttendanceResponse {
 
 export const getAdminTeacherAttendance = (query: {
   date?: string;
+  fromDate?: string;
+  toDate?: string;
   search?: string;
   status?: AttendanceStatus;
   sessionType?: AttendanceSessionType;

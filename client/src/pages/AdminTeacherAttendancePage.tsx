@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAdminTeacherAttendance, type AdminTeacherAttendanceResponse } from '../services/teacherAttendanceAdmin.api';
 import type { AttendanceSessionType, AttendanceStatus } from '../services/teacherAttendance.api';
 import AttendanceStatusBadge from '../components/attendance/AttendanceStatusBadge';
-import { formatDateTimeForDisplay } from '../utils/date';
+import { formatDateForInput, formatDateTimeForDisplay } from '../utils/date';
 
 const sessions: Array<{ value: '' | AttendanceSessionType; label: string }> = [
   { value: '', label: 'All sessions' },
@@ -20,6 +20,8 @@ const AdminTeacherAttendancePage = () => {
   const [search, setSearch] = useState('');
   const [sessionType, setSessionType] = useState<'' | AttendanceSessionType>('');
   const [status, setStatus] = useState<'' | AttendanceStatus>('');
+  const [fromDate, setFromDate] = useState(formatDateForInput(new Date()));
+  const [toDate, setToDate] = useState(formatDateForInput(new Date()));
   const [message, setMessage] = useState('');
 
   const load = async () => {
@@ -28,6 +30,8 @@ const AdminTeacherAttendancePage = () => {
         search: search || undefined,
         sessionType: sessionType || undefined,
         status: status || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
         perPage: 100
       });
       setData(response.data);
@@ -63,8 +67,16 @@ const AdminTeacherAttendancePage = () => {
       {message && <p role="status" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{message}</p>}
 
       <section className="rounded-[2rem] bg-white p-6 shadow ring-1 ring-border">
-        <form className="grid gap-3 md:grid-cols-[1fr_220px_180px_auto]" onSubmit={(event) => { event.preventDefault(); void load(); }}>
+        <form className="grid gap-3 md:grid-cols-[1fr_180px_180px_220px_180px_auto]" onSubmit={(event) => { event.preventDefault(); void load(); }}>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search teacher" className="rounded-xl border border-muted px-4 py-3 text-text-primary" />
+          <label className="space-y-1 text-sm text-text-secondary">
+            <span>From date</span>
+            <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} className="w-full rounded-xl border border-muted px-4 py-3 text-text-primary" />
+          </label>
+          <label className="space-y-1 text-sm text-text-secondary">
+            <span>To date</span>
+            <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} className="w-full rounded-xl border border-muted px-4 py-3 text-text-primary" />
+          </label>
           <select value={sessionType} onChange={(event) => setSessionType(event.target.value as '' | AttendanceSessionType)} className="rounded-xl border border-muted px-4 py-3 text-text-primary">
             {sessions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>

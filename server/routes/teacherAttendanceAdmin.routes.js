@@ -22,6 +22,8 @@ router.get(
   '/today',
   adminOnly,
   query('date').optional().isISO8601(),
+  query('fromDate').optional().isISO8601(),
+  query('toDate').optional().isISO8601(),
   query('search').optional().trim().isString(),
   query('status').optional().isIn(['PRESENT', 'LATE', 'ABSENT', 'LEAVE']),
   query('sessionType').optional().isIn(['morning', 'afternoon', 'evening']),

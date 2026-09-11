@@ -78,9 +78,13 @@ const createTeacherAttendanceAdminService = ({
     return teachers.map((item) => item._id);
   };
 
-  const getTodayAttendance = async ({ search, status, sessionType, page = 1, perPage = 20, date } = {}) => {
-    const dayStart = normalizeToDayStart(date || nowProvider());
-    const dayEnd = addDays(dayStart, 1);
+  const getTodayAttendance = async ({ search, status, sessionType, page = 1, perPage = 20, date, fromDate, toDate } = {}) => {
+    const dayStart = fromDate ? normalizeToDayStart(fromDate) : normalizeToDayStart(date || nowProvider());
+    const dayEnd = toDate
+      ? addDays(normalizeToDayStart(toDate), 1)
+      : fromDate
+        ? new Date('9999-12-31T23:59:59.999Z')
+        : addDays(dayStart, 1);
 
     const query = {
       attendanceDate: { $gte: dayStart, $lt: dayEnd },
