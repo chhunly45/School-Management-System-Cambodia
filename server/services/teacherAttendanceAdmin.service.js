@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { TeacherAttendance, Teacher } = require('../models');
 const { createTeacherAttendanceServices } = require('./teacherAttendance');
-const { normalizeToDayStart, addDays } = require('./teacherAttendance/time.utils');
+const { normalizeToDayStart, addDays, getSchoolDayBounds } = require('./teacherAttendance/time.utils');
 
 const MAX_PER_PAGE = 100;
 
@@ -79,9 +79,9 @@ const createTeacherAttendanceAdminService = ({
   };
 
   const getTodayAttendance = async ({ search, status, sessionType, page = 1, perPage = 20, date, fromDate, toDate } = {}) => {
-    const dayStart = fromDate ? normalizeToDayStart(fromDate) : normalizeToDayStart(date || nowProvider());
+    const dayStart = fromDate ? getSchoolDayBounds(fromDate).start : normalizeToDayStart(date || nowProvider());
     const dayEnd = toDate
-      ? addDays(normalizeToDayStart(toDate), 1)
+      ? getSchoolDayBounds(toDate).end
       : fromDate
         ? new Date('9999-12-31T23:59:59.999Z')
         : addDays(dayStart, 1);
