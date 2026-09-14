@@ -83,8 +83,7 @@ const TeacherAttendancePage = () => {
     }
 
     void Promise.all([loadTodayState(), loadHistory(1)]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, sessionType]);
 
   const locationAccuracyValid =
     capturedLocation !== null &&

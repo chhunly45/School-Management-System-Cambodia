@@ -20,7 +20,7 @@ jest.mock('../hooks/useAuth', () => ({
 jest.mock('../services/teacherAttendance.api', () => ({
   checkInTeacherAttendance: jest.fn(),
   checkOutTeacherAttendance: jest.fn(),
-  getTodayTeacherAttendance: () => getTodayTeacherAttendanceMock(),
+  getTodayTeacherAttendance: (sessionType: string) => getTodayTeacherAttendanceMock(sessionType),
   getTeacherAttendanceHistory: () => getTeacherAttendanceHistoryMock()
 }));
 
@@ -54,7 +54,14 @@ jest.mock('../components/attendance/AttendanceStatusBadge', () => ({
 
 jest.mock('../components/attendance/QrScannerPanel', () => ({
   __esModule: true,
-  default: () => <p>Camera permission denied. Enable camera access and try again.</p>
+  default: ({ onDecodedToken }: any) => (
+    <>
+      <p>Camera permission denied. Enable camera access and try again.</p>
+      <button type="button" onClick={() => onDecodedToken({ token: 'attqr_test_token', sessionType: 'afternoon' })}>
+        Decode Afternoon QR
+      </button>
+    </>
+  )
 }));
 
 jest.mock('../components/attendance/LocationStatusPanel', () => ({
@@ -170,6 +177,88 @@ describe('TeacherAttendancePage integration behavior', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/camera permission denied/i)).toBeInTheDocument();
+    });
+  });
+
+  it('refreshes today state when changing from morning to afternoon', async () => {
+    getTodayTeacherAttendanceMock.mockImplementation((requestedSessionType: string) => Promise.resolve({
+      success: true,
+      data: requestedSessionType === 'morning'
+        ? {
+            attendance: { status: 'LATE', checkInTime: '2026-09-14T07:33:00', checkOutTime: '2026-09-14T10:45:00' },
+            canCheckIn: false,
+            canCheckOut: false
+          }
+        : { attendance: null, canCheckIn: true, canCheckOut: false }
+    }));
+
+    render(
+      <MemoryRouter>
+        <TeacherAttendancePage />
+      </MemoryRouter>
+    );
+
+    await waitForInitialAttendanceLoad();
+    expect(getTodayTeacherAttendanceMock).toHaveBeenNthCalledWith(1, 'morning');
+    expect(screen.getByRole('button', { name: 'Already Checked In' })).toBeInTheDocument();
+    expect(screen.getByText('Check-in Time: 14/09/2026 07:33')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('combobox', { name: /attendance session/i }), { target: { value: 'afternoon' } });
+
+    await waitFor(() => {
+      expect(getTodayTeacherAttendanceMock).toHaveBeenNthCalledWith(2, 'afternoon');
+      expect(screen.getByRole('button', { name: 'Check In' })).toBeInTheDocument();
+    });
+    expect(screen.getByText('Check-in Time: -')).toBeInTheDocument();
+  });
+
+  it('keeps afternoon and evening today state independent', async () => {
+    getTodayTeacherAttendanceMock.mockImplementation((requestedSessionType: string) => Promise.resolve({
+      success: true,
+      data: requestedSessionType === 'evening'
+        ? { attendance: null, canCheckIn: true, canCheckOut: false }
+        : { attendance: { status: 'PRESENT', checkInTime: '2026-09-14T13:30:00' }, canCheckIn: false, canCheckOut: true }
+    }));
+
+    render(
+      <MemoryRouter>
+        <TeacherAttendancePage />
+      </MemoryRouter>
+    );
+
+    await waitForInitialAttendanceLoad();
+    fireEvent.change(screen.getByRole('combobox', { name: /attendance session/i }), { target: { value: 'afternoon' } });
+    await waitFor(() => expect(getTodayTeacherAttendanceMock).toHaveBeenNthCalledWith(2, 'afternoon'));
+    expect(screen.getByRole('button', { name: 'Already Checked In' })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('combobox', { name: /attendance session/i }), { target: { value: 'evening' } });
+    await waitFor(() => {
+      expect(getTodayTeacherAttendanceMock).toHaveBeenNthCalledWith(3, 'evening');
+      expect(screen.getByRole('button', { name: 'Check In' })).toBeInTheDocument();
+    });
+  });
+
+  it('refreshes today state when an afternoon QR synchronizes the session', async () => {
+    getTodayTeacherAttendanceMock.mockImplementation((requestedSessionType: string) => Promise.resolve({
+      success: true,
+      data: requestedSessionType === 'afternoon'
+        ? { attendance: null, canCheckIn: true, canCheckOut: false }
+        : { attendance: { status: 'LATE', checkInTime: '2026-09-14T07:33:00' }, canCheckIn: false, canCheckOut: false }
+    }));
+
+    render(
+      <MemoryRouter>
+        <TeacherAttendancePage />
+      </MemoryRouter>
+    );
+
+    await waitForInitialAttendanceLoad();
+    fireEvent.click(screen.getByRole('button', { name: /scan qr code/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Decode Afternoon QR' }));
+
+    await waitFor(() => {
+      expect(getTodayTeacherAttendanceMock).toHaveBeenNthCalledWith(2, 'afternoon');
+      expect(screen.getByRole('button', { name: 'Check In' })).toBeInTheDocument();
     });
   });
 });
