@@ -1,9 +1,11 @@
 const crypto = require('crypto');
 const { AttendanceQrToken, SchoolSetting } = require('../models');
-const { getDefaultPolicy, getSessionPolicy, SCHOOL_SETTINGS_KEY } = require('./teacherAttendance/attendancePolicy.service');
-const { parseTimeToMinutes, getSchoolDayBounds, getSchoolTimezone, getZonedParts, zonedDateTimeToUtc } = require('./teacherAttendance/time.utils');
+const { getDefaultPolicy, SCHOOL_SETTINGS_KEY } = require('./teacherAttendance/attendancePolicy.service');
+const { getSchoolDayBounds, getSchoolTimezone } = require('./teacherAttendance/time.utils');
 
 const ATTENDANCE_SESSIONS = ['morning', 'afternoon', 'evening'];
+// QR must remain scannable until an admin explicitly rotates or revokes it
+const NON_EXPIRING_QR_EXPIRES_AT = new Date('2099-12-31T23:59:59.000Z');
 
 const createValidationError = (message, statusCode = 400) => {
   const error = new Error(message);
@@ -32,18 +34,7 @@ const createAttendanceQrAdminService = ({
   };
 
   const getDailyExpiry = async (sessionType, referenceTime) => {
-    const policy = await getPolicy();
-    const sessionPolicy = getSessionPolicy(policy, sessionType || 'morning');
-    const endMinutes = parseTimeToMinutes(sessionPolicy.checkInEnd || sessionPolicy.checkoutTime);
-    if (endMinutes === null) {
-      throw createValidationError('Attendance policy time format is invalid.', 500);
-    }
-    const timezone = policy.attendanceTimezone || getSchoolTimezone();
-    const localDate = getZonedParts(referenceTime, timezone);
-    const sessionEnd = zonedDateTimeToUtc({ ...localDate, hour: Math.floor(endMinutes / 60), minute: endMinutes % 60, second: 0 }, timezone);
-    const midnightParts = new Date(Date.UTC(localDate.year, localDate.month - 1, localDate.day + 1));
-    const midnight = zonedDateTimeToUtc({ year: midnightParts.getUTCFullYear(), month: midnightParts.getUTCMonth() + 1, day: midnightParts.getUTCDate() }, timezone);
-    const expiresAt = sessionEnd < midnight ? sessionEnd : midnight;
+    const expiresAt = NON_EXPIRING_QR_EXPIRES_AT;
     return {
       expiresAt,
       ttlSeconds: Math.max(0, Math.floor((expiresAt.getTime() - referenceTime.getTime()) / 1000))

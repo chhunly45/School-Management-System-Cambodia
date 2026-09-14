@@ -6,7 +6,6 @@ const http = require('http');
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const { createAttendanceQrAdminService } = require('../services/attendanceQrAdmin.service');
-const { getZonedParts } = require('../services/teacherAttendance/time.utils');
 
 let mongod;
 let server;
@@ -164,7 +163,7 @@ describe('Attendance QR admin integration', () => {
     assert.equal(current.data.data.current.token, generated.data.data.current.token);
   });
 
-  it('generates a daily QR that expires at the configured session boundary', async () => {
+  it('generates a QR that does not expire until explicitly rotated or revoked', async () => {
     await createUser({
       email: 'admin-daily-expiry@example.com',
       password: 'Password123!',
@@ -180,13 +179,11 @@ describe('Attendance QR admin integration', () => {
     );
 
     const expiresAt = new Date(generated.data.data.current.expiresAt);
-    assert.equal(expiresAt.getHours(), 23);
-    assert.equal(expiresAt.getMinutes(), 59);
-    assert.equal(expiresAt.getSeconds(), 0);
-    assert.ok(expiresAt.getTime() - Date.now() > 60 * 60 * 10);
+    assert.equal(generated.data.data.current.status, 'ACTIVE');
+    assert.ok(expiresAt.getTime() - Date.now() > 1000 * 60 * 60 * 24 * 365 * 10);
   });
 
-  it('uses each selected session end as the QR expiry in the school timezone', async () => {
+  it('does not expire the QR at any session boundary for morning, afternoon, or evening', async () => {
     const createdAt = new Date('2026-08-07T00:00:00.000Z');
     const documents = [];
     const query = (value) => ({
@@ -220,15 +217,10 @@ describe('Attendance QR admin integration', () => {
       }
     });
 
-    for (const [sessionType, expectedHour, expectedMinute] of [
-      ['morning', 10, 45],
-      ['afternoon', 16, 0],
-      ['evening', 20, 0]
-    ]) {
+    for (const sessionType of ['morning', 'afternoon', 'evening']) {
       const generated = await service.generateToken({ createdBy: 'admin-test', sessionType });
-      const localExpiry = getZonedParts(generated.current.expiresAt, 'Asia/Phnom_Penh');
-      assert.equal(localExpiry.hour, expectedHour);
-      assert.equal(localExpiry.minute, expectedMinute);
+      assert.equal(generated.current.status, 'ACTIVE');
+      assert.ok(new Date(generated.current.expiresAt).getTime() - createdAt.getTime() > 1000 * 60 * 60 * 24 * 365 * 10);
     }
   });
 
