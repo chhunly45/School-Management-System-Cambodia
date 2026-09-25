@@ -360,7 +360,7 @@ const ClassPage = () => {
       </form>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <form onSubmit={handleSearch} className="flex flex-1 gap-2">
+        <form onSubmit={handleSearch} className="flex flex-1 flex-col gap-2 sm:flex-row">
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

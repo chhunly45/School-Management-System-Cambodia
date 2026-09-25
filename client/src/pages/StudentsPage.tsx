@@ -789,31 +789,6 @@ const StudentsPage = () => {
         </table>
       </div>
 
-        {/* Admin-only visual debug panel (temporary) */}
-        {user && user.role === 'admin' && (
-          <div className="mt-4 rounded-lg border border-muted bg-gray-50 p-3 text-sm text-text-secondary">
-            <div className="font-semibold mb-2">[TEMP DEBUG] API Response</div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>Response keys:</div>
-              <div className="font-medium">{responseDebug ? responseDebug.keys.join(', ') : 'n/a'}</div>
-              <div>Meta:</div>
-              <div className="font-medium">{responseDebug ? JSON.stringify(responseDebug.meta) : 'n/a'}</div>
-              <div>Page:</div>
-              <div className="font-medium">{responseDebug?.page ?? 'n/a'}</div>
-              <div>Limit:</div>
-              <div className="font-medium">{responseDebug?.limit ?? 'n/a'}</div>
-              <div>Total:</div>
-              <div className="font-medium">{responseDebug?.total ?? 'n/a'}</div>
-              <div>Total Pages:</div>
-              <div className="font-medium">{responseDebug?.totalPages ?? 'n/a'}</div>
-              <div>Students Loaded:</div>
-              <div className="font-medium">{students.length}</div>
-              <div>Pagination Visible:</div>
-              <div className="font-medium">{totalPages > 1 ? 'Yes' : 'No'}</div>
-            </div>
-          </div>
-        )}
-
       {totalPages > 1 && (
         <div className="flex flex-col gap-3 rounded-lg border border-muted bg-white p-4 md:flex-row md:items-center md:justify-between">
           <div className="text-sm text-text-secondary">
