@@ -462,7 +462,7 @@ const StudentsPage = () => {
             placeholder="Search by student ID, name, academic year, course, level, room, or shift..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            className="min-w-0 flex-1 rounded-lg border border-muted px-4 py-2 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
           <button
             type="submit"
