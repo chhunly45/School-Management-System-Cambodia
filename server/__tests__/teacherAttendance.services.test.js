@@ -27,6 +27,43 @@ const createDefaultSettings = async (overrides = {}) => models.SchoolSetting.cre
   ...overrides
 });
 
+const verifyPersistedStatusScenario = async ({ label, checkInTime, checkOutTime, expectedCheckInStatus, expectedCheckOutStatus, expectedLegacyStatus }) => {
+  let currentTime = new Date(`2026-08-07T${checkInTime}:00`);
+  const nowProvider = () => currentTime;
+  const teacherId = new mongoose.Types.ObjectId();
+  const user = { _id: new mongoose.Types.ObjectId(), email: `${label}@example.com` };
+  const teacherAttendanceService = createTeacherAttendanceService({
+    TeacherModel: { findOne: () => ({ lean: async () => ({ _id: teacherId }) }) },
+    TeacherAttendanceModel: models.TeacherAttendance,
+    AttendanceAttemptLogModel: models.AttendanceAttemptLog,
+    businessServices: services.createTeacherAttendanceServices({ nowProvider }),
+    nowProvider,
+    sessionWritesEnabled: true
+  });
+
+  const checkedIn = await teacherAttendanceService.checkIn({
+    user,
+    attendanceMethod: 'MANUAL',
+    latitude: SCHOOL_LAT,
+    longitude: SCHOOL_LNG
+  });
+  const afterCheckIn = await models.TeacherAttendance.findById(checkedIn._id).lean();
+  assert.equal(afterCheckIn.checkInStatus, expectedCheckInStatus);
+  assert.equal(afterCheckIn.checkOutStatus, null);
+  assert.equal(afterCheckIn.status, expectedCheckInStatus);
+
+  currentTime = new Date(`2026-08-07T${checkOutTime}:00`);
+  const checkedOut = await teacherAttendanceService.checkOut({
+    user,
+    latitude: SCHOOL_LAT,
+    longitude: SCHOOL_LNG
+  });
+  const afterCheckOut = await models.TeacherAttendance.findById(checkedOut._id).lean();
+  assert.equal(afterCheckOut.checkInStatus, expectedCheckInStatus);
+  assert.equal(afterCheckOut.checkOutStatus, expectedCheckOutStatus);
+  assert.equal(afterCheckOut.status, expectedLegacyStatus);
+};
+
 before(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_URI = mongod.getUri();
@@ -63,7 +100,7 @@ beforeEach(async () => {
 
 describe('Teacher Attendance business services', () => {
   it('validates check-in for logged-in teacher and computes PRESENT status', async () => {
-    await createDefaultSettings();
+    await createDefaultSettings({ morningLateAfter: '08:00' });
 
     const qrToken = await models.AttendanceQrToken.create({
       token: 'token-checkin-success-0001',
@@ -85,6 +122,7 @@ describe('Teacher Attendance business services', () => {
     });
 
     assert.equal(payload.status, 'PRESENT');
+    assert.equal(payload.checkInStatus, 'PRESENT');
     assert.equal(String(payload.qrTokenId), String(qrToken._id));
     assert.ok(payload.distanceFromSchool <= 1);
   });
@@ -119,11 +157,13 @@ describe('Teacher Attendance business services', () => {
     });
 
     assert.equal(payload.status, 'LATE');
+    assert.equal(payload.checkInStatus, 'LATE');
   });
 
   it('uses morning session rules and allows late check-in after checkout time', async () => {
     await createDefaultSettings({
       morningCheckInStart: '06:45',
+      morningCheckInEnd: '11:00',
       morningLateAfter: '06:55',
       morningCheckoutTime: '10:40'
     });
@@ -139,6 +179,7 @@ describe('Teacher Attendance business services', () => {
       longitude: SCHOOL_LNG
     });
     assert.equal(presentPayload.status, 'PRESENT');
+    assert.equal(presentPayload.checkInStatus, 'PRESENT');
 
     const lateServices = services.createTeacherAttendanceServices({ nowProvider: () => new Date('2026-08-07T06:56:00') });
     const latePayload = await lateServices.checkInValidationService.validateCheckIn({
@@ -149,6 +190,7 @@ describe('Teacher Attendance business services', () => {
       longitude: SCHOOL_LNG
     });
     assert.equal(latePayload.status, 'LATE');
+    assert.equal(latePayload.checkInStatus, 'LATE');
 
     const afterCheckoutServices = services.createTeacherAttendanceServices({ nowProvider: () => new Date('2026-08-07T10:45:00') });
     const afterCheckoutPayload = await afterCheckoutServices.checkInValidationService.validateCheckIn({
@@ -197,9 +239,10 @@ describe('Teacher Attendance business services', () => {
     assert.equal(payload.sessionType, 'afternoon');
     assert.equal(payload.status, 'PRESENT');
 
+    const morningServices = services.createTeacherAttendanceServices({ nowProvider: () => new Date('2026-08-07T07:00:00') });
     await assert.rejects(
       async () => {
-        await teacherServices.checkInValidationService.validateCheckIn({
+        await morningServices.checkInValidationService.validateCheckIn({
           actor,
           attendanceMethod: 'MANUAL',
           sessionType: 'morning',
@@ -341,7 +384,12 @@ describe('Teacher Attendance business services', () => {
   });
 
   it('rejects outside attendance window and outside radius', async () => {
-    await createDefaultSettings({ attendanceStart: '09:00', attendanceEnd: '17:00' });
+    await createDefaultSettings({
+      attendanceStart: '09:00',
+      attendanceEnd: '17:00',
+      morningCheckInStart: '09:00',
+      morningCheckInEnd: '17:00'
+    });
     const actor = { teacherId: new mongoose.Types.ObjectId(), userId: new mongoose.Types.ObjectId() };
 
     let teacherServices = services.createTeacherAttendanceServices({ nowProvider: () => FIXED_NOW });
@@ -427,7 +475,7 @@ describe('Teacher Attendance business services', () => {
     const userId = new mongoose.Types.ObjectId();
     const attendanceDate = new Date('2026-08-07T00:00:00');
 
-    const teacherServices = services.createTeacherAttendanceServices({ nowProvider: () => FIXED_NOW });
+    const teacherServices = services.createTeacherAttendanceServices({ nowProvider: () => new Date('2026-08-07T10:44:00') });
 
     await assert.rejects(
       async () => {
@@ -456,7 +504,8 @@ describe('Teacher Attendance business services', () => {
       gpsAccuracy: 5
     });
 
-    assert.equal(result.status, 'PRESENT');
+    assert.equal(result.status, 'LEAVE');
+    assert.equal(result.checkOutStatus, 'EARLY_LEAVE');
 
     await models.TeacherAttendance.updateOne(
       { teacherId, attendanceDate },
@@ -474,6 +523,18 @@ describe('Teacher Attendance business services', () => {
       (error) => error && error.code === 'ALREADY_CHECKED_OUT'
     );
   });
+
+  for (const scenario of [
+    { label: 'present-on-time', checkInTime: '06:49', checkOutTime: '10:45', expectedCheckInStatus: 'PRESENT', expectedCheckOutStatus: 'ON_TIME', expectedLegacyStatus: 'PRESENT' },
+    { label: 'late-on-time', checkInTime: '06:50', checkOutTime: '10:45', expectedCheckInStatus: 'LATE', expectedCheckOutStatus: 'ON_TIME', expectedLegacyStatus: 'LATE' },
+    { label: 'present-early-leave', checkInTime: '06:49', checkOutTime: '10:44', expectedCheckInStatus: 'PRESENT', expectedCheckOutStatus: 'EARLY_LEAVE', expectedLegacyStatus: 'LEAVE' },
+    { label: 'late-early-leave', checkInTime: '06:50', checkOutTime: '10:44', expectedCheckInStatus: 'LATE', expectedCheckOutStatus: 'EARLY_LEAVE', expectedLegacyStatus: 'LEAVE' }
+  ]) {
+    it(`persists independent statuses for ${scenario.label}`, async () => {
+      await createDefaultSettings();
+      await verifyPersistedStatusScenario(scenario);
+    });
+  }
 
   it('returns paginated attendance history', async () => {
     await createDefaultSettings();

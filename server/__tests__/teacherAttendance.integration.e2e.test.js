@@ -91,6 +91,10 @@ const seedAttendanceSettings = async () => {
     attendanceLateAfter: '23:59',
     attendanceStart: '00:00',
     attendanceEnd: '23:59',
+    morningCheckInStart: '00:00',
+    morningCheckInEnd: '23:59',
+    morningLateAfter: '23:59',
+    morningCheckoutTime: '00:00',
     attendanceQrRotationSeconds: 30
   });
 };
@@ -185,6 +189,7 @@ describe('Teacher Attendance end-to-end integration', () => {
     assert.equal(response.data.success, true);
     assert.equal(response.data.data.attendanceMethod, 'QR');
     assert.equal(response.data.data.status, 'PRESENT');
+    assert.equal(response.data.data.checkInStatus, 'PRESENT');
   });
 
   it('3) GPS permission/missing coordinates rejected', async () => {
@@ -342,6 +347,9 @@ describe('Teacher Attendance end-to-end integration', () => {
     );
 
     assert.equal(checkInResponse.status, 201);
+    assert.equal(checkInResponse.data.data.checkInStatus, 'PRESENT');
+    assert.equal(checkInResponse.data.data.checkOutStatus, null);
+    assert.equal(checkInResponse.data.data.status, 'PRESENT');
 
     await createQrToken({ token: 'qr-flow-token-b-0007', rotationNumber: 7, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
 
@@ -373,6 +381,9 @@ describe('Teacher Attendance end-to-end integration', () => {
 
     assert.equal(checkOutResponse.status, 200);
     assert.ok(checkOutResponse.data.data.checkOutTime, 'Expected checkOutTime to be set');
+    assert.equal(checkOutResponse.data.data.checkInStatus, 'PRESENT');
+    assert.equal(checkOutResponse.data.data.checkOutStatus, 'ON_TIME');
+    assert.equal(checkOutResponse.data.data.status, 'PRESENT');
 
     const todayResponse = await axios.get(`${base}/teacher-attendance/today`, {
       headers: authHeaders(session)
@@ -391,6 +402,10 @@ describe('Teacher Attendance end-to-end integration', () => {
     assert.equal(historyResponse.status, 200);
     assert.ok(Array.isArray(historyResponse.data.data.items));
     assert.ok(historyResponse.data.data.items.length >= 1);
+    const persistedAttendance = historyResponse.data.data.items.find((item) => String(item._id) === String(checkOutResponse.data.data._id));
+    assert.equal(persistedAttendance.checkInStatus, 'PRESENT');
+    assert.equal(persistedAttendance.checkOutStatus, 'ON_TIME');
+    assert.equal(persistedAttendance.status, 'PRESENT');
   });
 
   it('12) admin summary APIs return expected attendance report payloads', async () => {

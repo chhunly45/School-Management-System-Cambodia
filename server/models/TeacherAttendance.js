@@ -3,6 +3,8 @@ const { Schema, model } = mongoose;
 
 const ATTENDANCE_METHODS = ['QR', 'FACE', 'MANUAL'];
 const ATTENDANCE_STATUSES = ['PRESENT', 'LATE', 'ABSENT', 'LEAVE'];
+const CHECK_IN_STATUSES = [null, 'PRESENT', 'LATE'];
+const CHECK_OUT_STATUSES = [null, 'ON_TIME', 'EARLY_LEAVE'];
 const ATTENDANCE_SESSIONS = ['morning', 'afternoon', 'evening'];
 
 const TeacherAttendanceSchema = new Schema(
@@ -33,6 +35,8 @@ const TeacherAttendanceSchema = new Schema(
         message: 'checkOutTime must be greater than or equal to checkInTime'
       }
     },
+    checkInStatus: { type: String, enum: CHECK_IN_STATUSES, default: null },
+    checkOutStatus: { type: String, enum: CHECK_OUT_STATUSES, default: null },
     attendanceMethod: { type: String, enum: ATTENDANCE_METHODS, required: true },
     status: { type: String, enum: ATTENDANCE_STATUSES, required: true, default: 'PRESENT' },
     latitude: { type: Number, min: -90, max: 90, default: null },

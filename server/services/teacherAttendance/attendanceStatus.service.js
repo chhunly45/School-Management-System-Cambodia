@@ -7,6 +7,16 @@ const createAttendanceStatusService = ({ lateCalculationService = createLateCalc
     return late ? 'LATE' : 'PRESENT';
   };
 
+  const calculateCheckOutStatus = ({ checkOutTime, sessionCheckoutTime }) => {
+    if (!checkOutTime || !sessionCheckoutTime) return null;
+
+    const checkoutMinutes = getLocalMinutes(checkOutTime);
+    const normalCheckoutMinutes = parseTimeToMinutes(sessionCheckoutTime);
+    if (normalCheckoutMinutes === null) return null;
+
+    return checkoutMinutes < normalCheckoutMinutes ? 'EARLY_LEAVE' : 'ON_TIME';
+  };
+
   const calculateFinalStatus = ({ existingStatus, checkOutTime, sessionCheckoutTime }) => {
     if (!checkOutTime) return existingStatus;
     if (!sessionCheckoutTime) return existingStatus;
@@ -32,6 +42,7 @@ const createAttendanceStatusService = ({ lateCalculationService = createLateCalc
 
   return {
     calculateCheckInStatus,
+    calculateCheckOutStatus,
     calculateFinalStatus,
     calculateAbsentStatus
   };

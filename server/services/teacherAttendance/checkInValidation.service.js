@@ -76,6 +76,7 @@ const createCheckInValidationService = ({
       attendanceDate,
       sessionType: normalizedSessionType,
       checkInTime: now,
+      checkInStatus: status,
       attendanceMethod,
       status,
       qrTokenId: qrTokenDoc ? qrTokenDoc.doc._id : null,

@@ -89,10 +89,46 @@ describe('session-aware teacher attendance policy', () => {
   });
 
   it('classifies Early Leave only before the session checkout time', () => {
+    assert.equal(statusService.calculateCheckOutStatus({ checkOutTime: null, sessionCheckoutTime: '10:40' }), null);
+    assert.equal(statusService.calculateCheckOutStatus({ checkOutTime: makeTime('10:39'), sessionCheckoutTime: '10:40' }), 'EARLY_LEAVE');
+    assert.equal(statusService.calculateCheckOutStatus({ checkOutTime: makeTime('10:40'), sessionCheckoutTime: '10:40' }), 'ON_TIME');
+    assert.equal(statusService.calculateCheckOutStatus({ checkOutTime: makeTime('10:41'), sessionCheckoutTime: '10:40' }), 'ON_TIME');
     assert.equal(statusService.calculateFinalStatus({ existingStatus: 'PRESENT', checkOutTime: makeTime('10:39'), sessionCheckoutTime: '10:40' }), 'LEAVE');
     assert.equal(statusService.calculateFinalStatus({ existingStatus: 'PRESENT', checkOutTime: makeTime('10:40'), sessionCheckoutTime: '10:40' }), 'PRESENT');
     assert.equal(statusService.calculateFinalStatus({ existingStatus: 'LATE', checkOutTime: makeTime('15:59'), sessionCheckoutTime: '16:00' }), 'LEAVE');
     assert.equal(statusService.calculateFinalStatus({ existingStatus: 'LATE', checkOutTime: makeTime('19:59'), sessionCheckoutTime: '20:00' }), 'LEAVE');
+  });
+
+  it('classifies Afternoon and Evening checkout threshold boundaries', () => {
+    for (const [sessionCheckoutTime, beforeTime, atTime, afterTime] of [
+      ['16:00', '15:59', '16:00', '16:01'],
+      ['20:00', '19:59', '20:00', '20:01']
+    ]) {
+      assert.equal(statusService.calculateCheckOutStatus({ checkOutTime: makeTime(beforeTime), sessionCheckoutTime }), 'EARLY_LEAVE');
+      assert.equal(statusService.calculateCheckOutStatus({ checkOutTime: makeTime(atTime), sessionCheckoutTime }), 'ON_TIME');
+      assert.equal(statusService.calculateCheckOutStatus({ checkOutTime: makeTime(afterTime), sessionCheckoutTime }), 'ON_TIME');
+    }
+  });
+
+  it('keeps independent statuses while preserving legacy status priority', () => {
+    const cases = [
+      ['PRESENT', 'ON_TIME', 'PRESENT'],
+      ['LATE', 'ON_TIME', 'LATE'],
+      ['PRESENT', 'EARLY_LEAVE', 'LEAVE'],
+      ['LATE', 'EARLY_LEAVE', 'LEAVE']
+    ];
+
+    for (const [checkInStatus, checkOutStatus, legacyStatus] of cases) {
+      assert.equal(checkInStatus === 'LATE' ? 'LATE' : 'PRESENT', checkInStatus);
+      assert.equal(
+        statusService.calculateFinalStatus({
+          existingStatus: checkInStatus,
+          checkOutTime: checkOutStatus === 'EARLY_LEAVE' ? makeTime('10:39') : makeTime('10:40'),
+          sessionCheckoutTime: '10:40'
+        }),
+        legacyStatus
+      );
+    }
   });
 
   it('settles Absent only at or after session end', () => {

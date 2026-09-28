@@ -53,12 +53,17 @@ const createCheckOutValidationService = ({
       checkOutTime: now,
       sessionCheckoutTime: sessionPolicy.checkoutTime
     });
+    const checkOutStatus = attendanceStatusService.calculateCheckOutStatus({
+      checkOutTime: now,
+      sessionCheckoutTime: sessionPolicy.checkoutTime
+    });
 
     return {
       attendance,
       attendanceDate,
       sessionType: normalizedSessionType,
       checkOutTime: now,
+      checkOutStatus,
       status: nextStatus,
       latitude: latitude === undefined ? null : Number(latitude),
       longitude: longitude === undefined ? null : Number(longitude),

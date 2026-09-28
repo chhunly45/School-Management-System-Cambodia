@@ -138,6 +138,7 @@ const createTeacherAttendanceService = ({
         attendanceDate: validated.attendanceDate,
         sessionType: sessionWritesEnabled ? validated.sessionType : null,
         checkInTime: validated.checkInTime,
+        checkInStatus: validated.checkInStatus,
         attendanceMethod: validated.attendanceMethod,
         status: validated.status,
         latitude: validated.latitude,
@@ -213,6 +214,7 @@ const createTeacherAttendanceService = ({
       }
       attendance.sessionType = validated.sessionType || attendance.sessionType;
       attendance.checkOutTime = validated.checkOutTime;
+      attendance.checkOutStatus = validated.checkOutStatus;
       attendance.status = validated.status;
       attendance.latitude = validated.latitude;
       attendance.longitude = validated.longitude;
