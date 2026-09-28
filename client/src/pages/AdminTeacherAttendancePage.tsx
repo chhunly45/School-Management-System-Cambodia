@@ -92,8 +92,8 @@ const AdminTeacherAttendancePage = () => {
       </section>
 
       <section className="overflow-x-auto rounded-[2rem] bg-white p-6 shadow ring-1 ring-border">
-        <table className="w-full min-w-[760px] border-collapse text-sm">
-          <thead><tr className="border-b border-muted text-left text-text-secondary"><th className="py-3 pr-4">Teacher</th><th className="py-3 pr-4">Session</th><th className="py-3 pr-4">Check-in</th><th className="py-3 pr-4">Check-out</th><th className="py-3 pr-4">Status</th></tr></thead>
+        <table className="w-full min-w-[920px] border-collapse text-sm">
+          <thead><tr className="border-b border-muted text-left text-text-secondary"><th className="py-3 pr-4">Teacher</th><th className="py-3 pr-4">Session</th><th className="py-3 pr-4">Check-in</th><th className="py-3 pr-4">Check-out</th><th className="py-3 pr-4">Status</th><th className="py-3 pr-4">Check-in Status</th><th className="py-3 pr-4">Check-out Status</th></tr></thead>
           <tbody>
             {(data?.items || []).map((item) => (
               <tr key={item._id} className="border-b border-muted/70 text-text-primary">
@@ -102,6 +102,8 @@ const AdminTeacherAttendancePage = () => {
                 <td className="py-3 pr-4">{formatDateTimeForDisplay(item.checkInTime)}</td>
                 <td className="py-3 pr-4">{formatDateTimeForDisplay(item.checkOutTime)}</td>
                 <td className="py-3 pr-4"><AttendanceStatusBadge status={item.status} /></td>
+                <td className="py-3 pr-4">{item.checkInStatus || 'Not applicable'}</td>
+                <td className="py-3 pr-4">{item.checkOutStatus || 'Not applicable'}</td>
               </tr>
             ))}
           </tbody>

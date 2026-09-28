@@ -2,6 +2,8 @@ import api from './api';
 
 export type AttendanceMethod = 'QR' | 'FACE' | 'MANUAL';
 export type AttendanceStatus = 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
+export type CheckInStatus = 'PRESENT' | 'LATE';
+export type CheckOutStatus = 'ON_TIME' | 'EARLY_LEAVE';
 export type AttendanceSessionType = 'morning' | 'afternoon' | 'evening';
 
 export interface TeacherAttendanceRecord {
@@ -20,6 +22,8 @@ export interface TeacherAttendanceRecord {
   sessionType: AttendanceSessionType | null;
   checkInTime: string | null;
   checkOutTime: string | null;
+  checkInStatus?: CheckInStatus | null;
+  checkOutStatus?: CheckOutStatus | null;
   attendanceMethod: AttendanceMethod;
   status: AttendanceStatus;
   latitude?: number | null;
