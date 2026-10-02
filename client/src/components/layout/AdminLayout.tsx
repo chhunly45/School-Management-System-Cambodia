@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { Home, Users, ShoppingBag, CheckCircle, TrendingUp, BookOpen, Award, Bus, GraduationCap, CalendarRange, Layers, Building2, Settings2, QrCode, Menu, X } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: Home },
@@ -30,9 +31,14 @@ const navItems = [
 ];
 
 const AdminLayout = () => {
+  const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isLimitedUser = user?.role === 'LIMITED_STUDENT_PAYMENT';
+  const visibleNavItems = isLimitedUser
+    ? navItems.filter((item) => ['/admin/students', '/admin/payments'].includes(item.to))
+    : navItems;
 
-  const renderNavItems = (onNavigate?: () => void) => navItems.map((item) => {
+  const renderNavItems = (onNavigate?: () => void) => visibleNavItems.map((item) => {
     const Icon = item.icon;
     return (
       <NavLink
@@ -60,8 +66,8 @@ const AdminLayout = () => {
         <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
           <div className="mb-1 flex items-center justify-between rounded-3xl border border-muted bg-white px-4 py-3 shadow-sm lg:hidden">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-text-secondary">School Admin</p>
-              <p className="mt-1 text-lg font-semibold text-text-primary">Admin Menu</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-text-secondary">{isLimitedUser ? 'Student & Payment' : 'School Admin'}</p>
+              <p className="mt-1 text-lg font-semibold text-text-primary">{isLimitedUser ? 'Workspace' : 'Admin Menu'}</p>
             </div>
             <button
               type="button"
@@ -86,8 +92,8 @@ const AdminLayout = () => {
               <aside id="admin-mobile-navigation" className="absolute inset-x-3 bottom-3 top-20 overflow-y-auto rounded-3xl border border-muted bg-white p-4 shadow-2xl sm:left-auto sm:w-[min(22rem,calc(100vw-1.5rem))]">
                 <div className="mb-4 flex items-center justify-between gap-3 border-b border-muted pb-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-text-secondary">School Admin</p>
-                    <p className="mt-1 text-lg font-semibold text-text-primary">Navigation</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-text-secondary">{isLimitedUser ? 'Student & Payment' : 'School Admin'}</p>
+                    <p className="mt-1 text-lg font-semibold text-text-primary">{isLimitedUser ? 'Workspace' : 'Navigation'}</p>
                   </div>
                   <button
                     type="button"
@@ -107,8 +113,8 @@ const AdminLayout = () => {
 
           <aside className="hidden rounded-[2rem] border border-muted bg-white p-6 shadow-xl ring-1 ring-muted lg:block">
             <div className="mb-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-text-secondary">School Admin</p>
-              <h2 className="mt-3 text-2xl font-semibold text-text-primary">Manage School</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-text-secondary">{isLimitedUser ? 'Student & Payment' : 'School Admin'}</p>
+              <h2 className="mt-3 text-2xl font-semibold text-text-primary">{isLimitedUser ? 'Workspace' : 'Manage School'}</h2>
             </div>
             <nav className="space-y-2">
               {renderNavItems()}

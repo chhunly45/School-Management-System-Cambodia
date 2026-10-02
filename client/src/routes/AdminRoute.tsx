@@ -1,16 +1,21 @@
 import { Navigate, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
+const limitedStudentPaymentRoutes = ['/admin/students', '/admin/payments'];
+
 const AdminRoute = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const currentPath = location.pathname.replace(/\/+$/, '') || '/';
+  const limitedUserCanAccess = user?.role === 'LIMITED_STUDENT_PAYMENT'
+    && (limitedStudentPaymentRoutes.includes(currentPath) || /^\/admin\/students\/[^/]+$/.test(currentPath));
 
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (user.role !== 'admin') {
+  if (user.role !== 'admin' && !limitedUserCanAccess) {
     return (
       <div className="min-h-screen bg-background py-10">
         <div className="max-w-3xl mx-auto rounded-3xl border border-red-200 bg-white p-8 shadow-sm">

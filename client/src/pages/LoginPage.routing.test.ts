@@ -9,6 +9,10 @@ describe('post-login routing', () => {
     expect(getPostLoginPath({ role: 'admin' })).toBe('/admin/school-dashboard');
   });
 
+  it('starts limited student/payment users on the Student workspace', () => {
+    expect(getPostLoginPath({ role: 'LIMITED_STUDENT_PAYMENT' })).toBe('/admin/students');
+  });
+
   it('keeps seller, user, and unknown roles on the default dashboard', () => {
     expect(getPostLoginPath({ role: 'seller' })).toBe('/dashboard');
     expect(getPostLoginPath({ role: 'user' })).toBe('/dashboard');

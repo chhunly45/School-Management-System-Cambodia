@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { listStudents, createStudent, updateStudent, deleteStudent } from '../services/student.api';
@@ -125,6 +126,8 @@ const getCompactPaginationItems = (currentPage: number, totalPages: number): Arr
 const StudentsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin';
+  const hasStudentAccess = isAdmin || user?.role === 'LIMITED_STUDENT_PAYMENT';
   const [students, setStudents] = useState<Student[]>([]);
   const [formValues, setFormValues] = useState<StudentFormValues>(emptyStudentForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -148,7 +151,7 @@ const StudentsPage = () => {
 
   useEffect(() => {
     if (!user) return navigate('/login');
-    if (user.role !== 'admin') {
+    if (!hasStudentAccess) {
       setAccessDenied(true);
       return;
     }
@@ -282,6 +285,8 @@ const StudentsPage = () => {
   };
 
   const handleEdit = (student: Student) => {
+    if (!isAdmin) return;
+
     const { englishName, khmerName } = splitStudentName(student.fullName || '');
 
     setEditingId(student._id);
@@ -361,6 +366,7 @@ const StudentsPage = () => {
   };
 
   const handleDelete = async () => {
+    if (!isAdmin) return;
     if (!pendingDeleteStudent) return;
     setLoading(true);
     setMessage('');
@@ -766,20 +772,30 @@ const StudentsPage = () => {
                     </span>
                   </td>
                     <td className="px-4 py-3 space-x-2">
-                      <button
-                        onClick={() => handleEdit(student)}
-                        className="text-primary hover:underline text-sm font-medium"
-                        disabled={loading}
+                      <Link
+                        to={`/admin/students/${student._id}`}
+                        className="text-secondary hover:underline text-sm font-medium"
                       >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setPendingDeleteStudent(student)}
-                        className="text-red-600 hover:underline text-sm font-medium"
-                        disabled={loading}
-                      >
-                        Delete
-                      </button>
+                        View
+                      </Link>
+                      {isAdmin && (
+                        <>
+                        <button
+                          onClick={() => handleEdit(student)}
+                          className="text-primary hover:underline text-sm font-medium"
+                          disabled={loading}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setPendingDeleteStudent(student)}
+                          className="text-red-600 hover:underline text-sm font-medium"
+                          disabled={loading}
+                        >
+                          Delete
+                        </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 );

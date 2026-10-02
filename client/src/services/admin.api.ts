@@ -10,6 +10,18 @@ export const getAdminUsers = async (params: Record<string, any> = {}) => {
   return response.data.data;
 };
 
+export interface CreateAdminLimitedUserPayload {
+  displayName: string;
+  phoneNumber: string;
+  email?: string;
+  password: string;
+}
+
+export const createAdminLimitedUser = async (payload: CreateAdminLimitedUserPayload) => {
+  const response = await api.post('/admin/users', payload);
+  return response.data.data;
+};
+
 export const updateAdminUserStatus = async (userId: string, updates: { isActive?: boolean; role?: string; verified?: boolean; verificationStatus?: string; sellerVerificationStatus?: string }) => {
   const response = await api.patch(`/admin/users/${userId}/status`, updates);
   return response.data.data;

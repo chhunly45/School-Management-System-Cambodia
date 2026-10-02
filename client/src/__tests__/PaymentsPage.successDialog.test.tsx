@@ -106,4 +106,55 @@ describe('PaymentsPage success dialog', () => {
     expect(screen.getByRole('button', { name: /Export Excel/i })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Download PDF/i }).length).toBeGreaterThan(0);
   });
+
+  it('allows limited users to view, create, and open payment details without edit, delete, or monthly summary', async () => {
+    (useAuth as jest.Mock).mockReturnValue({ user: { role: 'LIMITED_STUDENT_PAYMENT' } });
+    (listPayments as jest.Mock).mockResolvedValue({
+      data: {
+        items: [{
+          _id: 'payment-1',
+          receiptNumber: 'RCPT-LIMITED-1',
+          studentId: 'S-LIMITED-1',
+          studentName: 'Limited Student',
+          className: 'Room 1',
+          paymentType: 'monthly',
+          paymentPlan: 'monthly',
+          tuitionAmount: 100,
+          amount: 100,
+          discount: 0,
+          remainingBalance: 0,
+          paymentDate: '2026-09-30',
+          paymentMethod: 'cash',
+          academicYear: '2026-2027',
+          semester: 1,
+          status: 'paid',
+          remarks: '',
+          feeEntries: []
+        }],
+        meta: { page: 1, limit: 100, total: 1 }
+      }
+    });
+    (listStudents as jest.Mock).mockResolvedValue({
+      data: { items: [{ _id: 'student-1', studentId: 'S-LIMITED-1', fullName: 'Limited Student', className: 'Room 1', monthlyTuition: 100 }] }
+    });
+
+    render(
+      <MemoryRouter>
+        <PaymentsPage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('RCPT-LIMITED-1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Payment' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View Receipt' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Monthly Summary')).not.toBeInTheDocument();
+
+    expect(getMonthlyPaymentSummary).not.toHaveBeenCalled();
+    expect(listAcademicYears).not.toHaveBeenCalled();
+    expect(listGrades).not.toHaveBeenCalled();
+    expect(listClasses).not.toHaveBeenCalled();
+    expect(getSchoolSettings).not.toHaveBeenCalled();
+  });
 });

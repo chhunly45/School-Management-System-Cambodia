@@ -13,6 +13,9 @@ export const getPostLoginPath = (authUser?: any) => {
   if (role === 'admin' || role === 'super_admin' || role === 'school_admin' || authUser?.isAdmin || authUser?.is_super_admin) {
     return '/admin/school-dashboard';
   }
+  if (role === 'LIMITED_STUDENT_PAYMENT') {
+    return '/admin/students';
+  }
   if (role === 'teacher') {
     return '/teacher/attendance';
   }

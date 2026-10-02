@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import Header from '../components/layout/Header';
+import { MemoryRouter } from 'react-router-dom';
 import api from '../services/api';
 import * as favApi from '../services/favorites.api';
 import * as notifApi from '../services/notification.api';
@@ -55,10 +56,7 @@ describe('Header component', () => {
     fireEvent.click(toggle);
 
     const drawerNav = screen.getByRole('navigation');
-    expect(within(drawerNav).getByRole('link', { name: /About/i })).toBeInTheDocument();
-    expect(within(drawerNav).getByRole('link', { name: /Guide/i })).toBeInTheDocument();
-    expect(within(drawerNav).getByRole('link', { name: /Help/i })).toBeInTheDocument();
-    expect(within(drawerNav).getByRole('link', { name: /Post Product/i })).toBeInTheDocument();
+    expect(within(drawerNav).getByRole('link', { name: /Home/i })).toBeInTheDocument();
     expect(within(drawerNav).getByRole('link', { name: /Login/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText(/Close mobile menu/i));
@@ -71,7 +69,7 @@ describe('Header component', () => {
 
     render(<Header /> , { wrapper: require('react-router-dom').MemoryRouter });
 
-    expect(screen.getByAltText('Konpuk')).toBeInTheDocument();
+    expect(screen.getByAltText('SMS-CAM')).toBeInTheDocument();
     expect(screen.getAllByText(/Help/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/English/i)).toBeInTheDocument();
   });
@@ -96,6 +94,26 @@ describe('Header component', () => {
     expect(screen.getByText(/ចេញពីប្រព័ន្ធ/i)).toBeInTheDocument();
   });
 
+  it('limits the global mobile menu to Student and Payment navigation for the limited role', async () => {
+    const { useAuth } = require('../hooks/useAuth');
+    useAuth.mockReturnValue({ user: { displayName: 'Limited User', role: 'LIMITED_STUDENT_PAYMENT' }, logout: jest.fn() });
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Header />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByLabelText(/Toggle mobile menu/i));
+    const drawerNav = screen.getByRole('navigation');
+
+    expect(within(drawerNav).getByRole('link', { name: 'Students' })).toBeInTheDocument();
+    expect(within(drawerNav).getByRole('link', { name: 'Payments' })).toBeInTheDocument();
+    expect(within(drawerNav).queryByRole('link', { name: 'School Dashboard' })).not.toBeInTheDocument();
+    expect(within(drawerNav).queryByRole('link', { name: 'Teachers' })).not.toBeInTheDocument();
+    expect(within(drawerNav).queryByRole('link', { name: 'Attendance' })).not.toBeInTheDocument();
+    expect(within(drawerNav).queryByRole('link', { name: 'Finance' })).not.toBeInTheDocument();
+  });
   it('handles categories fetch error gracefully', async () => {
     (api.get as jest.Mock).mockRejectedValue(new Error('network'));
     const { useAuth } = require('../hooks/useAuth');

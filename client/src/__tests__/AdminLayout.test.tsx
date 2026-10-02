@@ -1,8 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AdminLayout from '../components/layout/AdminLayout';
+import { useAuth } from '../hooks/useAuth';
+
+jest.mock('../hooks/useAuth', () => ({
+  useAuth: jest.fn()
+}));
+
+const mockedUseAuth = jest.mocked(useAuth);
 
 describe('AdminLayout', () => {
+  beforeEach(() => {
+    mockedUseAuth.mockReturnValue({ user: { role: 'admin' } } as any);
+  });
+
   it('renders admin navigation and header', () => {
     render(
       <MemoryRouter>
@@ -11,7 +22,7 @@ describe('AdminLayout', () => {
     );
 
     expect(screen.getByText(/Manage School/i)).toBeInTheDocument();
-    expect(screen.getByText(/School Admin/i)).toBeInTheDocument();
+    expect(screen.getByRole('complementary').querySelector('p')).toHaveTextContent('School Admin');
     expect(screen.getByText(/Students/i)).toBeInTheDocument();
     expect(screen.getByText(/Teachers/i)).toBeInTheDocument();
     expect(screen.getByText(/Payments/i)).toBeInTheDocument();

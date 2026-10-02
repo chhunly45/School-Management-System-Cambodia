@@ -839,7 +839,7 @@ const refreshToken = async (token) => {
   }
 
   const user = await User.findById(payload.userId);
-  if (!user || !user.refreshTokens.includes(token)) {
+  if (!user || !user.isActive || !user.refreshTokens.includes(token)) {
     const error = new Error('Refresh token is not valid');
     error.statusCode = 401;
     throw error;

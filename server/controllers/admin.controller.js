@@ -23,9 +23,18 @@ const listUsers = async (req, res, next) => {
   }
 };
 
+const createLimitedUser = async (req, res, next) => {
+  try {
+    const user = await adminService.createLimitedUser(req.body, req.user.id);
+    res.status(201).json({ success: true, data: user });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateUserStatus = async (req, res, next) => {
   try {
-    const user = await adminService.updateUserStatus(req.params.id, req.body, req.user.id);
+    const user = await adminService.updateUserStatus(req.params.id, req.body, req.user.id, req.user.role);
     res.json({ success: true, data: user });
   } catch (error) {
     next(error);
@@ -266,6 +275,7 @@ const getRevenueBySeller = async (req, res, next) => {
 module.exports = {
   getOverview,
   listUsers,
+  createLimitedUser,
   updateUserStatus,
   listProducts,
   updateProductStatus,

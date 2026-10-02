@@ -29,6 +29,7 @@ const Header = () => {
   const { user, logout } = useAuth();
   const { socket } = useSocket();
   const navigate = useNavigate();
+  const isLimitedUser = user?.role === 'LIMITED_STUDENT_PAYMENT';
   const notificationsButtonRef = useRef<HTMLButtonElement | null>(null);
   const notificationsMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -340,17 +341,17 @@ const Header = () => {
                   {notificationCount > 0 && <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-rose-600 px-2 text-[0.65rem] font-semibold text-white">{notificationCount > 9 ? '9+' : notificationCount}</span>}
                 </Link>
                 <hr className="border-surface-muted" />
-                <Link to="/admin/school-dashboard" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">School Dashboard</Link>
+                {!isLimitedUser && <Link to="/admin/school-dashboard" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">School Dashboard</Link>}
                 <Link to="/admin/students" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Students</Link>
-                <Link to="/admin/teachers" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Teachers</Link>
-                <Link to="/admin/attendance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Attendance</Link>
-                <Link to="/teacher/attendance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Teacher Attendance</Link>
+                {!isLimitedUser && <Link to="/admin/teachers" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Teachers</Link>}
+                {!isLimitedUser && <Link to="/admin/attendance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Attendance</Link>}
+                {!isLimitedUser && <Link to="/teacher/attendance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Teacher Attendance</Link>}
                 <Link to="/admin/payments" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Payments</Link>
-                <Link to="/admin/finance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Finance</Link>
+                {!isLimitedUser && <Link to="/admin/finance" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Finance</Link>}
                 <hr className="border-surface-muted" />
                 {user ? (
                   <>
-                    <Link to="/admin/school-dashboard" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">School Dashboard</Link>
+                    {!isLimitedUser && <Link to="/admin/school-dashboard" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">School Dashboard</Link>}
                     <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="block rounded-3xl px-4 py-3 text-sm font-semibold text-text-secondary hover:bg-background">Profile</Link>
                   </>
                 ) : (

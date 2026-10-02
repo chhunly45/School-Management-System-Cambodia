@@ -113,6 +113,7 @@ interface PaymentFormValues {
 
 const today = formatDateForInput(new Date());
 const monthKeyDefault = formatDateForInput(new Date()).slice(0, 7);
+const LIMITED_STUDENT_PAYMENT_ROLE = 'LIMITED_STUDENT_PAYMENT';
 
 const money = (value: number) => Number(value.toFixed(2));
 
@@ -207,6 +208,9 @@ const getComputedPaymentStatus = (payment: PaymentRecord): 'paid' | 'due_soon' |
 const PaymentsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isAdminUser = user?.role === 'admin';
+  const isLimitedUser = user?.role === LIMITED_STUDENT_PAYMENT_ROLE;
+  const hasPaymentAccess = isAdminUser || isLimitedUser;
 
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [formValues, setFormValues] = useState<PaymentFormValues>(emptyPaymentForm);
@@ -258,15 +262,30 @@ const PaymentsPage = () => {
       navigate('/login');
       return;
     }
-    if (user.role !== 'admin') {
+    if (!hasPaymentAccess) {
       setAccessDenied(true);
       return;
     }
-    void Promise.all([loadLookups(), loadSchoolSettings(), loadPayments(), loadMonthlySummary()]);
+    if (isLimitedUser) {
+      void Promise.all([loadLookups(), loadPayments()]);
+    } else {
+      void Promise.all([loadLookups(), loadSchoolSettings(), loadPayments(), loadMonthlySummary()]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadLookups = async () => {
+    if (isLimitedUser) {
+      try {
+        const studentsResp = await listStudents({ perPage: 300 });
+        setStudents(studentsResp.data?.items || []);
+      } catch (err) {
+        console.error(err);
+        setMessage('Unable to load students.');
+      }
+      return;
+    }
+
     try {
       const [yearsResp, gradesResp, classesResp, studentsResp] = await Promise.all([
         listAcademicYears({ perPage: 100 }),
@@ -352,6 +371,8 @@ const PaymentsPage = () => {
   };
 
   const loadMonthlySummary = async () => {
+    if (!isAdminUser) return;
+
     try {
       const [year, month] = reportMonth.split('-').map(Number);
       const response = await getMonthlyPaymentSummary({
@@ -370,7 +391,11 @@ const PaymentsPage = () => {
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await Promise.all([loadPayments(), loadMonthlySummary()]);
+    if (isAdminUser) {
+      await Promise.all([loadPayments(), loadMonthlySummary()]);
+    } else {
+      await loadPayments();
+    }
   };
 
   const recalculateRemainingBalance = (next: PaymentFormValues) => {
@@ -474,6 +499,13 @@ const PaymentsPage = () => {
       return recalculateRemainingBalance(next);
     });
 
+    if (isLimitedUser) {
+      setSelectedTransport(null);
+      setStudentLookupSearch(`${selected.studentId} - ${selected.fullName}`);
+      setStudentLookupOpen(false);
+      return;
+    }
+
     // fetch transport record for selected student (use student._id as source of truth)
     try {
       const resp = await listTransport({ studentId: selected._id, perPage: 5 });
@@ -527,6 +559,8 @@ const PaymentsPage = () => {
   };
 
   const handleEdit = (payment: PaymentRecord) => {
+    if (!isAdminUser) return;
+
     setEditingId(payment._id);
     setSelectedReceipt(null);
     const { englishName, khmerName } = splitFullName(payment.studentName || '');
@@ -656,7 +690,11 @@ const PaymentsPage = () => {
 
       setEditingId(null);
       setFormValues({ ...emptyPaymentForm, feeEntries: buildFeeEntries(0) });
-      await Promise.all([loadPayments(), loadMonthlySummary()]);
+      if (isAdminUser) {
+        await Promise.all([loadPayments(), loadMonthlySummary()]);
+      } else {
+        await loadPayments();
+      }
     } catch (err: any) {
       setMessage(err?.response?.data?.message || 'Error saving payment. Please try again.');
       console.error(err);
@@ -666,6 +704,7 @@ const PaymentsPage = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (!isAdminUser) return;
     if (!window.confirm('Are you sure you want to delete this payment?')) return;
 
     setLoading(true);
@@ -959,7 +998,7 @@ const PaymentsPage = () => {
   }, [payments, timelineStudentId]);
 
   if (accessDenied) {
-    return <div className="p-8 text-center text-red-500">Access Denied. Admin only.</div>;
+    return <div className="p-8 text-center text-red-500">Access Denied.</div>;
   }
 
   return (
@@ -1656,6 +1695,7 @@ const PaymentsPage = () => {
           )}
         </section>
 
+        {isAdminUser && (
         <section className="rounded-2xl bg-white p-6 shadow">
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <h2 className="text-xl font-semibold text-slate-900">Monthly Summary</h2>
@@ -1695,6 +1735,7 @@ const PaymentsPage = () => {
             <p className="text-sm text-slate-600">No summary data for the selected period.</p>
           )}
         </section>
+        )}
 
         <section className="rounded-2xl bg-white p-6 shadow">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -1858,12 +1899,16 @@ const PaymentsPage = () => {
                         <button onClick={() => handlePrintHistoryReceipt(payment)} className="mr-2 text-cyan-700 hover:text-cyan-900">
                           Print Receipt
                         </button>
-                        <button onClick={() => handleEdit(payment)} className="mr-2 text-amber-700 hover:text-amber-900">
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(payment._id)} className="text-rose-700 hover:text-rose-900">
-                          Delete
-                        </button>
+                        {isAdminUser && (
+                          <>
+                            <button onClick={() => handleEdit(payment)} className="mr-2 text-amber-700 hover:text-amber-900">
+                              Edit
+                            </button>
+                            <button onClick={() => handleDelete(payment._id)} className="text-rose-700 hover:text-rose-900">
+                              Delete
+                            </button>
+                          </>
+                        )}
                       </td>
                           </>
                         );

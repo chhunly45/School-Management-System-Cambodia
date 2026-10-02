@@ -72,11 +72,11 @@ describe('StudentsPage pagination', () => {
     expect(screen.getByText('Students')).toBeInTheDocument();
     expect(screen.getByText('Add New Student')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add Student' })).toBeInTheDocument();
-    expect(screen.getByText('Academic Year')).toBeInTheDocument();
-    expect(screen.getByText('Course')).toBeInTheDocument();
-    expect(screen.getByText('Level')).toBeInTheDocument();
-    expect(screen.getByText('Room')).toBeInTheDocument();
-    expect(screen.getByText('Study Shift')).toBeInTheDocument();
+    expect(screen.getByLabelText('Academic Year')).toBeInTheDocument();
+    expect(screen.getByLabelText('Course')).toBeInTheDocument();
+    expect(screen.getByLabelText('Level')).toBeInTheDocument();
+    expect(screen.getByLabelText('Room')).toBeInTheDocument();
+    expect(screen.getByLabelText('Study Shift')).toBeInTheDocument();
   });
 
   it('does not load academic year, grade, or class lookup data for students', async () => {
@@ -93,5 +93,34 @@ describe('StudentsPage pagination', () => {
     expect(listAcademicYears).not.toHaveBeenCalled();
     expect(listGrades).not.toHaveBeenCalled();
     expect(listClasses).not.toHaveBeenCalled();
+  });
+
+  it('allows the limited role to view and create students without edit or delete controls', async () => {
+    (useAuth as jest.Mock).mockReturnValue({ user: { role: 'LIMITED_STUDENT_PAYMENT' } });
+    (listStudents as jest.Mock).mockResolvedValue({
+      data: {
+        items: [{
+          _id: 'student-1',
+          studentId: 'S-LIMITED-1',
+          fullName: 'Limited Student',
+          gender: 'other',
+          status: 'active'
+        }],
+        meta: { page: 1, limit: 10, total: 1 }
+      }
+    });
+
+    render(
+      <MemoryRouter>
+        <StudentsPage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('S-LIMITED-1')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View' })).toHaveAttribute('href', '/admin/students/student-1');
+    expect(screen.getByRole('button', { name: 'Add Student' })).toBeInTheDocument();
+    expect(screen.getByText('Add New Student')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
   });
 });

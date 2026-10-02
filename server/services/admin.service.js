@@ -1,7 +1,11 @@
 const { User, Product, Chat, Report, Image, AuditLog } = require('../models');
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const notificationService = require('./notification.service');
+const { validatePassword } = require('../middleware/security/password.validator');
+const { normalizeCambodiaPhone } = require('../utils/phone');
 
+const LIMITED_STUDENT_PAYMENT_ROLE = 'LIMITED_STUDENT_PAYMENT';
 const sellerBackfillFields = 'displayName profileImageUrl avatar email phoneNumber sellerVerificationStatus';
 
 const createAuditLog = async ({ adminId, reportId, action, targetType, targetId, details, metadata = {} }) => {
@@ -68,11 +72,75 @@ const listUsers = async ({ role, page = 1, limit = 25 }) => {
   return { items, meta: { page: Number(page), limit: Number(limit), total } };
 };
 
-const updateUserStatus = async (userId, updates, adminId) => {
+const createLimitedUser = async ({ displayName, phoneNumber, email, password }, adminId) => {
+  const normalizedPhone = normalizeCambodiaPhone(phoneNumber);
+  if (!normalizedPhone) {
+    const error = new Error('Phone number is required');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const normalizedEmail = email?.trim().toLowerCase();
+  if (normalizedEmail && await User.findOne({ email: normalizedEmail })) {
+    const error = new Error('Email already registered');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (await User.findOne({ phoneNumber: normalizedPhone })) {
+    const error = new Error('Phone number already registered');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (!validatePassword(password)) {
+    const error = new Error('Password must be at least 8 characters');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const user = await User.create({
+    ...(normalizedEmail ? { email: normalizedEmail } : {}),
+    phoneNumber: normalizedPhone,
+    passwordHash: await bcrypt.hash(password, 12),
+    displayName: displayName.trim(),
+    role: LIMITED_STUDENT_PAYMENT_ROLE,
+    isActive: false,
+    emailVerified: false,
+    phoneVerified: false,
+    sellerVerificationStatus: 'unverified'
+  });
+
+  await createAuditLog({
+    adminId,
+    reportId: null,
+    action: 'user.create',
+    targetType: 'user',
+    targetId: user._id,
+    details: `Created inactive limited student/payment user ${user._id}`,
+    metadata: { role: user.role, isActive: user.isActive }
+  });
+
+  const safeUser = user.toObject();
+  delete safeUser.passwordHash;
+  delete safeUser.refreshTokens;
+  delete safeUser.emailVerificationHash;
+  delete safeUser.passwordResetOtpHash;
+  delete safeUser.loginOtpHash;
+  return safeUser;
+};
+
+const updateUserStatus = async (userId, updates, adminId, adminRole) => {
   const user = await User.findById(userId);
   if (!user) {
     const error = new Error('User not found');
     error.statusCode = 404;
+    throw error;
+  }
+
+  if (adminRole !== 'admin' && (user.role === LIMITED_STUDENT_PAYMENT_ROLE || updates.role === LIMITED_STUDENT_PAYMENT_ROLE)) {
+    const error = new Error('Forbidden: only admins can manage limited student/payment accounts');
+    error.statusCode = 403;
     throw error;
   }
 
@@ -354,6 +422,7 @@ const getProductsByProvince = async () => {
 module.exports = {
   getOverview,
   listUsers,
+  createLimitedUser,
   updateUserStatus,
   listProducts,
   updateProductStatus,

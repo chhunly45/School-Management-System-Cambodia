@@ -32,10 +32,19 @@ router.get('/revenue/weekly', adminController.getWeeklyRevenue);
 router.get('/revenue/monthly', adminController.getMonthlyRevenue);
 router.get('/revenue/by-seller', adminController.getRevenueBySeller);
 router.get('/users', adminController.listUsers);
+router.post('/users',
+  roleMiddleware(['admin']),
+  body('displayName').notEmpty().trim().isString(),
+  body('phoneNumber').notEmpty().trim().isString(),
+  body('email').optional({ checkFalsy: true }).isEmail(),
+  body('password').isLength({ min: 8 }),
+  validate,
+  adminController.createLimitedUser
+);
 router.patch('/users/:id/status',
   param('id').isMongoId(),
   body('isActive').optional().isBoolean(),
-  body('role').optional().isIn(['user','seller','admin','moderator']),
+  body('role').optional().isIn(['user','seller','admin','moderator','LIMITED_STUDENT_PAYMENT']),
   body('sellerVerificationStatus').optional().isIn(['unverified','verified','rejected']),
   body('verified').optional().isBoolean(),
   body('verificationStatus').optional().isIn(['none','pending','approved','rejected']),

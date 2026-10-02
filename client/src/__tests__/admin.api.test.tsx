@@ -16,6 +16,29 @@ describe('admin API wrappers', () => {
     expect(mockedApi.get).toHaveBeenCalledWith('/admin/overview');
   });
 
+  it('creates a limited user without allowing the client to choose role or active status', async () => {
+    const payload = {
+      displayName: 'Limited Operator',
+      phoneNumber: '+85512345678',
+      email: 'limited@example.com',
+      password: 'LimitedPass123!'
+    };
+    const createdUser = {
+      _id: 'limited-1',
+      displayName: payload.displayName,
+      phoneNumber: payload.phoneNumber,
+      email: payload.email,
+      role: 'LIMITED_STUDENT_PAYMENT',
+      isActive: false
+    };
+    mockedApi.post.mockResolvedValueOnce({ data: { data: createdUser } });
+
+    const result = await adminApi.createAdminLimitedUser(payload);
+
+    expect(result).toEqual(createdUser);
+    expect(mockedApi.post).toHaveBeenCalledWith('/admin/users', payload);
+  });
+
   it('fetches admin users and products and updates statuses', async () => {
     mockedApi.get.mockResolvedValueOnce({ data: { data: [{ id: '1' }] } });
     const users = await adminApi.getAdminUsers({ page: 1 });

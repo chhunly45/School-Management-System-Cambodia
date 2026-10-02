@@ -30,6 +30,7 @@ import AboutPage from '../pages/AboutPage';
 import GuidePage from '../pages/GuidePage';
 import HelpPage from '../pages/HelpPage';
 import StudentsPage from '../pages/StudentsPage';
+import StudentDetailPage from '../pages/StudentDetailPage';
 import PaymentsPage from '../pages/PaymentsPage';
 import AttendancePage from '../pages/AttendancePage';
 import EmployeeAttendancePage from '../pages/EmployeeAttendancePage';
@@ -95,6 +96,7 @@ const AppRoutes = () => (
         <Route path="audit" element={<AdminDashboardPage />} />
         <Route path="banners" element={<AdminBannersPage />} />
         <Route path="students" element={<StudentsPage />} />
+        <Route path="students/:id" element={<StudentDetailPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="teacher-attendance" element={<AdminTeacherAttendancePage />} />

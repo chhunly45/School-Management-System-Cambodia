@@ -7,10 +7,11 @@ const validate = require('../middleware/validation.middleware');
 
 const router = express.Router();
 const adminOnly = [authMiddleware, roleMiddleware(['admin'])];
+const adminOrLimitedStudentPayment = [authMiddleware, roleMiddleware(['admin', 'LIMITED_STUDENT_PAYMENT'])];
 
 router.get(
   '/',
-  adminOnly,
+  adminOrLimitedStudentPayment,
   query('search').optional().trim().isString(),
   query('status').optional().isIn(['active', 'inactive', 'graduated']),
   query('className').optional().trim().isString(),
@@ -24,7 +25,7 @@ router.get(
 
 router.get(
   '/:id',
-  adminOnly,
+  adminOrLimitedStudentPayment,
   param('id').isMongoId(),
   validate,
   studentController.getStudent
@@ -32,7 +33,7 @@ router.get(
 
 router.post(
   '/',
-  adminOnly,
+  adminOrLimitedStudentPayment,
   body('studentId').notEmpty().trim().isString(),
   body('fullName').notEmpty().trim().isString(),
   body('gender').optional().isIn(['male', 'female', 'other']),
