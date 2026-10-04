@@ -190,7 +190,7 @@ const SchoolDashboardPage = () => {
           <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.gracePeriodPayments}</p>
         </article>
         <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
-          <p className="text-sm text-muted">Overdue Payments</p>
+          <p className="text-sm text-muted">Overdue Students</p>
           <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.overduePayments}</p>
         </article>
         <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">

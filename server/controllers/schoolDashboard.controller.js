@@ -1,18 +1,7 @@
 const { Student, Payment, Attendance, EmployeeAttendance, Certificate, Transport } = require('../models');
+const { getSchoolDayBounds, getZonedParts } = require('../services/teacherAttendance/time.utils');
 
 const toMoney = (value = 0) => Number(Number(value || 0).toFixed(2));
-
-const getDayStart = (date = new Date()) => {
-  const current = new Date(date);
-  current.setHours(0, 0, 0, 0);
-  return current;
-};
-
-const getDayEnd = (date = new Date()) => {
-  const current = getDayStart(date);
-  current.setDate(current.getDate() + 1);
-  return current;
-};
 
 const getWeekStart = (date = new Date()) => {
   const now = new Date(date);
@@ -28,8 +17,8 @@ const getMonthStart = (date = new Date()) => {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 };
 
-const getTeacherPresenceToday = async (todayStart, todayEnd) => {
-  const teacherAttendanceRecords = await EmployeeAttendance.countDocuments({
+const getTeacherPresenceToday = async (EmployeeAttendanceModel, todayStart, todayEnd) => {
+  const teacherAttendanceRecords = await EmployeeAttendanceModel.countDocuments({
     date: { $gte: todayStart, $lt: todayEnd },
     employeeType: 'teacher'
   });
@@ -38,44 +27,53 @@ const getTeacherPresenceToday = async (todayStart, todayEnd) => {
     return null;
   }
 
-  return EmployeeAttendance.countDocuments({
+  return EmployeeAttendanceModel.countDocuments({
     date: { $gte: todayStart, $lt: todayEnd },
     employeeType: 'teacher',
     status: 'present'
   });
 };
 
-const parseDateOnly = (value) => {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+const getSchoolDateOrdinal = (date) => {
+  const parts = getZonedParts(date);
+  if (!parts) return null;
+  return Date.UTC(parts.year, parts.month - 1, parts.day) / (24 * 60 * 60 * 1000);
 };
 
-const addDays = (date, days) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
-
-const evaluatePaymentLifecycle = (payment, now = new Date()) => {
+const evaluatePaymentLifecycle = (payment, todayOrdinal) => {
   const remainingBalance = Number(payment.remainingBalance || 0);
-  if (remainingBalance <= 0) return 'paid';
+  if (remainingBalance <= 0 || payment.status === 'paid') return 'paid';
 
-  const dueDate = parseDateOnly(payment.dueDate);
-  if (!dueDate) return 'overdue';
+  if (!payment.dueDate) return null;
+  const dueDate = new Date(payment.dueDate);
+  if (Number.isNaN(dueDate.getTime())) return null;
 
+  const dueDateOrdinal = getSchoolDateOrdinal(dueDate);
+  if (dueDateOrdinal === null) return null;
   const gracePeriodDays = Number(payment.gracePeriodDays || 0);
-  const currentDate = parseDateOnly(now) || now;
-  const graceStart = addDays(dueDate, 1);
-  const graceEnd = addDays(dueDate, gracePeriodDays);
+  const daysSinceDue = todayOrdinal - dueDateOrdinal;
 
-  if (currentDate < graceStart) return 'due_soon';
-  if (currentDate >= graceStart && currentDate <= graceEnd) return 'grace_period';
+  if (daysSinceDue <= 0) return 'due_soon';
+  if (daysSinceDue <= gracePeriodDays) return 'grace_period';
   return 'overdue';
 };
 
-const getSchoolStats = async (req, res, next) => {
+const createGetSchoolStats = ({
+  models = { Student, Payment, Attendance, EmployeeAttendance, Certificate, Transport },
+  nowProvider = () => new Date()
+} = {}) => async (req, res, next) => {
+  const {
+    Student: StudentModel,
+    Payment: PaymentModel,
+    Attendance: AttendanceModel,
+    EmployeeAttendance: EmployeeAttendanceModel,
+    Certificate: CertificateModel,
+    Transport: TransportModel
+  } = models;
   try {
-    const now = new Date();
-    const todayStart = getDayStart(now);
-    const todayEnd = getDayEnd(now);
+    const now = nowProvider();
+    const { start: todayStart, end: todayEnd } = getSchoolDayBounds(now);
+    const todayOrdinal = getSchoolDateOrdinal(now);
     const weekStart = getWeekStart(now);
     const monthStart = getMonthStart(now);
 
@@ -92,10 +90,10 @@ const getSchoolStats = async (req, res, next) => {
       totalCertificates,
       totalTransport
     ] = await Promise.all([
-      Attendance.countDocuments({ date: { $gte: todayStart, $lt: todayEnd }, status: 'present' }),
-      Attendance.countDocuments({ date: { $gte: todayStart, $lt: todayEnd }, status: 'absent' }),
-      getTeacherPresenceToday(todayStart, todayEnd),
-      Payment.aggregate([
+      AttendanceModel.countDocuments({ date: { $gte: todayStart, $lt: todayEnd }, status: 'present' }),
+      AttendanceModel.countDocuments({ date: { $gte: todayStart, $lt: todayEnd }, status: 'absent' }),
+      getTeacherPresenceToday(EmployeeAttendanceModel, todayStart, todayEnd),
+      PaymentModel.aggregate([
         {
           $match: {
             status: 'paid',
@@ -109,7 +107,7 @@ const getSchoolStats = async (req, res, next) => {
           }
         }
       ]),
-      Payment.aggregate([
+      PaymentModel.aggregate([
         {
           $match: {
             status: 'paid',
@@ -124,7 +122,7 @@ const getSchoolStats = async (req, res, next) => {
           }
         }
       ]),
-      Payment.aggregate([
+      PaymentModel.aggregate([
         {
           $match: {
             remainingBalance: { $gt: 0 }
@@ -137,31 +135,34 @@ const getSchoolStats = async (req, res, next) => {
           }
         }
       ]),
-      Payment.find({ remainingBalance: { $gt: 0 } })
-        .select('remainingBalance dueDate gracePeriodDays')
+      PaymentModel.find({ remainingBalance: { $gt: 0 } })
+        .select('studentId status remainingBalance dueDate gracePeriodDays')
         .lean(),
-      Payment.find({ status: 'paid' })
+      PaymentModel.find({ status: 'paid' })
         .sort({ paymentDate: -1, createdAt: -1 })
         .limit(5)
         .select('receiptNumber studentId studentName className amount paymentDate paymentMethod status')
         .lean(),
-      Student.find({})
+      StudentModel.find({})
         .sort({ createdAt: -1 })
         .limit(5)
         .select('studentId fullName className status createdAt')
         .lean(),
-      Certificate.countDocuments({ status: 'issued' }),
-      Transport.countDocuments({ status: 'active' })
+      CertificateModel.countDocuments({ status: 'issued' }),
+      TransportModel.countDocuments({ status: 'active' })
     ]);
 
-    const todayIncome = todaysIncome[0]?.totalIncome || 0;
+    const todayIncome = todaysIncome[0]?.total || 0;
     const monthIncome = monthlyIncome[0]?.totalIncome || 0;
     const outstandingBalance = outstandingTuition[0]?.total || 0;
 
+    const overdueStudentIds = new Set();
     const lifecycleSummary = paymentLifecycleDocs.reduce(
       (acc, payment) => {
-        const lifecycle = evaluatePaymentLifecycle(payment, now);
-        if (acc[lifecycle] !== undefined) {
+        const lifecycle = evaluatePaymentLifecycle(payment, todayOrdinal);
+        if (lifecycle === 'overdue' && payment.studentId) {
+          overdueStudentIds.add(String(payment.studentId));
+        } else if (lifecycle && acc[lifecycle] !== undefined) {
           acc[lifecycle] += 1;
         }
         return acc;
@@ -180,7 +181,7 @@ const getSchoolStats = async (req, res, next) => {
         outstandingTuition: toMoney(outstandingBalance),
         dueSoonPayments: lifecycleSummary.due_soon,
         gracePeriodPayments: lifecycleSummary.grace_period,
-        overduePayments: lifecycleSummary.overdue,
+        overduePayments: overdueStudentIds.size,
         totalCertificates,
         totalTransport,
         recentPayments,
@@ -192,6 +193,9 @@ const getSchoolStats = async (req, res, next) => {
   }
 };
 
+const getSchoolStats = createGetSchoolStats();
+
 module.exports = {
-  getSchoolStats
+  getSchoolStats,
+  createGetSchoolStats
 };
