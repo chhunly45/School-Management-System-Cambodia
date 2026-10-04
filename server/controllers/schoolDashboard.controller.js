@@ -1,4 +1,4 @@
-const { Student, Payment, Attendance, EmployeeAttendance, Certificate, Transport } = require('../models');
+perf(dashboard): remove unused recent record queriesconst { Payment, Attendance, EmployeeAttendance, Certificate, Transport } = require('../models');
 const { getSchoolDayBounds, getZonedParts } = require('../services/teacherAttendance/time.utils');
 
 const toMoney = (value = 0) => Number(Number(value || 0).toFixed(2));
@@ -59,11 +59,10 @@ const evaluatePaymentLifecycle = (payment, todayOrdinal) => {
 };
 
 const createGetSchoolStats = ({
-  models = { Student, Payment, Attendance, EmployeeAttendance, Certificate, Transport },
+  models = { Payment, Attendance, EmployeeAttendance, Certificate, Transport },
   nowProvider = () => new Date()
 } = {}) => async (req, res, next) => {
   const {
-    Student: StudentModel,
     Payment: PaymentModel,
     Attendance: AttendanceModel,
     EmployeeAttendance: EmployeeAttendanceModel,
@@ -85,8 +84,6 @@ const createGetSchoolStats = ({
       monthlyIncome,
       outstandingTuition,
       paymentLifecycleDocs,
-      recentPayments,
-      recentStudents,
       totalCertificates,
       totalTransport
     ] = await Promise.all([
@@ -138,16 +135,6 @@ const createGetSchoolStats = ({
       PaymentModel.find({ remainingBalance: { $gt: 0 } })
         .select('studentId status remainingBalance dueDate gracePeriodDays')
         .lean(),
-      PaymentModel.find({ status: 'paid' })
-        .sort({ paymentDate: -1, createdAt: -1 })
-        .limit(5)
-        .select('receiptNumber studentId studentName className amount paymentDate paymentMethod status')
-        .lean(),
-      StudentModel.find({})
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select('studentId fullName className status createdAt')
-        .lean(),
       CertificateModel.countDocuments({ status: 'issued' }),
       TransportModel.countDocuments({ status: 'active' })
     ]);
@@ -184,8 +171,8 @@ const createGetSchoolStats = ({
         overduePayments: overdueStudentIds.size,
         totalCertificates,
         totalTransport,
-        recentPayments,
-        recentStudents
+        recentPayments: [],
+        recentStudents: []
       }
     });
   } catch (error) {
