@@ -2,6 +2,45 @@ const mongoose = require('mongoose');
 const { Student } = require('../models');
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const khmerCollator = new Intl.Collator('km');
+const khmerCharacterPattern = /\p{Script=Khmer}/u;
+const latinCharacterPattern = /\p{Script=Latin}/u;
+
+const getKhmerSurname = (fullName = '') => {
+  const name = String(fullName).trim();
+  if (!name) return null;
+
+  const separatorIndex = name.indexOf('/');
+  let khmerName;
+
+  if (separatorIndex >= 0) {
+    khmerName = name.slice(separatorIndex + 1).trim();
+  } else if (khmerCharacterPattern.test(name) && !latinCharacterPattern.test(name)) {
+    khmerName = name;
+  } else {
+    return null;
+  }
+
+  if (!khmerCharacterPattern.test(khmerName) || latinCharacterPattern.test(khmerName)) return null;
+  return khmerName.split(/\s+/u).find((token) => khmerCharacterPattern.test(token)) || null;
+};
+
+const compareStudentsByKhmerSurname = (left, right) => {
+  const leftSurname = left.surname;
+  const rightSurname = right.surname;
+  if (leftSurname && !rightSurname) return -1;
+  if (!leftSurname && rightSurname) return 1;
+  if (leftSurname && rightSurname) {
+    const surnameOrder = khmerCollator.compare(leftSurname, rightSurname);
+    if (surnameOrder !== 0) return surnameOrder;
+  }
+
+  const leftStudentId = String(left.student.studentId || '');
+  const rightStudentId = String(right.student.studentId || '');
+  if (leftStudentId < rightStudentId) return -1;
+  if (leftStudentId > rightStudentId) return 1;
+  return 0;
+};
 
 const listStudents = async (filters = {}) => {
   const query = {};
@@ -60,14 +99,17 @@ const listStudents = async (filters = {}) => {
   const limit = Number(filters.perPage) || 50;
   const skip = (page - 1) * limit;
 
-  const [items, total] = await Promise.all([
+  const [students, total] = await Promise.all([
     Student.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
       .lean(),
     Student.countDocuments(query)
   ]);
+
+  const items = students
+    .map((student) => ({ student, surname: getKhmerSurname(student.fullName) }))
+    .sort(compareStudentsByKhmerSurname)
+    .slice(skip, skip + limit)
+    .map(({ student }) => student);
 
   return { items, meta: { page, limit, total } };
 };
