@@ -85,6 +85,7 @@ const createGetSchoolStats = ({
       maleStudents,
       femaleStudents,
       todaysIncome,
+      studentsPaidToday,
       monthlyIncome,
       outstandingTuition,
       paymentLifecycleDocs,
@@ -110,6 +111,20 @@ const createGetSchoolStats = ({
             total: { $sum: '$amount' }
           }
         }
+      ]),
+      PaymentModel.aggregate([
+        {
+          $match: {
+            status: 'paid',
+            paymentDate: { $gte: todayStart, $lt: todayEnd }
+          }
+        },
+        {
+          $group: {
+            _id: '$studentId'
+          }
+        },
+        { $count: 'total' }
       ]),
       PaymentModel.aggregate([
         {
@@ -173,6 +188,7 @@ const createGetSchoolStats = ({
         totalStudents,
         maleStudents,
         femaleStudents,
+        studentsPaidToday: studentsPaidToday[0]?.total || 0,
         todaysIncome: toMoney(todayIncome),
         monthlyIncome: toMoney(monthIncome),
         outstandingTuition: toMoney(outstandingBalance),

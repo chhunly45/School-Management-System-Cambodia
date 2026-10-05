@@ -62,6 +62,9 @@ const makeModels = ({ payments = [], students = [] } = {}) => {
         });
 
         if (matchingPayments.length === 0) return [];
+        if (pipeline.some((stage) => stage.$count === 'total')) {
+          return [{ total: new Set(matchingPayments.map((payment) => payment.studentId)).size }];
+        }
         if (group.totalIncome) {
           return [{
             total: matchingPayments.length,
@@ -150,6 +153,7 @@ describe('school dashboard controller', () => {
     assert.ok(Object.hasOwn(data, 'totalStudents'));
     assert.ok(Object.hasOwn(data, 'maleStudents'));
     assert.ok(Object.hasOwn(data, 'femaleStudents'));
+    assert.ok(Object.hasOwn(data, 'studentsPaidToday'));
   });
 
   it('returns the sum of paid payments made today', async () => {
@@ -163,6 +167,82 @@ describe('school dashboard controller', () => {
     });
 
     assert.equal(data.todaysIncome, 37.5);
+  });
+
+  it('counts three paid transactions for three different students separately', async () => {
+    const { data } = await getStats({
+      now: '2026-06-11T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T18:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-2', status: 'paid', paymentDate: '2026-06-10T19:00:00.000Z', amount: 20 },
+        { studentId: 'STUDENT-3', status: 'paid', paymentDate: '2026-06-10T20:00:00.000Z', amount: 30 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidToday, 3);
+  });
+
+  it('counts three paid transactions for the same student once', async () => {
+    const { data } = await getStats({
+      now: '2026-06-11T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T18:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T19:00:00.000Z', amount: 20 },
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T20:00:00.000Z', amount: 30 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidToday, 1);
+  });
+
+  it('counts paid transactions only, excluding pending and overdue payments', async () => {
+    const { data } = await getStats({
+      now: '2026-06-11T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T18:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-2', status: 'pending', paymentDate: '2026-06-10T19:00:00.000Z', amount: 20 },
+        { studentId: 'STUDENT-3', status: 'overdue', paymentDate: '2026-06-10T20:00:00.000Z', amount: 30 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidToday, 1);
+  });
+
+  it('counts paid payments today but excludes yesterday by Cambodia school-day boundary', async () => {
+    const { data } = await getStats({
+      now: '2026-06-11T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-TODAY', status: 'paid', paymentDate: '2026-06-10T17:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-YESTERDAY', status: 'paid', paymentDate: '2026-06-10T16:59:59.999Z', amount: 20 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidToday, 1);
+  });
+
+  it('counts a student once when they have multiple paid payments alongside another student', async () => {
+    const { data } = await getStats({
+      now: '2026-06-11T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T18:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T19:00:00.000Z', amount: 20 },
+        { studentId: 'STUDENT-2', status: 'paid', paymentDate: '2026-06-10T20:00:00.000Z', amount: 30 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidToday, 2);
+  });
+
+  it('returns zero when there are no matching paid payments today', async () => {
+    const { data } = await getStats({
+      now: '2026-06-11T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-PENDING', status: 'pending', paymentDate: '2026-06-10T18:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-YESTERDAY', status: 'paid', paymentDate: '2026-06-09T18:00:00.000Z', amount: 20 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidToday, 0);
   });
 
   it('returns zero when there are no paid payments today', async () => {
@@ -328,6 +408,15 @@ describe('school dashboard controller', () => {
     assert.equal(end.toISOString(), '2026-06-11T17:00:00.000Z');
     assert.deepEqual(attendanceQueries[0].date, { $gte: start, $lt: end });
     assert.deepEqual(paymentAggregatePipelines[0][0].$match.paymentDate, { $gte: start, $lt: end });
+    assert.deepEqual(paymentAggregatePipelines[1][0].$match, {
+      status: 'paid',
+      paymentDate: { $gte: start, $lt: end }
+    });
+    assert.deepEqual(paymentAggregatePipelines[1].slice(1), [
+      { $group: { _id: '$studentId' } },
+      { $count: 'total' }
+    ]);
+    assert.equal(data.studentsPaidToday, 0);
     assert.equal(data.overduePayments, 1);
   });
 });
