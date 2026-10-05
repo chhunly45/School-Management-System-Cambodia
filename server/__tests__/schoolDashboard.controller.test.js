@@ -32,7 +32,7 @@ const makeQuery = (documents) => ({
   }
 });
 
-const makeModels = ({ payments = [] } = {}) => {
+const makeModels = ({ payments = [], students = [] } = {}) => {
   const attendanceQueries = [];
   const paymentAggregatePipelines = [];
   const inRange = (date, range) => {
@@ -43,7 +43,11 @@ const makeModels = ({ payments = [] } = {}) => {
 
   const models = {
     Student: {
-      find: () => makeQuery([])
+      find: () => makeQuery([]),
+      countDocuments: async (query) => students.filter((student) => (
+        student.status === query.status
+        && (!query.gender || student.gender === query.gender)
+      )).length
     },
     Payment: {
       aggregate: async (pipeline) => {
@@ -98,8 +102,8 @@ const makeModels = ({ payments = [] } = {}) => {
   return { models, attendanceQueries, paymentAggregatePipelines };
 };
 
-const getStats = async ({ now, payments = [] }) => {
-  const testModels = makeModels({ payments });
+const getStats = async ({ now, payments = [], students = [] }) => {
+  const testModels = makeModels({ payments, students });
   const handler = createGetSchoolStats({
     models: testModels.models,
     nowProvider: () => new Date(now)
@@ -120,6 +124,34 @@ const getStats = async ({ now, payments = [] }) => {
 };
 
 describe('school dashboard controller', () => {
+  it('returns active student totals split by male and female without counting other as either', async () => {
+    const { data } = await getStats({
+      now: '2026-06-11T03:00:00.000Z',
+      students: [
+        { status: 'active', gender: 'male' },
+        { status: 'active', gender: 'male' },
+        { status: 'active', gender: 'female' },
+        { status: 'active', gender: 'other' },
+        { status: 'inactive', gender: 'female' },
+        { status: 'graduated', gender: 'male' }
+      ]
+    });
+
+    assert.equal(data.totalStudents, 4);
+    assert.equal(data.maleStudents, 2);
+    assert.equal(data.femaleStudents, 1);
+  });
+
+  it('includes all required student count fields in the dashboard response', async () => {
+    const { data } = await getStats({
+      now: '2026-06-11T03:00:00.000Z'
+    });
+
+    assert.ok(Object.hasOwn(data, 'totalStudents'));
+    assert.ok(Object.hasOwn(data, 'maleStudents'));
+    assert.ok(Object.hasOwn(data, 'femaleStudents'));
+  });
+
   it('returns the sum of paid payments made today', async () => {
     const { data } = await getStats({
       now: '2026-06-11T03:00:00.000Z',

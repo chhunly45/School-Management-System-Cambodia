@@ -26,6 +26,9 @@ interface RecentStudent {
 }
 
 interface SchoolDashboardStats {
+  totalStudents: number;
+  maleStudents: number;
+  femaleStudents: number;
   studentsPresentToday: number;
   studentsAbsentToday: number;
   teachersPresentToday: number | null;
@@ -40,6 +43,9 @@ interface SchoolDashboardStats {
 }
 
 const defaultStats: SchoolDashboardStats = {
+  totalStudents: 0,
+  maleStudents: 0,
+  femaleStudents: 0,
   studentsPresentToday: 0,
   studentsAbsentToday: 0,
   teachersPresentToday: 0,
@@ -155,6 +161,18 @@ const SchoolDashboardPage = () => {
       )}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
+          <p className="text-sm text-muted">Total Students</p>
+          <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.totalStudents}</p>
+        </article>
+        <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
+          <p className="text-sm text-muted">Male Students</p>
+          <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.maleStudents}</p>
+        </article>
+        <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
+          <p className="text-sm text-muted">Female Students</p>
+          <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.femaleStudents}</p>
+        </article>
         <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
           <p className="text-sm text-muted">Students Present Today</p>
           <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.studentsPresentToday}</p>

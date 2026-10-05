@@ -1,4 +1,4 @@
-const { Payment, Attendance, EmployeeAttendance, Certificate, Transport } = require('../models');
+const { Student, Payment, Attendance, EmployeeAttendance, Certificate, Transport } = require('../models');
 const { getSchoolDayBounds, getZonedParts } = require('../services/teacherAttendance/time.utils');
 
 const toMoney = (value = 0) => Number(Number(value || 0).toFixed(2));
@@ -59,10 +59,11 @@ const evaluatePaymentLifecycle = (payment, todayOrdinal) => {
 };
 
 const createGetSchoolStats = ({
-  models = { Payment, Attendance, EmployeeAttendance, Certificate, Transport },
+  models = { Student, Payment, Attendance, EmployeeAttendance, Certificate, Transport },
   nowProvider = () => new Date()
 } = {}) => async (req, res, next) => {
   const {
+    Student: StudentModel,
     Payment: PaymentModel,
     Attendance: AttendanceModel,
     EmployeeAttendance: EmployeeAttendanceModel,
@@ -80,6 +81,9 @@ const createGetSchoolStats = ({
       studentsPresentToday,
       studentsAbsentToday,
       teachersPresentToday,
+      totalStudents,
+      maleStudents,
+      femaleStudents,
       todaysIncome,
       monthlyIncome,
       outstandingTuition,
@@ -90,6 +94,9 @@ const createGetSchoolStats = ({
       AttendanceModel.countDocuments({ date: { $gte: todayStart, $lt: todayEnd }, status: 'present' }),
       AttendanceModel.countDocuments({ date: { $gte: todayStart, $lt: todayEnd }, status: 'absent' }),
       getTeacherPresenceToday(EmployeeAttendanceModel, todayStart, todayEnd),
+      StudentModel.countDocuments({ status: 'active' }),
+      StudentModel.countDocuments({ status: 'active', gender: 'male' }),
+      StudentModel.countDocuments({ status: 'active', gender: 'female' }),
       PaymentModel.aggregate([
         {
           $match: {
@@ -163,6 +170,9 @@ const createGetSchoolStats = ({
         studentsPresentToday,
         studentsAbsentToday,
         teachersPresentToday,
+        totalStudents,
+        maleStudents,
+        femaleStudents,
         todaysIncome: toMoney(todayIncome),
         monthlyIncome: toMoney(monthIncome),
         outstandingTuition: toMoney(outstandingBalance),
