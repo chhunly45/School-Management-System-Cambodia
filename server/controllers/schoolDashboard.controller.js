@@ -1,5 +1,9 @@
 const { Student, Payment, Attendance, EmployeeAttendance, Certificate, Transport } = require('../models');
-const { getSchoolDayBounds, getZonedParts } = require('../services/teacherAttendance/time.utils');
+const {
+  getSchoolDayBounds,
+  getZonedParts,
+  zonedDateTimeToUtc
+} = require('../services/teacherAttendance/time.utils');
 
 const toMoney = (value = 0) => Number(Number(value || 0).toFixed(2));
 
@@ -74,6 +78,17 @@ const createGetSchoolStats = ({
     const now = nowProvider();
     const { start: todayStart, end: todayEnd } = getSchoolDayBounds(now);
     const todayOrdinal = getSchoolDateOrdinal(now);
+    const schoolDateParts = getZonedParts(now);
+    const monthPeriodStart = zonedDateTimeToUtc({
+      year: schoolDateParts.year,
+      month: schoolDateParts.month,
+      day: 1
+    });
+    const monthPeriodEnd = schoolDateParts.month === 12
+      ? zonedDateTimeToUtc({ year: schoolDateParts.year + 1, month: 1, day: 1 })
+      : zonedDateTimeToUtc({ year: schoolDateParts.year, month: schoolDateParts.month + 1, day: 1 });
+    const yearPeriodStart = zonedDateTimeToUtc({ year: schoolDateParts.year, month: 1, day: 1 });
+    const yearPeriodEnd = zonedDateTimeToUtc({ year: schoolDateParts.year + 1, month: 1, day: 1 });
     const weekStart = getWeekStart(now);
     const monthStart = getMonthStart(now);
 
@@ -86,6 +101,8 @@ const createGetSchoolStats = ({
       femaleStudents,
       todaysIncome,
       studentsPaidToday,
+      studentsPaidThisMonth,
+      studentsPaidThisYear,
       monthlyIncome,
       outstandingTuition,
       paymentLifecycleDocs,
@@ -117,6 +134,34 @@ const createGetSchoolStats = ({
           $match: {
             status: 'paid',
             paymentDate: { $gte: todayStart, $lt: todayEnd }
+          }
+        },
+        {
+          $group: {
+            _id: '$studentId'
+          }
+        },
+        { $count: 'total' }
+      ]),
+      PaymentModel.aggregate([
+        {
+          $match: {
+            status: 'paid',
+            paymentDate: { $gte: monthPeriodStart, $lt: monthPeriodEnd }
+          }
+        },
+        {
+          $group: {
+            _id: '$studentId'
+          }
+        },
+        { $count: 'total' }
+      ]),
+      PaymentModel.aggregate([
+        {
+          $match: {
+            status: 'paid',
+            paymentDate: { $gte: yearPeriodStart, $lt: yearPeriodEnd }
           }
         },
         {
@@ -189,6 +234,8 @@ const createGetSchoolStats = ({
         maleStudents,
         femaleStudents,
         studentsPaidToday: studentsPaidToday[0]?.total || 0,
+        studentsPaidThisMonth: studentsPaidThisMonth[0]?.total || 0,
+        studentsPaidThisYear: studentsPaidThisYear[0]?.total || 0,
         todaysIncome: toMoney(todayIncome),
         monthlyIncome: toMoney(monthIncome),
         outstandingTuition: toMoney(outstandingBalance),

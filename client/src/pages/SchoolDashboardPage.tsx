@@ -33,6 +33,8 @@ interface SchoolDashboardStats {
   studentsAbsentToday: number;
   teachersPresentToday: number | null;
   studentsPaidToday: number;
+  studentsPaidThisMonth: number;
+  studentsPaidThisYear: number;
   todaysIncome: number;
   monthlyIncome: number;
   outstandingTuition: number;
@@ -51,6 +53,8 @@ const defaultStats: SchoolDashboardStats = {
   studentsAbsentToday: 0,
   teachersPresentToday: 0,
   studentsPaidToday: 0,
+  studentsPaidThisMonth: 0,
+  studentsPaidThisYear: 0,
   todaysIncome: 0,
   monthlyIncome: 0,
   outstandingTuition: 0,
@@ -196,6 +200,14 @@ const SchoolDashboardPage = () => {
         <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
           <p className="text-sm text-muted">Students Paid Today</p>
           <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.studentsPaidToday}</p>
+        </article>
+        <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
+          <p className="text-sm text-muted">Students Paid This Month</p>
+          <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.studentsPaidThisMonth}</p>
+        </article>
+        <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
+          <p className="text-sm text-muted">Students Paid This Year</p>
+          <p className="mt-2 text-3xl font-semibold text-text-primary">{stats.studentsPaidThisYear}</p>
         </article>
         <article className="rounded-3xl bg-white p-6 shadow ring-1 ring-border">
           <p className="text-sm text-muted">Monthly Income</p>

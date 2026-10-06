@@ -154,6 +154,8 @@ describe('school dashboard controller', () => {
     assert.ok(Object.hasOwn(data, 'maleStudents'));
     assert.ok(Object.hasOwn(data, 'femaleStudents'));
     assert.ok(Object.hasOwn(data, 'studentsPaidToday'));
+    assert.ok(Object.hasOwn(data, 'studentsPaidThisMonth'));
+    assert.ok(Object.hasOwn(data, 'studentsPaidThisYear'));
   });
 
   it('returns the sum of paid payments made today', async () => {
@@ -231,6 +233,101 @@ describe('school dashboard controller', () => {
     });
 
     assert.equal(data.studentsPaidToday, 2);
+  });
+
+  it('counts unique students with paid payments in the Cambodia calendar month', async () => {
+    const { data, paymentAggregatePipelines } = await getStats({
+      now: '2026-06-15T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-01T17:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T18:00:00.000Z', amount: 20 },
+        { studentId: 'STUDENT-2', status: 'paid', paymentDate: '2026-06-14T17:00:00.000Z', amount: 30 },
+        { studentId: 'STUDENT-3', status: 'paid', paymentDate: '2026-05-31T16:59:59.999Z', amount: 40 },
+        { studentId: 'STUDENT-5', status: 'paid', paymentDate: '2026-06-30T17:00:00.000Z', amount: 45 },
+        { studentId: 'STUDENT-4', status: 'pending', paymentDate: '2026-06-10T19:00:00.000Z', amount: 50 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidThisMonth, 2);
+    assert.equal(data.todaysIncome, 30);
+    assert.deepEqual(paymentAggregatePipelines[2][0].$match, {
+      status: 'paid',
+      paymentDate: {
+        $gte: new Date('2026-05-31T17:00:00.000Z'),
+        $lt: new Date('2026-06-30T17:00:00.000Z')
+      }
+    });
+    assert.deepEqual(paymentAggregatePipelines[2].slice(1), [
+      { $group: { _id: '$studentId' } },
+      { $count: 'total' }
+    ]);
+  });
+
+  it('counts unique students with paid payments in the Cambodia calendar year', async () => {
+    const { data, paymentAggregatePipelines } = await getStats({
+      now: '2026-06-15T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2025-12-31T17:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-1', status: 'paid', paymentDate: '2026-06-10T18:00:00.000Z', amount: 20 },
+        { studentId: 'STUDENT-2', status: 'paid', paymentDate: '2026-06-14T17:00:00.000Z', amount: 30 },
+        { studentId: 'STUDENT-3', status: 'paid', paymentDate: '2025-12-31T16:59:59.999Z', amount: 40 },
+        { studentId: 'STUDENT-5', status: 'paid', paymentDate: '2026-12-31T17:00:00.000Z', amount: 45 },
+        { studentId: 'STUDENT-4', status: 'overdue', paymentDate: '2026-06-10T19:00:00.000Z', amount: 50 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidThisYear, 2);
+    assert.deepEqual(paymentAggregatePipelines[3][0].$match, {
+      status: 'paid',
+      paymentDate: {
+        $gte: new Date('2025-12-31T17:00:00.000Z'),
+        $lt: new Date('2026-12-31T17:00:00.000Z')
+      }
+    });
+    assert.deepEqual(paymentAggregatePipelines[3].slice(1), [
+      { $group: { _id: '$studentId' } },
+      { $count: 'total' }
+    ]);
+  });
+
+  it('uses Cambodia midnight, month, and year boundaries for paid student counts', async () => {
+    const { data, paymentAggregatePipelines } = await getStats({
+      now: '2025-12-31T17:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-BOUNDARY', status: 'paid', paymentDate: '2025-12-31T17:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-BEFORE', status: 'paid', paymentDate: '2025-12-31T16:59:59.999Z', amount: 20 },
+        { studentId: 'STUDENT-PENDING', status: 'pending', paymentDate: '2025-12-31T17:00:00.000Z', amount: 30 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidToday, 1);
+    assert.equal(data.studentsPaidThisMonth, 1);
+    assert.equal(data.studentsPaidThisYear, 1);
+    assert.deepEqual(paymentAggregatePipelines[1][0].$match.paymentDate, {
+      $gte: new Date('2025-12-31T17:00:00.000Z'),
+      $lt: new Date('2026-01-01T17:00:00.000Z')
+    });
+    assert.deepEqual(paymentAggregatePipelines[2][0].$match.paymentDate, {
+      $gte: new Date('2025-12-31T17:00:00.000Z'),
+      $lt: new Date('2026-01-31T17:00:00.000Z')
+    });
+    assert.deepEqual(paymentAggregatePipelines[3][0].$match.paymentDate, {
+      $gte: new Date('2025-12-31T17:00:00.000Z'),
+      $lt: new Date('2026-12-31T17:00:00.000Z')
+    });
+  });
+
+  it('returns zero for month and year periods with no paid payments', async () => {
+    const { data } = await getStats({
+      now: '2026-06-15T03:00:00.000Z',
+      payments: [
+        { studentId: 'STUDENT-PENDING', status: 'pending', paymentDate: '2026-06-10T18:00:00.000Z', amount: 10 },
+        { studentId: 'STUDENT-LAST-YEAR', status: 'paid', paymentDate: '2025-06-10T18:00:00.000Z', amount: 20 }
+      ]
+    });
+
+    assert.equal(data.studentsPaidThisMonth, 0);
+    assert.equal(data.studentsPaidThisYear, 0);
   });
 
   it('returns zero when there are no matching paid payments today', async () => {
