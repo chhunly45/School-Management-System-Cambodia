@@ -29,6 +29,38 @@ interface Student {
   status: 'active' | 'inactive' | 'graduated';
 }
 
+const studentCsvColumns = [
+  ['Student ID', 'studentId'],
+  ['Full Name', 'fullName'],
+  ['Gender', 'gender'],
+  ['Date of Birth', 'dateOfBirth'],
+  ['Phone', 'phone'],
+  ['Address', 'address'],
+  ['Guardian Name', 'guardianName'],
+  ['Guardian Phone', 'guardianPhone'],
+  ['Class', 'className'],
+  ['Academic Year', 'academicYear'],
+  ['Grade', 'grade'],
+  ['Study Shift', 'studyShift'],
+  ['Status', 'status'],
+  ['Monthly Tuition', 'monthlyTuition']
+] as const;
+
+const toCsvCell = (value: unknown) => {
+  if (value === null || value === undefined) return '""';
+  const stringValue = value instanceof Date ? value.toISOString().slice(0, 10) : String(value);
+  const safeValue = /^[\u0000-\u0020]*[=+\-@]/.test(stringValue) ? `'${stringValue}` : stringValue;
+  return `"${safeValue.replace(/"/g, '""')}"`;
+};
+
+export const buildStudentsCsv = (students: Student[]) => {
+  const rows = [
+    studentCsvColumns.map(([header]) => header),
+    ...students.map((student) => studentCsvColumns.map(([, field]) => student[field] ?? ''))
+  ];
+  return `\uFEFF${rows.map((row) => row.map(toCsvCell).join(',')).join('\r\n')}`;
+};
+
 interface StudentFormValues {
   studentId: string;
   englishName: string;
@@ -132,6 +164,7 @@ const StudentsPage = () => {
   const [formValues, setFormValues] = useState<StudentFormValues>(emptyStudentForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [accessDenied, setAccessDenied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -218,6 +251,55 @@ const StudentsPage = () => {
     e.preventDefault();
     await loadStudents(searchTerm, 1);
   };
+  const handleExportCsv = async () => {
+    setExportLoading(true);
+    setMessage('');
+    try {
+      const firstResponse = await listStudents({ search: searchTerm, page: 1, perPage: 1 });
+      const firstItems = firstResponse.data.items;
+      const total = Number(firstResponse.data.meta.total);
+
+      if (!Number.isInteger(total) || total < 0) {
+        throw new Error('Student export returned invalid pagination metadata.');
+      }
+
+      if (total === 0) {
+        setMessage('No students to export.');
+        return;
+      }
+
+      let allStudents = firstItems;
+      if (total !== firstItems.length) {
+        const allStudentsResponse = await listStudents({ search: searchTerm, page: 1, perPage: total });
+        allStudents = allStudentsResponse.data.items;
+      }
+
+      if (allStudents.length !== total) {
+        throw new Error('Student list changed during export. Please try again.');
+      }
+
+      const csv = buildStudentsCsv(allStudents);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = `students-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      try {
+        anchor.click();
+      } finally {
+        anchor.remove();
+        URL.revokeObjectURL(objectUrl);
+      }
+      setMessage('Students exported successfully.');
+    } catch (error) {
+      setMessage('Unable to export students.');
+      console.error('Unable to export students.', error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
 
   const handlePageChange = async (nextPage: number) => {
     if (nextPage < 1 || nextPage > totalPages || loading) return;
@@ -478,6 +560,14 @@ const StudentsPage = () => {
             Search
           </button>
         </form>
+        <button
+          type="button"
+          onClick={handleExportCsv}
+          disabled={exportLoading || loading}
+          className="rounded-lg border border-primary px-6 py-2 text-primary font-medium hover:bg-primary/5 transition disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {exportLoading ? 'Exporting...' : 'Export CSV'}
+        </button>
         <button
           onClick={handleAdd}
           className="rounded-lg bg-primary px-6 py-2 text-white font-medium hover:opacity-90 transition"
